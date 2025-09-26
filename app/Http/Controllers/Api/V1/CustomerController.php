@@ -201,15 +201,13 @@ class CustomerController extends Controller
     public function updateProfile(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'f_name' => 'required|string|max:255',
-            'l_name' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $request->user()->id,
             'phone' => 'required|string|max:20|unique:users,phone,' . $request->user()->id,
             'password' => 'nullable|string|min:6',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
-            'f_name.required' => translate('first_name_required'),
-            'l_name.required' => translate('last_name_required'),
+            'name.required' => translate('first_name_required'),
         ]);
 
         if ($validator->fails()) {
@@ -227,8 +225,7 @@ class CustomerController extends Controller
             return response()->json(['message' => translate('User not found')], 200);
         }
 
-        $user->f_name = $request->f_name;
-        $user->l_name = $request->l_name;
+        $user->name = $request->name;
 
         if ($user->email != $request['email']){
             $user->email_verified_at = null;

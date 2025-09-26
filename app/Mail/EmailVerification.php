@@ -20,6 +20,7 @@ class EmailVerification extends Mailable
      * @return void
      */
     protected $token;
+    protected $language_code;
 
     public function __construct($token = '', $language_code)
     {

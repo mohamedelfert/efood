@@ -21,6 +21,8 @@ class PasswordResetMail extends Mailable
      */
 
     protected $token;
+    protected $name;
+    protected $language_code;
 
     public function __construct($token, $name, $language_code)
     {

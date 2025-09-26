@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class WalletTransaction extends Model
 {
-
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,6 +18,9 @@ class WalletTransaction extends Model
         'debit',
         'credit',
         'balance',
+        'gateway',
+        'status',
+        'metadata',
         'created_at',
         'updated_at',
     ];
@@ -27,10 +29,13 @@ class WalletTransaction extends Model
         'user_id' => 'integer',
         'credit' => 'float',
         'debit' => 'float',
-        'admin_bonus'=>'float',
-        'balance'=>'float',
-        'reference'=>'string',
-        'created_at'=>'string'
+        'balance' => 'float',
+        'admin_bonus' => 'array',
+        'metadata' => 'array',
+        'reference' => 'string',
+        'gateway' => 'string',
+        'status' => 'string',
+        'created_at' => 'string',
     ];
 
     public function user()
@@ -38,4 +43,18 @@ class WalletTransaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function getTypeAttribute(): string
+    {
+        return $this->credit > 0 ? 'credit' : 'debit';
+    }
+
+    public function getAmountAttribute(): float
+    {
+        return $this->credit > 0 ? $this->credit : $this->debit;
+    }
+
+    public function isCredit(): bool
+    {
+        return $this->credit > 0;
+    }
 }

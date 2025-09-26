@@ -2,72 +2,224 @@
 
 namespace App\CentralLogics;
 
-use App\Model\BusinessSetting;
-use App\Model\PointTransitions;
-use App\Model\WalletBonus;
 use App\User;
-use App\Model\WalletTransaction;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\DB;
+use Exception;
+use App\Model\WalletBonus;
 use Illuminate\Support\Str;
+use App\Model\BusinessSetting;
+use App\Model\OrderTransaction;
+use App\Model\PointTransitions;
+use App\Model\WalletTransaction;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Brian2694\Toastr\Facades\Toastr;
 
 class CustomerLogic{
 
-    public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $referance)
+    public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $order_id = null)
     {
+        // Validate amount
+        if ($amount <= 0) {
+            throw new Exception('Transaction amount must be positive.');
+        }
 
-        if(BusinessSetting::where('key','wallet_status')->first()->value != 1) return false;
-
-        $user = User::find($user_id);
-        $current_balance = $user->wallet_balance;
-
-        $wallet_transaction = new WalletTransaction();
-        $wallet_transaction->user_id = $user->id;
-        $wallet_transaction->transaction_id = Str::random('30');
-        $wallet_transaction->reference = $referance;
-        $wallet_transaction->transaction_type = $transaction_type;
-
-        $debit = 0.0;
-        $credit = 0.0;
-
-        if(in_array($transaction_type, ['add_fund_by_admin','add_fund','loyalty_point', 'referrer','add_fund_bonus']))
-        {
-            $credit = $amount;
-
-            if($transaction_type == 'loyalty_point')
-            {
-                $credit = (int)($amount / BusinessSetting::where('key','loyalty_point_exchange_rate')->first()->value);
+        // Start database transaction
+        return DB::transaction(function () use ($user_id, $amount, $transaction_type, $reference, $order_id) {
+            // Check if wallet system is enabled
+            if (BusinessSetting::where('key', 'wallet_status')->first()?->value != 1) {
+                throw new Exception('Wallet system is disabled.');
             }
-        }
-        else if($transaction_type == 'order_place')
-        {
-            $debit = $amount;
-        }
 
-        $wallet_transaction->credit = $credit;
-        $wallet_transaction->debit = $debit;
-        $wallet_transaction->balance = $current_balance + $credit - $debit;
-        $wallet_transaction->created_at = now();
-        $wallet_transaction->updated_at = now();
-        $user->wallet_balance = $current_balance + $credit - $debit;
+            // Fetch user with lock to prevent race conditions
+            $user = User::lockForUpdate()->find($user_id);
+            if (!$user) {
+                throw new Exception('User not found.');
+            }
 
-        try{
-            DB::beginTransaction();
+            $current_balance = $user->wallet_balance;
+            $validTransactionTypes = ['add_fund_by_admin', 'add_fund', 'loyalty_point', 'referrer', 'add_fund_bonus', 'order_place'];
+            if (!in_array($transaction_type, $validTransactionTypes)) {
+                throw new Exception('Invalid transaction type: ' . $transaction_type);
+            }
+
+            $debit = 0.0;
+            $credit = 0.0;
+            $new_balance = $current_balance;
+            $wallet_transaction = null;
+            $order_transaction = null;
+
+            // Handle transaction types
+            if ($transaction_type === 'order_place') {
+                if (!$order_id) {
+                    throw new Exception('Order ID is required for order_place transaction.');
+                }
+                if ($current_balance < $amount) {
+                    throw new Exception('Insufficient wallet balance.');
+                }
+
+                $debit = $amount;
+                $new_balance = $current_balance - $debit;
+
+                // Create order transaction
+                $order_transaction = new OrderTransaction();
+                $order_transaction->user_id = $user->id;
+                $order_transaction->order_id = $order_id;
+                $order_transaction->transaction_id = Str::uuid();
+                $order_transaction->reference = $reference;
+                $order_transaction->transaction_type = $transaction_type;
+                $order_transaction->debit = $debit;
+                $order_transaction->balance = $new_balance;
+                $order_transaction->order_amount = $amount;
+                $order_transaction->total_amount = $amount;
+                $order_transaction->status = 'completed';
+
+                // Create wallet transaction for order_place to track debit
+                $wallet_transaction = new WalletTransaction();
+                $wallet_transaction->user_id = $user->id;
+                $wallet_transaction->transaction_id = Str::uuid();
+                $wallet_transaction->reference = $reference;
+                $wallet_transaction->transaction_type = $transaction_type;
+                $wallet_transaction->credit = $credit;
+                $wallet_transaction->debit = $debit;
+                $wallet_transaction->balance = $new_balance;
+            } else {
+                $credit = $amount;
+
+                // Special handling for loyalty points
+                if ($transaction_type === 'loyalty_point') {
+                    $exchange_rate = BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()?->value;
+                    if (!$exchange_rate || $exchange_rate <= 0) {
+                        throw new Exception('Invalid loyalty point exchange rate.');
+                    }
+                    $credit = round($amount / $exchange_rate, 2); // Preserve precision
+                }
+
+                $new_balance = $current_balance + $credit;
+
+                // Create wallet transaction
+                $wallet_transaction = new WalletTransaction();
+                $wallet_transaction->user_id = $user->id;
+                $wallet_transaction->transaction_id = Str::uuid();
+                $wallet_transaction->reference = $reference;
+                $wallet_transaction->transaction_type = $transaction_type;
+                $wallet_transaction->credit = $credit;
+                $wallet_transaction->debit = $debit;
+                $wallet_transaction->balance = $new_balance;
+            }
+
+            // Update user balance and save transactions
+            $user->wallet_balance = $new_balance;
             $user->save();
-            $wallet_transaction->save();
-            DB::commit();
-            if(in_array($transaction_type, ['loyalty_point','order_place','add_fund_by_admin', 'referrer', 'add_fund', 'add_fund_bonus'])) return $wallet_transaction;
-            return true;
-        }catch(\Exception $ex)
-        {
-            info($ex);
-            DB::rollback();
 
-            return false;
-        }
-        return false;
+            if ($wallet_transaction) {
+                $wallet_transaction->save();
+            }
+            if ($order_transaction) {
+                $order_transaction->save();
+            }
+
+            return $wallet_transaction ?? $order_transaction;
+        }, 5); // Retry transaction up to 5 times on deadlock
     }
 
+    
+    // public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $order_id = null)
+    // {   
+    //     // Validate amount
+    //     if ($amount <= 0) {
+    //         throw new Exception('Transaction amount must be positive.');
+    //     }
+
+    //     // Start database transaction
+    //     return DB::transaction(function () use ($user_id, $amount, $transaction_type, $reference, $order_id) {
+    //         // Check if wallet system is enabled
+    //         if (BusinessSetting::where('key', 'wallet_status')->first()?->value != 1) {
+    //             throw new Exception('Wallet system is disabled.');
+    //         }
+
+    //         // Fetch user with lock to prevent race conditions
+    //         $user = User::lockForUpdate()->find($user_id);
+    //         if (!$user) {
+    //             throw new Exception('User not found.');
+    //         }
+
+    //         $current_balance = $user->wallet_balance;
+    //         $validTransactionTypes = ['add_fund_by_admin', 'add_fund', 'loyalty_point', 'referrer', 'add_fund_bonus', 'order_place'];
+    //         if (!in_array($transaction_type, $validTransactionTypes)) {
+    //             throw new Exception('Invalid transaction type: ' . $transaction_type);
+    //         }
+
+    //         $debit = 0.0;
+    //         $credit = 0.0;
+    //         $new_balance = $current_balance;
+    //         $wallet_transaction = null;
+    //         $order_transaction = null;
+
+    //         // Handle transaction types
+    //         if ($transaction_type === 'order_place') {
+    //             if (!$order_id) {
+    //                 throw new Exception('Order ID is required for order_place transaction.');
+    //             }
+    //             if ($current_balance < $amount) {
+    //                 throw new Exception('Insufficient wallet balance.');
+    //             }
+
+    //             $debit = $amount;
+    //             $new_balance = $current_balance - $debit;
+
+    //             // Create only order transaction for order_place
+    //             $order_transaction = new OrderTransaction();
+    //             $order_transaction->user_id = $user->id;
+    //             $order_transaction->order_id = $order_id;
+    //             $order_transaction->transaction_id = Str::uuid();
+    //             $order_transaction->reference = $reference;
+    //             $order_transaction->transaction_type = $transaction_type;
+    //             $order_transaction->debit = $debit;
+    //             $order_transaction->balance = $new_balance;
+    //             $order_transaction->order_amount = $amount;
+    //             $order_transaction->total_amount = $amount;
+    //             $order_transaction->status = 'completed';
+    //         } else {
+    //             $credit = $amount;
+
+    //             // Special handling for loyalty points
+    //             if ($transaction_type === 'loyalty_point') {
+    //                 $exchange_rate = BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()?->value;
+    //                 if (!$exchange_rate || $exchange_rate <= 0) {
+    //                     throw new Exception('Invalid loyalty point exchange rate.');
+    //                 }
+    //                 $credit = round($amount / $exchange_rate, 2); // Preserve precision
+    //             }
+
+    //             $new_balance = $current_balance + $credit;
+
+    //             // Create wallet transaction
+    //             $wallet_transaction = new WalletTransaction();
+    //             $wallet_transaction->user_id = $user->id;
+    //             $wallet_transaction->transaction_id = Str::uuid();
+    //             $wallet_transaction->reference = $reference;
+    //             $wallet_transaction->transaction_type = $transaction_type;
+    //             $wallet_transaction->credit = $credit;
+    //             $wallet_transaction->debit = $debit;
+    //             $wallet_transaction->balance = $new_balance;
+    //         }
+
+    //         // Update user balance and save transactions
+    //         $user->wallet_balance = $new_balance;
+    //         $user->save();
+
+    //         if ($wallet_transaction) {
+    //             $wallet_transaction->save();
+    //         }
+    //         if ($order_transaction) {
+    //             $order_transaction->save();
+    //         }
+
+    //         return $wallet_transaction ?? $order_transaction;
+    //     }, 5); // Retry transaction up to 5 times on deadlock
+    // }
+
+    
     public static function create_loyalty_point_transaction($user_id, $referance, $amount, $transaction_type)
     {
         $settings = array_column(BusinessSetting::whereIn('key',['loyalty_point_status','loyalty_point_exchange_rate','loyalty_point_item_purchase_point'])->get()->toArray(), 'value','key');

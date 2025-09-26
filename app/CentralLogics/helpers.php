@@ -2,27 +2,28 @@
 
 namespace App\CentralLogics;
 
-use App\CPU\ImageManager;
-use App\Model\AddOn;
-use App\Model\Branch;
-use App\Model\BusinessSetting;
-use App\Model\Currency;
-use App\Model\DMReview;
-use App\Model\Order;
-use App\Model\Product;
-use App\Model\ProductByBranch;
-use App\Model\Review;
-use App\Models\DeliveryChargeByArea;
-use App\Models\LoginSetup;
 use App\User;
 use Carbon\Carbon;
-use GuzzleHttp\Promise\PromiseInterface;
-use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
+use App\Model\AddOn;
+use App\Model\Order;
+use App\Model\Branch;
+use App\Model\Review;
+use App\Model\Product;
+use App\Model\Currency;
+use App\Model\DMReview;
+use App\CPU\ImageManager;
+use App\Models\LoginSetup;
 use Illuminate\Support\Str;
+use App\Model\BusinessSetting;
+use App\Model\ProductByBranch;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
+use App\Models\DeliveryChargeByArea;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use GuzzleHttp\Promise\PromiseInterface;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Helpers
@@ -111,74 +112,96 @@ class Helpers
 
     public static function product_data_formatting($data, $multi_data = false)
     {
-        $storage = [];
+        try {
+            $storage = [];
 
-        if ($multi_data == true) {
-            foreach ($data as $item) {
+            if ($multi_data == true) {
+                foreach ($data as $item) {
+                    // Check if fields are already arrays before decoding
+                    $category_ids = is_array($item['category_ids'])
+                        ? $item['category_ids']
+                        : (json_decode($item['category_ids'], true) ?? []);
+                    $attributes = is_array($item['attributes'])
+                        ? $item['attributes']
+                        : (json_decode($item['attributes'], true) ?? []);
+                    $choice_options = is_array($item['choice_options'])
+                        ? $item['choice_options']
+                        : (json_decode($item['choice_options'], true) ?? []);
+                    $add_ons = is_array($item['add_ons'])
+                        ? $item['add_ons']
+                        : (json_decode($item['add_ons'], true) ?? []);
+                    $variations = is_array($item['variations'])
+                        ? $item['variations']
+                        : (json_decode($item['variations'], true) ?? []);
 
-                $variations = [];
-                $item['category_ids'] = json_decode($item['category_ids']);
-                $item['attributes'] = json_decode($item['attributes']);
-                $item['choice_options'] = json_decode($item['choice_options']);
-                $item['add_ons'] = AddOn::whereIn('id', json_decode($item['add_ons']))->get();
+                    // Fetch add-ons if add_ons is an array of IDs
+                    $item['add_ons'] = AddOn::whereIn('id', $add_ons)->get()->toArray();
+                    $item['category_ids'] = $category_ids;
+                    $item['attributes'] = $attributes;
+                    $item['choice_options'] = $choice_options;
+                    $item['variations'] = $variations;
 
-                $item['variations'] = json_decode($item['variations'], true);
+                    if (isset($item['translations']) && count($item['translations'])) {
+                        foreach ($item['translations'] as $translation) {
+                            if ($translation->key == 'name') {
+                                $item['name'] = $translation->value;
+                            }
+                            if ($translation->key == 'description') {
+                                $item['description'] = $translation->value;
+                            }
+                        }
+                    }
+                    unset($item['translations']);
+                    $storage[] = $item;
+                }
+                $data = $storage;
+            } else {
+                $data_addons = $data['add_ons'];
+                $addon_ids = [];
+                if (is_array($data_addons) && isset($data_addons[0]['id'])) {
+                    $addon_ids = array_column($data_addons, 'id');
+                } elseif (is_array($data_addons)) {
+                    $addon_ids = $data_addons;
+                } else {
+                    $addon_ids = json_decode($data_addons, true) ?? [];
+                }
 
-                if (count($item['translations'])) {
-                    foreach ($item['translations'] as $translation) {
+                $data['category_ids'] = is_array($data['category_ids'])
+                    ? $data['category_ids']
+                    : (json_decode($data['category_ids'], true) ?? []);
+                $data['attributes'] = is_array($data['attributes'])
+                    ? $data['attributes']
+                    : (json_decode($data['attributes'], true) ?? []);
+                $data['choice_options'] = is_array($data['choice_options'])
+                    ? $data['choice_options']
+                    : (json_decode($data['choice_options'], true) ?? []);
+                $data['add_ons'] = AddOn::whereIn('id', $addon_ids)->get()->toArray();
+                $data['variations'] = is_array($data['variations'])
+                    ? $data['variations']
+                    : (json_decode($data['variations'], true) ?? []);
+
+                if (isset($data['translations']) && count($data['translations']) > 0) {
+                    foreach ($data['translations'] as $translation) {
                         if ($translation->key == 'name') {
-                            $item['name'] = $translation->value;
+                            $data['name'] = $translation->value;
                         }
                         if ($translation->key == 'description') {
-                            $item['description'] = $translation->value;
+                            $data['description'] = $translation->value;
                         }
                     }
                 }
-                unset($item['translations']);
-                $storage[] = $item;
-            }
-            $data = $storage;
-        } else {
-            $data_addons = $data['add_ons'];
-            $addon_ids = [];
-            if(gettype($data_addons) != 'array') {
-                $addon_ids = json_decode($data_addons);
-
-            } elseif(gettype($data_addons) == 'array' && isset($data_addons[0]['id'])) {
-                foreach($data_addons as $addon) {
-                    $addon_ids[] = $addon['id'];
-                }
-
-            } else {
-                $addon_ids = $data_addons;
+                unset($data['translations']);
             }
 
-            $variations = [];
-            $data['category_ids'] = gettype($data['category_ids']) != 'array' ? json_decode($data['category_ids']) : $data['category_ids'];
-            $data['attributes'] = gettype($data['attributes']) != 'array' ? json_decode($data['attributes']) : $data['attributes'];
-            $data['choice_options'] = gettype($data['choice_options']) != 'array' ? json_decode($data['choice_options']) : $data['choice_options'];
-
-            //$data['add_ons'] = AddOn::whereIn('id', $addon_ids)->get();
-            //$data['variations'] = json_decode($data['variations'], true);
-
-            //variation server relate data formating
-            $data['add_ons'] = AddOn::whereIn('id', $addon_ids)->get()->toArray();
-            $data['variations'] = gettype($data['variations']) == 'array' ? $data['variations'] : json_decode($data['variations'], true);
-
-
-            if (count($data['translations']) > 0) {
-                foreach ($data['translations'] as $translation) {
-                    if ($translation->key == 'name') {
-                        $data['name'] = $translation->value;
-                    }
-                    if ($translation->key == 'description') {
-                        $data['description'] = $translation->value;
-                    }
-                }
-            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::error('product_data_formatting failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data_type' => gettype($data)
+            ]);
+            return $multi_data ? [] : [];
         }
-
-        return $data;
     }
 
     public static function order_data_formatting($data, $multi_data = false)
@@ -248,14 +271,35 @@ class Helpers
 
     public static function currency_code()
     {
-        $currency_code = BusinessSetting::where(['key' => 'currency'])->first()->value;
-        return $currency_code;
+        $currency = BusinessSetting::where(['key' => 'currency'])->first();
+        
+        // Add proper null checking
+        if (!$currency) {
+            return 'USD'; // Default fallback currency code
+        }
+        
+        if (!isset($currency->value)) {
+            return 'USD'; // Default fallback if value doesn't exist
+        }
+        
+        return $currency->value;
     }
 
     public static function currency_symbol()
     {
-        $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
-        return $currency_symbol;
+        $currency_code = self::currency_code();
+        $currency = Currency::where(['currency_code' => $currency_code])->first();
+        
+        // Add proper null checking
+        if (!$currency) {
+            return '$'; // Default fallback symbol
+        }
+        
+        if (!isset($currency->currency_symbol)) {
+            return '$'; // Default fallback if symbol doesn't exist
+        }
+        
+        return $currency->currency_symbol;
     }
 
     public static function set_symbol($amount)

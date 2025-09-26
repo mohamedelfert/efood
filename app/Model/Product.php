@@ -27,6 +27,7 @@ class Product extends Model
         'is_recommended' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'variations' => 'array',
     ];
 
     public function getPriceAttribute($price): float

@@ -27,6 +27,7 @@ const MANAGEMENT_SECTION = [
     'user_management' => 'user_management',
     'table_management' => 'table_management',
     'system_management' => 'system_management',
+    'special_system_management' => 'special_system_management'
 ];
 
 const CACHE_BUSINESS_SETTINGS_TABLE = 'cache_business_settings_table';

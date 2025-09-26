@@ -2,18 +2,21 @@
 
 namespace App;
 
-use App\Model\Branch;
-use App\Model\ChefBranch;
-use App\Model\CustomerAddress;
 use App\Model\Order;
+use App\Model\Branch;
 use App\Model\Wishlist;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use App\Model\ChefBranch;
+use App\Models\PaymentMethod;
+use App\Model\CustomerAddress;
+use App\Models\WalletBonusUser;
+use App\Model\WalletTransaction;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
@@ -24,9 +27,11 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $fillable = [
-        'name', 'f_name', 'l_name', 'phone', 'email', 'password', 'point', 'is_active', 'user_type', 'refer_code', 'refer_by', 'language_code'
-    ];
+    // protected $fillable = [
+    //     'name', 'f_name', 'l_name', 'phone', 'email', 'password', 'point', 'is_active', 'user_type', 'refer_code', 'refer_by', 'language_code'
+    // ];
+
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for arrays.
@@ -102,6 +107,37 @@ class User extends Authenticatable
             }
         }
         return $path;
+    }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class)->where('is_active', true);
+    }
+
+    public function defaultPaymentMethod()
+    {
+        return $this->hasOne(PaymentMethod::class)->where('is_default', true);
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class)->orderBy('created_at', 'desc');
+    }
+
+    public function walletBonusUsers()
+    {
+        return $this->hasMany(WalletBonusUser::class);
+    }
+
+    // Helper methods
+    public function hasWalletBalance(float $amount): bool
+    {
+        return $this->wallet_balance >= $amount;
+    }
+
+    public function getFormattedWalletBalanceAttribute(): string
+    {
+        return number_format($this->wallet_balance, 2);
     }
 
 }

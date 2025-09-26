@@ -1,34 +1,36 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\Auth\CustomerAuthController;
-use App\Http\Controllers\Api\V1\Auth\DeliveryManLoginController;
-use App\Http\Controllers\Api\V1\Auth\KitchenLoginController;
-use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
+use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\Api\V1\TagController;
+use App\Http\Controllers\Api\V1\PageController;
+use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\TableController;
 use App\Http\Controllers\Api\V1\BannerController;
 use App\Http\Controllers\Api\V1\BranchController;
-use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ConfigController;
-use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\CouponController;
-use App\Http\Controllers\Api\V1\CuisineController;
-use App\Http\Controllers\Api\V1\CustomerController;
-use App\Http\Controllers\Api\V1\CustomerWalletController;
-use App\Http\Controllers\Api\V1\DeliverymanController;
-use App\Http\Controllers\Api\V1\DeliveryManReviewController;
-use App\Http\Controllers\Api\V1\GuestUserController;
-use App\Http\Controllers\Api\V1\KitchenController;
-use App\Http\Controllers\Api\V1\LoyaltyPointController;
 use App\Http\Controllers\Api\V1\MapApiController;
-use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\OfflinePaymentMethodController;
-use App\Http\Controllers\Api\V1\OrderController;
-use App\Http\Controllers\Api\V1\PageController;
+use App\Http\Controllers\Api\V1\CuisineController;
+use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\ProductController;
-use App\Http\Controllers\Api\V1\TableConfigController;
-use App\Http\Controllers\Api\V1\TableController;
-use App\Http\Controllers\Api\V1\TagController;
+use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\WishlistController;
+use App\Http\Controllers\Api\V1\GuestUserController;
+use App\Http\Controllers\Api\V1\DeliverymanController;
+use App\Http\Controllers\Api\V1\TableConfigController;
+use App\Http\Controllers\Api\V1\ConversationController;
+use App\Http\Controllers\Api\V1\LoyaltyPointController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Services\Payment\Gateways\PaymobPaymentGateway;
+use App\Http\Controllers\Api\V1\CustomerWalletController;
+use App\Http\Controllers\Api\V1\Auth\CustomerAuthController;
+use App\Http\Controllers\Api\V1\Auth\KitchenLoginController;
+use App\Http\Controllers\Api\V1\DeliveryManReviewController;
+use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
+use App\Http\Controllers\Api\V1\OfflinePaymentMethodController;
+use App\Http\Controllers\Api\V1\Auth\DeliveryManLoginController;
 
 Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function () {
 
@@ -169,7 +171,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::put('payment-method', [OrderController::class, 'updatePaymentMethod'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::post('guest-track', [OrderController::class, 'guestTrackOrder'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::post('details-guest', [OrderController::class, 'getGuestOrderDetails'])->withoutMiddleware(['auth:api', 'is_active']);
+            Route::get('{order_id}/payment-methods', [OrderController::class, 'getOrderPaymentMethods']);
+            Route::post('{order_id}/process-payment', [OrderController::class, 'processOrderPayment']);
         });
+
         // Chatting
         Route::group(['prefix' => 'message'], function () {
             //customer-admin
@@ -188,11 +193,66 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::delete('remove', [WishlistController::class, 'removeFromWishlist']);
         });
 
-        Route::post('transfer-point-to-wallet', [CustomerWalletController::class, 'transferLoyaltyPointToWallet']);
-        Route::get('wallet-transactions', [CustomerWalletController::class, 'walletTransactions']);
         Route::get('loyalty-point-transactions', [LoyaltyPointController::class, 'pointTransactions']);
-        Route::get('bonus/list', [CustomerWalletController::class, 'walletBonusList']);
 
+        // Wallet Management Endpoints
+        Route::group(['prefix' => 'wallet'], function () {
+            Route::post('add-fund', [CustomerWalletController::class, 'addFund']);
+            
+            // Get wallet balance and details
+            Route::get('balance', [CustomerWalletController::class, 'getWalletBalance']);
+            // Get wallet statistics/summary
+            Route::get('summary', [CustomerWalletController::class, 'getWalletSummary']);
+            // Get wallet transaction history with pagination
+            Route::get('transactions', [CustomerWalletController::class, 'walletTransactions']);
+
+            // Update wallet PIN
+            Route::post('update-pin', [CustomerWalletController::class, 'updateWalletPin']);
+            Route::post('verify-pin', [CustomerWalletController::class, 'verifyWalletPin']);
+            
+            // Top up wallet - Get available payment methods
+            Route::get('payment-methods', [CustomerWalletController::class, 'getPaymentMethods']);
+            
+            // Process wallet top-up
+            Route::post('top-up', [CustomerWalletController::class, 'topUpWallet']);
+
+            // Search users for money transfer
+            Route::get('search-users', [CustomerWalletController::class, 'searchUsers']);
+
+            // Get user details for transfer confirmation
+            Route::get('user-details/{user_id}', [CustomerWalletController::class, 'getUserDetailsForTransfer']);
+
+            // OTP-based transfer endpoints
+            Route::post('send-transfer-otp', [CustomerWalletController::class, 'sendTransferOTP']);
+            Route::post('verify-transfer-otp', [CustomerWalletController::class, 'verifyTransferOTP']);
+            Route::post('cancel-pending-transfer', [CustomerWalletController::class, 'cancelPendingTransfer']);
+            Route::get('pending-transfer', [CustomerWalletController::class, 'getPendingTransfer']);
+
+            Route::post('transfer-point-to-wallet', [CustomerWalletController::class, 'transferLoyaltyPointToWallet']);
+            Route::get('bonus/list', [CustomerWalletController::class, 'walletBonusList']);
+
+            Route::get('export-transactions', [CustomerWalletController::class, 'exportTransactions']);
+
+            // Verify transaction by reference (for external payment gateways)
+            Route::post('verify-payment/{reference}', [CustomerWalletController::class, 'verifyPayment'])->withoutMiddleware(['auth:api', 'is_active']);
+            
+            // Check wallet status without auth (for guest users)
+            Route::post('check-status', [CustomerWalletController::class, 'checkWalletStatus']);
+          
+            // Get transaction details
+            Route::get('transaction/{transaction_id}', [CustomerWalletController::class, 'getTransactionDetails']);
+            // Request refund for a transaction
+            Route::post('request-refund/{transaction_id}', [CustomerWalletController::class, 'requestRefund']);
+            // Suggested additions
+            Route::get('analytics', [CustomerWalletController::class, 'getWalletAnalytics']);
+            Route::post('report-dispute/{transaction_id}', [CustomerWalletController::class, 'reportDispute']);
+            // Check if user can transfer money (verification status, limits, etc.)
+            Route::get('transfer-eligibility', [CustomerWalletController::class, 'checkTransferEligibility']);
+            // Get transfer limits and fees
+            Route::get('transfer-limits', [CustomerWalletController::class, 'getTransferLimits']);
+            // Get cashback history
+            Route::get('cashback-history', [CustomerWalletController::class, 'getCashbackHistory']); 
+        });
     });
 
     Route::group(['prefix' => 'coupon'], function () {
@@ -244,5 +304,11 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::get('products', [BranchController::class, 'products']);
     });
 
-
+    Route::group(['prefix' => 'payment'], function () {
+        Route::post('/initiate', [PaymentsController::class, 'initiatePayment']);
+        Route::post('/confirm', [PaymentsController::class, 'confirmPayment']);
+        Route::post('/resend-otp', [PaymentsController::class, 'resendOTP']);
+        Route::match(['GET','POST'],'/callback', [PaymentsController::class, 'handleCallback']);
+        Route::get('/methods', [PaymentsController::class, 'getPaymentMethods']);
+    });
 });

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Database\Seeder;
+use Database\Seeders\TestDataTableSeeder;
+use Database\Seeders\CurrenciesTableSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,6 +15,8 @@ class DatabaseSeeder extends Seeder
     {
          $this->call([
              AdminTableSeeder::class,
+             CurrenciesTableSeeder::class,
+             TestDataTableSeeder::class
          ]);
     }
 }

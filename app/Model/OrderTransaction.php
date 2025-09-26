@@ -9,6 +9,8 @@ class OrderTransaction extends Model
 {
     protected $table = 'order_transactions';
 
+    protected $guarded = [];
+
     protected $casts = [
         'delivery_man_id' => 'integer',
         'order_id' => 'integer',

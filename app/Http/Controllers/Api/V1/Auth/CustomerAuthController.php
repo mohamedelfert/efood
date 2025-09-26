@@ -2,28 +2,29 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
-use App\CentralLogics\Helpers;
-use App\CentralLogics\SMS_module;
-use App\Http\Controllers\Controller;
-use App\Mail\EmailVerification;
-use App\Model\BusinessSetting;
-use App\Model\EmailVerifications;
-use App\Model\PhoneVerification;
-use App\Models\LoginSetup;
 use App\User;
 use Firebase\JWT\JWT;
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Client;
+use App\Models\LoginSetup;
+use Carbon\CarbonInterval;
+use Illuminate\Support\Str;
+use App\Mail\EmailVerifyOtp;
 use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use App\Model\BusinessSetting;
+use Illuminate\Support\Carbon;
+use App\Model\PhoneVerification;
+use App\CentralLogics\SMS_module;
+use App\Model\EmailVerifications;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Http\JsonResponse;
-use GuzzleHttp\Client;
-use Illuminate\Support\Carbon;
-use Carbon\CarbonInterval;
 use Modules\Gateways\Traits\SmsGateway;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Validator;
 
 class CustomerAuthController extends Controller
 {
@@ -41,14 +42,12 @@ class CustomerAuthController extends Controller
     public function registration(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'f_name' => 'required',
-            'l_name' => 'required',
+            'name' => 'required',
             'email' => 'required|unique:users',
             'phone' => 'required|min:6|max:20|unique:users',
             'password' => 'required|min:6',
         ], [
-            'f_name.required' => translate('The first name field is required.'),
-            'l_name.required' => translate('The last name field is required.'),
+            'name.required' => translate('The first name field is required.'),
         ]);
 
         if ($validator->fails()) {
@@ -62,8 +61,7 @@ class CustomerAuthController extends Controller
         $temporaryToken = Str::random(40);
 
         $user = $this->user->create([
-            'f_name' => $request->f_name,
-            'l_name' => $request->l_name,
+            'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => bcrypt($request->password),
@@ -202,7 +200,7 @@ class CustomerAuthController extends Controller
                 $mailStatus = Helpers::get_business_settings('registration_otp_mail_status_user');
 
                 if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
-                    Mail::to($request['email'])->send(new EmailVerification($token, $languageCode));
+                    Mail::to($request['email'])->send(new EmailVerifyOtp($token, $languageCode));
                 }
 
             } catch (\Exception $exception) {
@@ -446,7 +444,6 @@ class CustomerAuthController extends Controller
             'type' => 'required|in:phone,email'
         ]);
 
-
         $userId = $request['email_or_phone'];
         $type = $request['type'];
 
@@ -454,102 +451,113 @@ class CustomerAuthController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
+        // Find user based on the input type
         $user = $this->user->where('is_active', 1)
-            ->where(function ($query) use ($userId) {
-                $query->where(['email' => $userId])->orWhere('phone', $userId);
+            ->where(function ($query) use ($userId, $type) {
+                if ($type == 'email') {
+                    $query->where('email', $userId);
+                } else {
+                    $query->where('phone', $userId);
+                }
             })->first();
 
         $maxLoginHit = Helpers::get_business_settings('maximum_login_hit') ?? 5;
         $tempBlockTime = Helpers::get_business_settings('temporary_login_block_time') ?? 600; // seconds
 
-        if (isset($user)) {
-            if(isset($user->temp_block_time ) && Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime){
-                $time = $tempBlockTime - Carbon::parse($user->temp_block_time)->DiffInSeconds();
+        if (!$user) {
+            $errors = [];
+            $errors[] = ['code' => 'auth-001', 'message' => 'Invalid credentials.'];
+            return response()->json(['errors' => $errors], 401);
+        }
 
-                $errors = [];
-                $errors[] = ['code' => 'login_block_time',
-                    'message' => translate('please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
-                ];
-                return response()->json(['errors' => $errors], 403);
-            }
+        // Check if user is temporarily blocked
+        if(isset($user->temp_block_time) && Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime){
+            $time = $tempBlockTime - Carbon::parse($user->temp_block_time)->DiffInSeconds();
 
-            $data = [
-                'email' => $user->email,
-                'password' => $request->password,
-                'user_type' => null,
+            $errors = [];
+            $errors[] = ['code' => 'login_block_time',
+                'message' => translate('please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
             ];
+            return response()->json(['errors' => $errors], 403);
+        }
 
-            if (auth()->attempt($data)) {
-                $temporaryToken = Str::random(40);
+        // Verify password directly using Hash::check
+        if (Hash::check($request->password, $user->password)) {
+            $temporaryToken = Str::random(40);
 
-                $emailVerification = (int) $this->loginSetup->where(['key' => 'email_verification'])?->first()->value ?? 0;
-                $phoneVerification = (int) $this->loginSetup->where(['key' => 'phone_verification'])?->first()->value ?? 0;
+            $emailVerification = (int) $this->loginSetup->where(['key' => 'email_verification'])?->first()->value ?? 0;
+            $phoneVerification = (int) $this->loginSetup->where(['key' => 'phone_verification'])?->first()->value ?? 0;
 
-                if ($type == 'phone' && $phoneVerification && !$user->is_phone_verified) {
-                    return response()->json(['temporary_token' => $temporaryToken, 'status' => false], 200);
-                }
-                if ($type == 'email' && $emailVerification && $user->email_verified_at == null) {
-                    return response()->json(['temporary_token' => $temporaryToken, 'status' => false], 200);
-                }
-
-                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
-
-                $user->login_hit_count = 0;
-                $user->is_temp_blocked = 0;
-                $user->temp_block_time = null;
-                $user->updated_at = now();
+            // Check verification requirements
+            if ($type == 'phone' && $phoneVerification && !$user->is_phone_verified) {
+                $user->temporary_token = $temporaryToken;
                 $user->save();
-
-                return response()->json(['token' => $token, 'status' => true], 200);
+                return response()->json(['temporary_token' => $temporaryToken, 'status' => false], 200);
+            }
+            if ($type == 'email' && $emailVerification && $user->email_verified_at == null) {
+                $user->temporary_token = $temporaryToken;
+                $user->save();
+                return response()->json(['temporary_token' => $temporaryToken, 'status' => false], 200);
             }
 
-            else{
-                if(isset($user->temp_block_time ) && Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime){
-                    $time= $tempBlockTime - Carbon::parse($user->temp_block_time)->DiffInSeconds();
+            // Create Passport token
+            $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
 
-                    $errors = [];
-                    $errors[] = [
-                        'code' => 'login_block_time',
-                        'message' => translate('please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
-                    ];
-                    return response()->json([
-                        'errors' => $errors
-                    ], 403);
-                }
+            // Reset login attempts on successful login
+            $user->login_hit_count = 0;
+            $user->is_temp_blocked = 0;
+            $user->temp_block_time = null;
+            $user->updated_at = now();
+            $user->save();
 
-                if($user->is_temp_blocked == 1 && Carbon::parse($user->temp_block_time)->DiffInSeconds() >= $tempBlockTime){
+            return response()->json(['token' => $token, 'status' => true], 200);
+        }
 
-                    $user->login_hit_count = 0;
-                    $user->is_temp_blocked = 0;
-                    $user->temp_block_time = null;
-                    $user->updated_at = now();
-                    $user->save();
-                }
+        // Handle failed login attempts
+        if(isset($user->temp_block_time) && Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime){
+            $time = $tempBlockTime - Carbon::parse($user->temp_block_time)->DiffInSeconds();
 
-                if($user->login_hit_count >= $maxLoginHit &&  $user->is_temp_blocked == 0){
-                    $user->is_temp_blocked = 1;
-                    $user->temp_block_time = now();
-                    $user->updated_at = now();
-                    $user->save();
+            $errors = [];
+            $errors[] = [
+                'code' => 'login_block_time',
+                'message' => translate('please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
+            ];
+            return response()->json([
+                'errors' => $errors
+            ], 403);
+        }
 
-                    $time= $tempBlockTime - Carbon::parse($user->temp_block_time)->DiffInSeconds();
-
-                    $errors = [];
-                    $errors[] = [
-                        'code' => 'login_temp_blocked',
-                        'message' => translate('Too_many_attempts. please_try_again_after_'). CarbonInterval::seconds($time)->cascade()->forHumans()
-                    ];
-                    return response()->json([
-                        'errors' => $errors
-                    ], 403);
-                }
-            }
-
-            $user->login_hit_count += 1;
+        if($user->is_temp_blocked == 1 && Carbon::parse($user->temp_block_time)->DiffInSeconds() >= $tempBlockTime){
+            $user->login_hit_count = 0;
+            $user->is_temp_blocked = 0;
             $user->temp_block_time = null;
             $user->updated_at = now();
             $user->save();
         }
+
+        if($user->login_hit_count >= $maxLoginHit && $user->is_temp_blocked == 0){
+            $user->is_temp_blocked = 1;
+            $user->temp_block_time = now();
+            $user->updated_at = now();
+            $user->save();
+
+            $time = $tempBlockTime;
+
+            $errors = [];
+            $errors[] = [
+                'code' => 'login_temp_blocked',
+                'message' => translate('Too_many_attempts. please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
+            ];
+            return response()->json([
+                'errors' => $errors
+            ], 403);
+        }
+
+        // Increment login hit count
+        $user->login_hit_count += 1;
+        $user->temp_block_time = null;
+        $user->updated_at = now();
+        $user->save();
 
         $errors = [];
         $errors[] = ['code' => 'auth-001', 'message' => 'Invalid credentials.'];

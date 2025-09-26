@@ -15,13 +15,16 @@ class AdminTableSeeder extends Seeder
     {
         DB::table('admins')->insert([
             'id' => 1,
-            'f_name' => 'Master Admin',
-            'l_name' => 'Khandakar',
-            'phone' => '01759412381',
-            'email' => 'admin@admin.com',
+            'f_name' => 'mohamed',
+            'l_name' => 'elfert',
+            'phone' => '01011731954',
+            'email' => 'mohamedelfert@yahoo.com',
             'image' => 'def.png',
-            'password' => bcrypt(12345678),
-            'remember_token' =>Str::random(10),
+            'password' => bcrypt(123456789),
+            'identity_number' => 'ADMIN001',
+            'identity_type' => 'NID',
+            'identity_image' => 'def.png',
+            'remember_token' => Str::random(10),
             'created_at'=>now(),
             'updated_at'=>now()
         ]);
