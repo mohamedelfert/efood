@@ -552,6 +552,19 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         Route::get('verify-offline-payment/quick-view-details', [OfflinePaymentMethodController::class, 'quickViewDetails'])->name('offline-modal-view');
         Route::get('verify-offline-payment/{status}', [OfflinePaymentMethodController::class, 'offlinePaymentList'])->name('verify-offline-payment');
 
+        Route::group(['prefix' => 'currency', 'as' => 'currency.'], function () {
+            Route::get('/', 'CurrencyController@index')->name('index');
+            Route::get('/create', 'CurrencyController@create')->name('create');
+            Route::post('/store', 'CurrencyController@store')->name('store');
+            Route::get('/edit/{id}', 'CurrencyController@edit')->name('edit');
+            Route::put('/update/{id}', 'CurrencyController@update')->name('update');
+            Route::post('/set-primary/{id}', 'CurrencyController@setPrimary')->name('set-primary');
+            Route::post('/toggle-status/{id}', 'CurrencyController@toggleStatus')->name('toggle-status');
+            Route::delete('/delete/{id}', 'CurrencyController@destroy')->name('delete');
+            Route::get('/exchange-rates', 'CurrencyController@updateExchangeRates')->name('exchange-rates');
+            Route::post('/save-exchange-rates', 'CurrencyController@saveExchangeRates')->name('save-exchange-rates');
+        });
+
     });
 });
 

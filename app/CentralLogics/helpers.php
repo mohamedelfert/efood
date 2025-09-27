@@ -288,7 +288,7 @@ class Helpers
     public static function currency_symbol()
     {
         $currency_code = self::currency_code();
-        $currency = Currency::where(['currency_code' => $currency_code])->first();
+        $currency = Currency::where(['code' => $currency_code])->first();
         
         // Add proper null checking
         if (!$currency) {

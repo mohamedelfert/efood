@@ -9,6 +9,8 @@ class OrderPartialPayment extends Model
 {
     use HasFactory;
 
+    protected $table = 'order_partial_payments';
+
     protected $casts = [
         'order_id' => 'integer',
         'paid_amount' => 'float',
@@ -20,5 +22,6 @@ class OrderPartialPayment extends Model
         'paid_with',
         'paid_amount',
         'due_amount',
+        'transaction_id',
     ];
 }

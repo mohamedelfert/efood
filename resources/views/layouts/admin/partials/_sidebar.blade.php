@@ -525,6 +525,35 @@
                                 </a>
                             </li>
 
+                            <!-- Currency Management -->
+                            <li class="navbar-vertical-aside-has-menu {{Request::is('admin/currency*')?'active':''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
+                                    <i class="tio-pages nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('currency-management')}}</span>
+                                </a>
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub" 
+                                    style="display: {{Request::is('admin/currency*')?'block':'none'}}">
+                                    <li class="nav-item {{Request::is('admin/currency') || Request::is('admin/currency/edit*')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.currency.index')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('currency-list')}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{Request::is('admin/currency/create')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.currency.create')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('add-currency')}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{Request::is('admin/currency/exchange-rates')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.currency.exchange-rates')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('exchange-rates')}}</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
                             <!-- PAGE SETUP -->
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/web-app/social-media') || Request::is('admin/business-settings/page-setup/*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">

@@ -161,6 +161,31 @@ Route::get('add-currency', function () {
     return response()->json(['ok']);
 });
 
+Route::get('setup-currencies', function () {
+    $currencies = GATEWAYS_CURRENCIES;
+    $added = 0;
+    
+    foreach ($currencies as $currency) {
+        $exists = \App\Model\Currency::where('code', $currency['code'])->exists();
+        
+        if (!$exists) {
+            \App\Model\Currency::create([
+                'name' => $currency['name'],
+                'code' => $currency['code'],
+                'symbol' => $currency['symbol'],
+                'exchange_rate' => $currency['code'] === 'USD' ? 1.0000 : 1.0000,
+                'is_primary' => $currency['code'] === 'USD',
+                'is_active' => $currency['code'] === 'USD',
+                'decimal_places' => 2,
+                'position' => 'before',
+            ]);
+            $added++;
+        }
+    }
+    
+    return "تم إضافة $added عملة بنجاح";
+});
+
 Route::get('test', function () {
     Mail::to('abdurrahman.6amtech@gmail.com')->send(new \App\Mail\OrderPlaced(100628));
 });

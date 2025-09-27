@@ -379,11 +379,9 @@ class CustomerWalletController extends Controller
                 'purpose' => 'wallet_topup',
                 'customer_data' => [
                     'user_id' => $user->id,
-                    'name' => $user->f_name . ' ' . $user->l_name,
+                    'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
-                    'f_name' => $user->f_name,
-                    'l_name' => $user->l_name,
                 ],
                 'callback_url' => $callbackUrl,
             ];
@@ -570,7 +568,7 @@ class CustomerWalletController extends Controller
                     'receiver_phone' => $receiver->phone,
                     'amount' => $amount,
                     'note' => $request->note,
-                    'receiver_name' => trim($receiver->f_name . ' ' . $receiver->l_name)
+                    'receiver_name' => trim($receiver->name)
                 ])
             ]);
 
@@ -580,7 +578,7 @@ class CustomerWalletController extends Controller
                 'success' => true,
                 'message' => translate('OTP sent successfully'),
                 'otp_expires_in' => 5,
-                'receiver_name' => trim($receiver->f_name . ' ' . $receiver->l_name),
+                'receiver_name' => trim($receiver->name),
                 'receiver_phone' => $receiver->phone,
                 'amount' => $amount,
                 'sent_at' => now()->toDateTimeString(),
@@ -664,7 +662,7 @@ class CustomerWalletController extends Controller
                 'credit' => $amount,
                 'debit' => 0,
                 'transaction_type' => 'transfer_received',
-                'reference' => 'Transfer from ' . trim($sender->f_name . ' ' . $sender->l_name),
+                'reference' => 'Transfer from ' . trim($sender->name),
                 'status' => 'completed',
                 'balance' => $receiver->wallet_balance + $amount,
                 'admin_bonus' => $transferData['note'],
@@ -728,25 +726,24 @@ class CustomerWalletController extends Controller
         }
 
         $currentUserId = $request->user()->id;
-        $query = $request->query;
-        $limit = $request->limit ?? 10;
+        $query = $request->query('query'); 
+        $limit = $request->input('limit', 10);
 
         $users = $this->user
             ->where('id', '!=', $currentUserId)
             ->where('is_active', 1)
             ->where(function ($q) use ($query) {
-                $q->where('f_name', 'LIKE', "%{$query}%")
-                  ->orWhere('l_name', 'LIKE', "%{$query}%")
-                  ->orWhere('email', 'LIKE', "%{$query}%")
-                  ->orWhere('phone', 'LIKE', "%{$query}%");
+                $q->where('name', 'LIKE', "%{$query}%")
+                ->orWhere('email', 'LIKE', "%{$query}%")
+                ->orWhere('phone', 'LIKE', "%{$query}%");
             })
-            ->select('id', 'f_name', 'l_name', 'email', 'phone', 'image', 'is_active')
+            ->select('id', 'name', 'email', 'phone', 'image', 'is_active')
             ->limit($limit)
             ->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'name' => trim($user->f_name . ' ' . $user->l_name),
+                    'name' => trim($user->name),
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'image' => $user->image,
@@ -783,7 +780,7 @@ class CustomerWalletController extends Controller
 
         $data = [
             'id' => $user->id,
-            'name' => trim($user->f_name . ' ' . $user->l_name),
+            'name' => trim($user->name),
             'email' => $user->email,
             'phone' => $user->phone,
             'image' => $user->image,

@@ -763,13 +763,9 @@ class CustomerAuthController extends Controller
 
         $temporaryToken = Str::random(40);
         $name = $request->name;
-        $nameParts = explode(' ', $name, 2);
-        $firstName = $nameParts[0];
-        $lastName = $nameParts[1] ?? '';
 
         $user = new User();
-        $user->f_name = $firstName;
-        $user->l_name = $lastName;
+        $user->name = $name;
         $user->email = $request->email;
         $user->phone = $request->phone;
         $user->password = bcrypt(rand(11111111, 99999999));
@@ -962,13 +958,9 @@ class CustomerAuthController extends Controller
         $temporaryToken = Str::random(40);
 
         $name = $request->name;
-        $nameParts = explode(' ', $name, 2);
-        $firstName = $nameParts[0];
-        $lastName = $nameParts[1] ?? '';
 
         $user = new User();
-        $user->f_name = $firstName;
-        $user->l_name = $lastName;
+        $user->name = $name;
         $user->email = $request->email;
         $user->phone = $request->phone;
         $user->password = bcrypt(rand(11111111, 99999999));

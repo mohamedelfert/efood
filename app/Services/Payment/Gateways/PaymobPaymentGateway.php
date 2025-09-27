@@ -72,8 +72,8 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
     {
         $customerData = $data['customer_data'] ?? [];
         $billingData = [
-            'first_name' => $customerData['f_name'] ?? 'Customer',
-            'last_name' => $customerData['l_name'] ?? 'User',
+            'first_name' => $customerData['name'] ?? 'Customer',
+            'last_name' => $customerData['name'] ?? 'User',
             'email' => $customerData['email'] ?? 'customer@example.com',
             'phone_number' => $customerData['phone'] ?? '01234567890',
             'street' => $customerData['address_street'] ?? 'Unknown Street',

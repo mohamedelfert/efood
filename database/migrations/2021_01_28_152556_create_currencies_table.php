@@ -15,10 +15,14 @@ class CreateCurrenciesTable extends Migration
     {
         Schema::create('currencies', function (Blueprint $table) {
             $table->id();
-            $table->string('country')->nullable();
-            $table->string('currency_code')->nullable();
-            $table->string('currency_symbol')->nullable();
-            $table->decimal('exchange_rate')->nullable();
+            $table->string('name');
+            $table->string('code', 3)->unique();
+            $table->string('symbol', 10); 
+            $table->decimal('exchange_rate', 10, 4)->default(1.0000);
+            $table->boolean('is_primary')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->integer('decimal_places')->default(2);
+            $table->string('position', 10)->default('before');
             $table->timestamps();
         });
     }

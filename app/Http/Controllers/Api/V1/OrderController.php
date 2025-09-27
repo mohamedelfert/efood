@@ -9,6 +9,7 @@ use App\Model\AddOn;
 use App\Model\Order;
 use App\Model\Branch;
 use App\Model\Product;
+use App\Model\Currency;
 use App\Model\DMReview;
 use App\Models\GuestUser;
 use App\Models\OrderArea;
@@ -81,8 +82,7 @@ class OrderController extends Controller
             'customer_data' => 'required_if:payment_method,paymob,qib|array',
             'customer_data.email' => 'required_if:payment_method,paymob,qib|email',
             'customer_data.phone' => 'required_if:payment_method,paymob,qib|string',
-            'customer_data.f_name' => 'required_if:payment_method,paymob,qib|string',
-            'customer_data.l_name' => 'required_if:payment_method,paymob,qib|string',
+            'customer_data.name' => 'required_if:payment_method,paymob,qib|string',
             'payment_CustomerNo' => 'required_if:payment_method,qib|string',
             'payment_DestNation' => 'required_if:payment_method,qib|integer',
             'payment_Code' => 'required_if:payment_method,qib|integer',
@@ -324,6 +324,11 @@ class OrderController extends Controller
                 'updated_at' => now()
             ];
 
+            // Remove 'id' from $or if $order_id is not defined
+            if (!isset($order_id)) {
+                unset($or['id']);
+            }
+
             $o_id = $this->order->insertGetId($or);
 
             // Handle wallet payment
@@ -355,14 +360,20 @@ class OrderController extends Controller
                 $dueAmount = $totalOrderAmount - $walletAmount;
 
                 if ($walletAmount > 0) {
-                    $walletTransaction = CustomerLogic::create_wallet_transaction($or['user_id'], $walletAmount, 'order_place', $or['id']);
+                    $walletTransaction = CustomerLogic::create_wallet_transaction(
+                        $or['user_id'], 
+                        $walletAmount, 
+                        'order_place', 
+                        'ORDER_' . $o_id,
+                        $o_id
+                    );
                     if (!$walletTransaction) {
                         DB::rollBack();
                         Log::error('Wallet transaction creation failed for partial payment (wallet)', ['order_id' => $o_id]);
                         return response()->json(['errors' => [['code' => 'wallet_error', 'message' => translate('Failed to create wallet transaction')]]], 400);
                     }
                     $partial = new OrderPartialPayment;
-                    $partial->order_id = $or['id'];
+                    $partial->order_id = $o_id;
                     $partial->paid_with = 'wallet_payment';
                     $partial->paid_amount = $walletAmount;
                     $partial->due_amount = $dueAmount;
@@ -373,23 +384,32 @@ class OrderController extends Controller
                 if ($request->payment_method != 'cash_on_delivery' && $request->payment_method != 'offline_payment') {
                     $customerData = [
                         'user_id' => $userId,
-                        'name' => $request->customer_data['f_name'] . ' ' . $request->customer_data['l_name'],
+                        'name' => $request->customer_data['name'],
                         'email' => $request->customer_data['email'],
                         'phone' => $request->customer_data['phone'],
-                        'f_name' => $request->customer_data['f_name'],
-                        'l_name' => $request->customer_data['l_name']
                     ];
 
                     $transactionId = 'PAY_' . time() . '_' . $userId;
+                    $amountCents = round($dueAmount * 100);
                     $paymentData = [
                         'gateway' => $request->payment_method,
-                        'amount' => $dueAmount,
-                        'currency' => 'EGP',
+                        'amount' => $amountCents,
+                        'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
                         'purpose' => 'order_payment',
                         'order_id' => $o_id,
+                        'order_type' => $request->order_type,
                         'customer_data' => $customerData,
                         'callback_url' => rtrim($request->callback_url, '?') . '?transaction_id=' . $transactionId,
                         'transaction_id' => $transactionId,
+                        // Add cart items for Paymob (if required)
+                        'items' => array_map(function ($item) use ($request) {
+                            $product = Product::find($item['product_id']);
+                            return [
+                                'name' => $product->name ?? 'Product ' . $item['product_id'],
+                                'amount_cents' => round(($product->price ?? 0) * 100),
+                                'quantity' => $item['quantity'],
+                            ];
+                        }, $request->cart),
                     ];
 
                     if ($request->payment_method === 'qib') {
@@ -425,7 +445,8 @@ class OrderController extends Controller
                             $userId,
                             $dueAmount,
                             'add_fund',
-                            'order_payment'
+                            'ORDER_PAYMENT_' . $o_id,
+                            $o_id
                         );
 
                         if (!$walletTransaction) {
@@ -485,11 +506,9 @@ class OrderController extends Controller
             if (in_array($request->payment_method, ['paymob', 'qib']) && !$request->is_partial) {
                 $customerData = [
                     'user_id' => $userId,
-                    'name' => $request->customer_data['f_name'] . ' ' . $request->customer_data['l_name'],
+                    'name' => $request->customer_data['name'],
                     'email' => $request->customer_data['email'],
                     'phone' => $request->customer_data['phone'],
-                    'f_name' => $request->customer_data['f_name'],
-                    'l_name' => $request->customer_data['l_name']
                 ];
 
                 $transactionId = 'PAY_' . time() . '_' . $userId;
@@ -788,7 +807,7 @@ class OrderController extends Controller
         if ((bool)auth('api')->user()) {
             $fcmToken = auth('api')->user()?->cm_firebase_token;
             $local = auth('api')->user()?->language_code;
-            $customerName = auth('api')->user()?->f_name . ' '. auth('api')->user()?->l_name;
+            $customerName = auth('api')->user()?->name;
         } else {
             $guest = GuestUser::find($request['guest_id']);
             $fcmToken = $guest ? $guest->fcm_token : '';
@@ -975,7 +994,7 @@ class OrderController extends Controller
 
         $details = $this->order_detail->with(['order',
             'order.delivery_man' => function ($query) {
-                $query->select('id', 'f_name', 'l_name', 'phone', 'email', 'image', 'branch_id', 'is_active');
+                $query->select('id', 'name', 'phone', 'email', 'image', 'branch_id', 'is_active');
             },
             'order.delivery_man.rating', 'order.delivery_address', 'order.order_partial_payments' , 'order.offline_payment', 'order.deliveryman_review'])
             ->withCount(['reviews'])
@@ -1206,8 +1225,7 @@ class OrderController extends Controller
                     'user_id' => $request->user()->id,
                     'email' => $request->user()->email,
                     'phone' => $request->user()->phone,
-                    'f_name' => $request->user()->f_name,
-                    'l_name' => $request->user()->l_name
+                    'name' => $request->user()->name,
                 ]
             ]));
 
