@@ -606,29 +606,29 @@
                             @endif
                         @endif
 
-                        @if(Helpers::module_permission_check(MANAGEMENT_SECTION['special_system_management']))
-                            <li class="nav-item">
+                        <!-- @if(Helpers::module_permission_check(MANAGEMENT_SECTION['special_system_management'])) -->
+                            <!-- <li class="nav-item">
                                 <small class="nav-subtitle">{{translate('special_system_management')}}</small>
                                 <small class="tio-more-horizontal nav-subtitle-replacer"></small>
-                            </li>
+                            </li> -->
 
                             <!-- Special Settings -->
-                            <li class="navbar-vertical-aside-has-menu {{Request::is('admin/kitchen*') || Request::is('admin/table*') || Request::is('admin/verify-offline-payment*') || Request::is('admin/delivery-man*') || Request::is('admin/report/earning') || Request::is('admin/system-addon*') || Request::is('admin/pos*') || Request::is('admin/business-settings/email-setup*') || Request::is('admin/business-settings/web-app/third-party*') || Request::is('admin/customer/loyalty-point*')?'active':''}}">
+                            <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/kitchen*') || Request::is('admin/table*') || Request::is('admin/verify-offline-payment*') || Request::is('admin/delivery-man*') || Request::is('admin/report/earning') || Request::is('admin/system-addon*') || Request::is('admin/pos*') || Request::is('admin/business-settings/email-setup*') || Request::is('admin/business-settings/web-app/third-party*') || Request::is('admin/customer/loyalty-point*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                     <i class="tio-settings nav-icon"></i>
                                     <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Special Settings')}}</span>
                                 </a>
                                 <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/kitchen*') || Request::is('admin/table*') || Request::is('admin/verify-offline-payment*') || Request::is('admin/delivery-man*') || Request::is('admin/report/earning') || Request::is('admin/system-addon*') || Request::is('admin/pos*') || Request::is('admin/business-settings/email-setup*') || Request::is('admin/business-settings/web-app/third-party*') || Request::is('admin/customer/loyalty-point*')?'block':'none'}}">
                                     <!-- Cuisine -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/cuisine*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/cuisine*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.cuisine.add')}}">
                                             <i class="tio-link nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('cuisine')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Kitchen/Chefs -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/kitchen*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/kitchen*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                             <i class="tio-user nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('chef')}}</span>
@@ -648,10 +648,10 @@
                                                 </a>
                                             </li>
                                         </ul>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Table Management -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/table*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/table*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                             <i class="tio-table nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('table')}}</span>
@@ -677,18 +677,18 @@
                                                 </a>
                                             </li>
                                         </ul>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Offline Verification -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/verify-offline-payment*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/verify-offline-payment*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.verify-offline-payment', ['pending'])}}">
                                             <i class="tio-shopping-basket nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Offline Verification')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Delivery -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/delivery-man*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/delivery-man*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                             <i class="tio-user nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('deliveryman')}}</span>
@@ -719,58 +719,58 @@
                                                 </a>
                                             </li>
                                         </ul>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Earning Report -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/report/earning')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/report/earning')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.report.earning')}}">
                                             <i class="tio-chart-pie-1 nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Earning Report')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- System Addon -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/system-addon*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/system-addon*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.system-addon.index')}}">
                                             <i class="tio-add-circle-outlined nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('System Addon')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- POS New Sale -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/pos*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/pos*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.pos.index')}}">
                                             <i class="tio-shopping nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('POS New Sale')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- Email Template -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/email-setup*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/email-setup*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.business-settings.email-setup', ['user', 'new-order'])}}">
                                             <i class="tio-email nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Email Template')}}</span>
                                         </a>
-                                    </li>
+                                    </li> -->
 
                                     <!-- 3rd Party -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/web-app/third-party*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/web-app/third-party*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                             <i class="tio-running nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('3rd_Party')}}</span>
                                         </a>
                                         <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/business-settings/web-app/third-party*')?'block':'none'}}">
                                             <!-- Page Setup -->
-                                            <li class="nav-item {{Request::is('admin/business-settings/web-app/third-party/payment-method') || Request::is('admin/business-settings/web-app/third-party/mail-config') || Request::is('admin/business-settings/web-app/third-party/sms-module')||
+                                            <!-- <li class="nav-item {{Request::is('admin/business-settings/web-app/third-party/payment-method') || Request::is('admin/business-settings/web-app/third-party/mail-config') || Request::is('admin/business-settings/web-app/third-party/sms-module')||
                                                                 Request::is('admin/business-settings/web-app/third-party/map-api-settings') || Request::is('admin/business-settings/web-app/third-party/recaptcha') ||
                                                                 Request::is('admin/business-settings/web-app/third-party/social-login') || Request::is('admin/business-settings/web-app/third-party/chat')?'active':''}}">
                                                 <a class="nav-link" href="{{route('admin.business-settings.web-app.payment-method')}}">
                                                     <span class="tio-circle nav-indicator-icon"></span>
                                                     <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('3rd Party Configurations')}}</span>
                                                 </a>
-                                            </li>
+                                            </li> -->
 
-                                            <li class="nav-item {{Request::is('admin/business-settings/web-app/third-party/offline-payment*')?'active':''}}">
+                                            <!-- <li class="nav-item {{Request::is('admin/business-settings/web-app/third-party/offline-payment*')?'active':''}}">
                                                 <a class="nav-link" href="{{route('admin.business-settings.web-app.third-party.offline-payment.list')}}">
                                                     <span class="tio-circle nav-indicator-icon"></span>
                                                     <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Offline Payment Method')}}</span>
@@ -790,21 +790,21 @@
                                             </a>
                                             </li>
 
-                                        </ul>
-                                    </li>
+                                        </ul> -->
+                                    <!-- </li> -->
                                     <!-- End 3rd Party -->
 
                                     <!-- Customer Loyalty Points -->
-                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/customer/loyalty-point*')?'active':''}}">
+                                    <!-- <li class="navbar-vertical-aside-has-menu {{Request::is('admin/customer/loyalty-point*')?'active':''}}">
                                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.customer.loyalty-point.report')}}">
                                             <i class="tio-medal nav-icon"></i>
                                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Customer Loyalty Points')}}</span>
                                         </a>
-                                    </li>
-                                </ul>
-                            </li>
+                                    </li> -->
+                                <!-- </ul> -->
+                            <!-- </li> -->
                             <!-- End Special Settings -->
-                        @endif
+                        <!-- @endif -->
 
                         <li class="nav-item pt-10">
                             <div class=""></div>
