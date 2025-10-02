@@ -182,7 +182,7 @@
     });
 </script>
 
-@if(isset($recaptcha) && $recaptcha['status'] == 1)
+<!-- @if(isset($recaptcha) && $recaptcha['status'] == 1)
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="https://www.google.com/recaptcha/api.js?render={{$recaptcha['site_key']}}"></script>
         <script>
@@ -238,7 +238,7 @@
             document.getElementById('default_recaptcha_id').src = $url;
             console.log('url: '+ $url);
         }
-    </script>
+    </script> -->
 
 
 @if(env('APP_MODE')=='demo')
