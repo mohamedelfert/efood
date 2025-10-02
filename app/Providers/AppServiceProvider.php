@@ -54,5 +54,12 @@ class AppServiceProvider extends ServiceProvider
         }catch(\Exception $exception){}
 
         Paginator::useBootstrap();
+
+        // --------------------------------------
+        // Force HTTPS for all URLs
+        // --------------------------------------
+        if(config('app.env') !== 'local') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
