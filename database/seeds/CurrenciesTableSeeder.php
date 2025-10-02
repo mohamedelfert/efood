@@ -18,344 +18,344 @@ class CurrenciesTableSeeder extends Seeder
         $currencies = [
             [
                 'country' => 'United States',
-                'currency_code' => 'USD',
-                'currency_symbol' => '$',
+                'code' => 'USD',
+                'symbol' => '$',
                 'exchange_rate' => 1.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'European Union',
-                'currency_code' => 'EUR',
-                'currency_symbol' => '€',
+                'code' => 'EUR',
+                'symbol' => '€',
                 'exchange_rate' => 0.93,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'United Kingdom',
-                'currency_code' => 'GBP',
-                'currency_symbol' => '£',
+                'code' => 'GBP',
+                'symbol' => '£',
                 'exchange_rate' => 0.79,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Japan',
-                'currency_code' => 'JPY',
-                'currency_symbol' => '¥',
+                'code' => 'JPY',
+                'symbol' => '¥',
                 'exchange_rate' => 147.50,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'India',
-                'currency_code' => 'INR',
-                'currency_symbol' => '₹',
+                'code' => 'INR',
+                'symbol' => '₹',
                 'exchange_rate' => 83.20,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Australia',
-                'currency_code' => 'AUD',
-                'currency_symbol' => 'A$',
+                'code' => 'AUD',
+                'symbol' => 'A$',
                 'exchange_rate' => 1.52,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Canada',
-                'currency_code' => 'CAD',
-                'currency_symbol' => 'C$',
+                'code' => 'CAD',
+                'symbol' => 'C$',
                 'exchange_rate' => 1.35,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Switzerland',
-                'currency_code' => 'CHF',
-                'currency_symbol' => 'Fr',
+                'code' => 'CHF',
+                'symbol' => 'Fr',
                 'exchange_rate' => 0.88,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'China',
-                'currency_code' => 'CNY',
-                'currency_symbol' => '¥',
+                'code' => 'CNY',
+                'symbol' => '¥',
                 'exchange_rate' => 7.18,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Hong Kong',
-                'currency_code' => 'HKD',
-                'currency_symbol' => 'HK$',
+                'code' => 'HKD',
+                'symbol' => 'HK$',
                 'exchange_rate' => 7.82,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'New Zealand',
-                'currency_code' => 'NZD',
-                'currency_symbol' => 'NZ$',
+                'code' => 'NZD',
+                'symbol' => 'NZ$',
                 'exchange_rate' => 1.67,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Sweden',
-                'currency_code' => 'SEK',
-                'currency_symbol' => 'kr',
+                'code' => 'SEK',
+                'symbol' => 'kr',
                 'exchange_rate' => 10.45,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Norway',
-                'currency_code' => 'NOK',
-                'currency_symbol' => 'kr',
+                'code' => 'NOK',
+                'symbol' => 'kr',
                 'exchange_rate' => 10.60,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Denmark',
-                'currency_code' => 'DKK',
-                'currency_symbol' => 'kr',
+                'code' => 'DKK',
+                'symbol' => 'kr',
                 'exchange_rate' => 6.88,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Singapore',
-                'currency_code' => 'SGD',
-                'currency_symbol' => 'S$',
+                'code' => 'SGD',
+                'symbol' => 'S$',
                 'exchange_rate' => 1.34,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'South Korea',
-                'currency_code' => 'KRW',
-                'currency_symbol' => '₩',
+                'code' => 'KRW',
+                'symbol' => '₩',
                 'exchange_rate' => 1320.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Thailand',
-                'currency_code' => 'THB',
-                'currency_symbol' => '฿',
+                'code' => 'THB',
+                'symbol' => '฿',
                 'exchange_rate' => 35.80,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Malaysia',
-                'currency_code' => 'MYR',
-                'currency_symbol' => 'RM',
+                'code' => 'MYR',
+                'symbol' => 'RM',
                 'exchange_rate' => 4.67,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Indonesia',
-                'currency_code' => 'IDR',
-                'currency_symbol' => 'Rp',
+                'code' => 'IDR',
+                'symbol' => 'Rp',
                 'exchange_rate' => 15500.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Philippines',
-                'currency_code' => 'PHP',
-                'currency_symbol' => '₱',
+                'code' => 'PHP',
+                'symbol' => '₱',
                 'exchange_rate' => 56.20,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Vietnam',
-                'currency_code' => 'VND',
-                'currency_symbol' => '₫',
+                'code' => 'VND',
+                'symbol' => '₫',
                 'exchange_rate' => 24350.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Brazil',
-                'currency_code' => 'BRL',
-                'currency_symbol' => 'R$',
+                'code' => 'BRL',
+                'symbol' => 'R$',
                 'exchange_rate' => 4.95,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Mexico',
-                'currency_code' => 'MXN',
-                'currency_symbol' => '$',
+                'code' => 'MXN',
+                'symbol' => '$',
                 'exchange_rate' => 17.20,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Russia',
-                'currency_code' => 'RUB',
-                'currency_symbol' => '₽',
+                'code' => 'RUB',
+                'symbol' => '₽',
                 'exchange_rate' => 91.50,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'South Africa',
-                'currency_code' => 'ZAR',
-                'currency_symbol' => 'R',
+                'code' => 'ZAR',
+                'symbol' => 'R',
                 'exchange_rate' => 18.90,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Turkey',
-                'currency_code' => 'TRY',
-                'currency_symbol' => '₺',
+                'code' => 'TRY',
+                'symbol' => '₺',
                 'exchange_rate' => 32.10,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Saudi Arabia',
-                'currency_code' => 'SAR',
-                'currency_symbol' => '﷼',
+                'code' => 'SAR',
+                'symbol' => '﷼',
                 'exchange_rate' => 3.75,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'United Arab Emirates',
-                'currency_code' => 'AED',
-                'currency_symbol' => 'د.إ',
+                'code' => 'AED',
+                'symbol' => 'د.إ',
                 'exchange_rate' => 3.67,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Israel',
-                'currency_code' => 'ILS',
-                'currency_symbol' => '₪',
+                'code' => 'ILS',
+                'symbol' => '₪',
                 'exchange_rate' => 3.68,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Egypt',
-                'currency_code' => 'EGP',
-                'currency_symbol' => '£',
+                'code' => 'EGP',
+                'symbol' => '£',
                 'exchange_rate' => 30.90,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Nigeria',
-                'currency_code' => 'NGN',
-                'currency_symbol' => '₦',
+                'code' => 'NGN',
+                'symbol' => '₦',
                 'exchange_rate' => 780.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Kenya',
-                'currency_code' => 'KES',
-                'currency_symbol' => 'KSh',
+                'code' => 'KES',
+                'symbol' => 'KSh',
                 'exchange_rate' => 157.50,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Pakistan',
-                'currency_code' => 'PKR',
-                'currency_symbol' => '₨',
+                'code' => 'PKR',
+                'symbol' => '₨',
                 'exchange_rate' => 280.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Bangladesh',
-                'currency_code' => 'BDT',
-                'currency_symbol' => '৳',
+                'code' => 'BDT',
+                'symbol' => '৳',
                 'exchange_rate' => 110.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Argentina',
-                'currency_code' => 'ARS',
-                'currency_symbol' => '$',
+                'code' => 'ARS',
+                'symbol' => '$',
                 'exchange_rate' => 350.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Chile',
-                'currency_code' => 'CLP',
-                'currency_symbol' => '$',
+                'code' => 'CLP',
+                'symbol' => '$',
                 'exchange_rate' => 850.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Colombia',
-                'currency_code' => 'COP',
-                'currency_symbol' => '$',
+                'code' => 'COP',
+                'symbol' => '$',
                 'exchange_rate' => 3900.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Peru',
-                'currency_code' => 'PEN',
-                'currency_symbol' => 'S/',
+                'code' => 'PEN',
+                'symbol' => 'S/',
                 'exchange_rate' => 3.75,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Czech Republic',
-                'currency_code' => 'CZK',
-                'currency_symbol' => 'Kč',
+                'code' => 'CZK',
+                'symbol' => 'Kč',
                 'exchange_rate' => 22.50,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Hungary',
-                'currency_code' => 'HUF',
-                'currency_symbol' => 'Ft',
+                'code' => 'HUF',
+                'symbol' => 'Ft',
                 'exchange_rate' => 350.00,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Poland',
-                'currency_code' => 'PLN',
-                'currency_symbol' => 'zł',
+                'code' => 'PLN',
+                'symbol' => 'zł',
                 'exchange_rate' => 4.15,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Romania',
-                'currency_code' => 'RON',
-                'currency_symbol' => 'lei',
+                'code' => 'RON',
+                'symbol' => 'lei',
                 'exchange_rate' => 4.55,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'country' => 'Ukraine',
-                'currency_code' => 'UAH',
-                'currency_symbol' => '₴',
+                'code' => 'UAH',
+                'symbol' => '₴',
                 'exchange_rate' => 36.80,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()

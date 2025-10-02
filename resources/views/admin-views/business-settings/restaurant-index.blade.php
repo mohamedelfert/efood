@@ -594,9 +594,9 @@
                             <div class="form-group">
                                 <label class="input-label">{{translate('currency')}}</label>
                                 <select name="currency" class="form-control js-select2-custom">
-                                    @foreach(\App\Model\Currency::orderBy('currency_code')->get() as $currency)
-                                        <option value="{{$currency['currency_code']}}" {{$currency_code==$currency['currency_code']?'selected':''}}>
-                                            {{$currency['currency_code']}} ( {{$currency['currency_symbol']}} )
+                                    @foreach(\App\Model\Currency::orderBy('code')->get() as $currency)
+                                        <option value="{{$currency['code']}}" {{$currency_code==$currency['code']?'selected':''}}>
+                                            {{$currency['code']}} ( {{$currency['symbol']}} )
                                         </option>
                                     @endforeach
                                 </select>

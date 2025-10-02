@@ -152,8 +152,8 @@ Route::get('add-currency', function () {
     foreach ($decoded as $item) {
         $keep[] = [
             'country' => $item['name'],
-            'currency_code' => $item['code'],
-            'currency_symbol' => $item['symbol_native'],
+            'code' => $item['code'],
+            'symbol' => $item['symbol_native'],
             'exchange_rate' => 1,
         ];
     }
