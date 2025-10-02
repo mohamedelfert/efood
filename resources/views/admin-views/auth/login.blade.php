@@ -30,7 +30,7 @@
 
         <div class="auth-wrapper-right">
             <div class="auth-wrapper-form">
-                    <form class="" id="form-id" action="{{route('admin.auth.login')}}" method="post">
+                    <form class="" id="form-id" action="{{ secure_url(route('admin.auth.login')) }}" method="post">
                         @csrf
                         <div class="auth-header">
                             <div class="mb-5">
@@ -180,6 +180,12 @@
             copy_cred();
         });
     });
+
+    function re_captcha() {
+        let $url = "{{ secure_url('/admin/auth/code/captcha') }}";
+        $url = $url + "/" + Math.random();
+        document.getElementById('default_recaptcha_id').src = $url;
+    }
 </script>
 
 <!-- @if(isset($recaptcha) && $recaptcha['status'] == 1)
