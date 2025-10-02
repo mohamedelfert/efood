@@ -1117,19 +1117,49 @@ class Helpers
 
 }
 
+// function translate($key)
+// {
+//     $local = session()->has('local') ? session('local') : 'en';
+//     App::setLocale($local);
+//     $lang_array = include(base_path('resources/lang/' . $local . '/messages.php'));
+//     $processed_key = ucfirst(str_replace('_', ' ', Helpers::remove_invalid_charcaters($key)));
+//     if (!array_key_exists($key, $lang_array)) {
+//         $lang_array[$key] = $processed_key;
+//         $str = "<?php return " . var_export($lang_array, true) . ";";
+//         file_put_contents(base_path('resources/lang/' . $local . '/messages.php'), $str);
+//         $result = $processed_key;
+//     } else {
+//         $result = __('messages.' . $key);
+//     }
+//     return $result;
+// }
+
+
 function translate($key)
 {
-    $local = session()->has('local') ? session('local') : 'en';
+    $local = session('local', 'en'); // بدل has + get
     App::setLocale($local);
-    $lang_array = include(base_path('resources/lang/' . $local . '/messages.php'));
+
+    $langFile = base_path("resources/lang/{$local}/messages.php");
+
+    // نتأكد إن الملف موجود قبل include
+    if (!file_exists($langFile)) {
+        file_put_contents($langFile, "<?php return [];");
+    }
+
+    $lang_array = include $langFile;
+
     $processed_key = ucfirst(str_replace('_', ' ', Helpers::remove_invalid_charcaters($key)));
+
     if (!array_key_exists($key, $lang_array)) {
         $lang_array[$key] = $processed_key;
-        $str = "<?php return " . var_export($lang_array, true) . ";";
-        file_put_contents(base_path('resources/lang/' . $local . '/messages.php'), $str);
-        $result = $processed_key;
-    } else {
-        $result = __('messages.' . $key);
+
+        // نكتب الملف بشكل منسق
+        $str = "<?php\n\nreturn " . var_export($lang_array, true) . ";\n";
+        file_put_contents($langFile, $str);
+
+        return $processed_key;
     }
-    return $result;
+
+    return __('messages.' . $key);
 }
