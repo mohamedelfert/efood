@@ -1134,32 +1134,21 @@ class Helpers
 //     return $result;
 // }
 
-
 function translate($key)
 {
-    $local = session('local', 'en'); // بدل has + get
+    $local = session()->has('local') ? session('local') : 'en';
     App::setLocale($local);
 
     $langFile = base_path("resources/lang/{$local}/messages.php");
+    $lang_array = file_exists($langFile) ? include($langFile) : [];
 
-    // نتأكد إن الملف موجود قبل include
-    if (!file_exists($langFile)) {
-        file_put_contents($langFile, "<?php return [];");
-    }
-
-    $lang_array = include $langFile;
-
-    $processed_key = ucfirst(str_replace('_', ' ', Helpers::remove_invalid_charcaters($key)));
+    $processed_key = ucfirst(str_replace('_', ' ', \App\CentralLogics\Helpers::remove_invalid_charcaters($key)));
 
     if (!array_key_exists($key, $lang_array)) {
-        $lang_array[$key] = $processed_key;
-
-        // نكتب الملف بشكل منسق
-        $str = "<?php\n\nreturn " . var_export($lang_array, true) . ";\n";
-        file_put_contents($langFile, $str);
-
-        return $processed_key;
+        $result = $processed_key;
+    } else {
+        $result = __('messages.' . $key);
     }
 
-    return __('messages.' . $key);
+    return $result;
 }
