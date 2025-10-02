@@ -87,7 +87,7 @@
                             </div>
                         </div>
 
-                        @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
+                        <!-- @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
                         @if(isset($recaptcha) && $recaptcha['status'] == 1)
                             <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
 
@@ -118,7 +118,7 @@
                                     </a>
                                 </div>
                             </div>
-                        @endif
+                        @endif -->
                         <button type="submit" class="btn btn-lg btn-block btn-primary" id="signInBtn">{{translate('sign_in')}}</button>
                     </form>
 
