@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Add Currency'))
+@section('title', translate('add_currency'))
 
 @push('css_or_js')
 <style>
@@ -26,13 +26,13 @@
                     <ol class="breadcrumb breadcrumb-no-gutter">
                         <li class="breadcrumb-item">
                             <a class="breadcrumb-link" href="{{route('admin.currency.index')}}">
-                                {{translate('Currency Management')}}
+                                {{translate('currency_management')}}
                             </a>
                         </li>
-                        <li class="breadcrumb-item active">{{translate('Add Currency')}}</li>
+                        <li class="breadcrumb-item active">{{translate('add_currency')}}</li>
                     </ol>
                 </nav>
-                <h1 class="page-header-title">{{translate('Add New Currency')}}</h1>
+                <h1 class="page-header-title">{{translate('add_new_currency')}}</h1>
             </div>
         </div>
     </div>
@@ -43,15 +43,15 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">{{translate('Currency Information')}}</h4>
+                        <h4 class="card-title">{{translate('currency_information')}}</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Select Currency')}} *</label>
+                                    <label class="input-label">{{translate('select_currency')}} *</label>
                                     <select name="currency_code" id="currency_code" class="form-control" required>
-                                        <option value="">{{translate('Choose a currency...')}}</option>
+                                        <option value="">{{translate('choose_a_currency')}}</option>
                                         @foreach($availableCurrencies as $currency)
                                             <option value="{{$currency['code']}}" 
                                                     data-name="{{$currency['name']}}"
@@ -65,29 +65,29 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Exchange Rate')}} *</label>
+                                    <label class="input-label">{{translate('exchange_rate')}} *</label>
                                     <input type="number" step="0.0001" name="exchange_rate" class="form-control" 
                                            placeholder="{{translate('Ex: 1.0000')}}"
                                            value="{{old('exchange_rate', '1.0000')}}" required>
-                                    <small class="text-muted">{{translate('Rate against primary currency')}}</small>
+                                    <small class="text-muted">{{translate('rate_against_primary_currency')}}</small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="currency-info" id="currency-info">
                             <div class="currency-preview">
-                                <h6>{{translate('Currency Preview')}}</h6>
+                                <h6>{{translate('currency_preview')}}</h6>
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <strong>{{translate('Name')}}:</strong>
+                                        <strong>{{translate('name')}}:</strong>
                                         <span id="preview-name"></span>
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>{{translate('Code')}}:</strong>
+                                        <strong>{{translate('code')}}:</strong>
                                         <span id="preview-code"></span>
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>{{translate('Symbol')}}:</strong>
+                                        <strong>{{translate('symbol')}}:</strong>
                                         <span id="preview-symbol"></span>
                                     </div>
                                 </div>
@@ -130,10 +130,10 @@
                                                id="is_primary" name="is_primary" value="1"
                                                {{old('is_primary') ? 'checked' : ''}}>
                                         <label class="custom-control-label" for="is_primary">
-                                            {{translate('Set as Primary Currency')}}
+                                            {{translate('set_as_primary_currency')}}
                                         </label>
                                     </div>
-                                    <small class="text-muted">{{translate('This will replace current primary currency')}}</small>
+                                    <small class="text-muted">{{translate('this_will_replace_current_primary_currency')}}</small>
                                 </div>
                             </div>
                             <div class="col-md-6">

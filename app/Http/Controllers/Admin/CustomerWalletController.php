@@ -109,13 +109,12 @@ class CustomerWalletController extends Controller
             ->where('user_type', null)
             ->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%")
+                    $q->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%");
                 }
             })
             ->limit(8)
-            ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
+            ->get([DB::raw('id, CONCAT(name, " (", phone ,")") as text')]);
         if ($request->all) $data[] = (object)['id' => false, 'text' => translate('all')];
 
         return response()->json($data);

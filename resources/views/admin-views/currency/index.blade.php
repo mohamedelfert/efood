@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Currency Management'))
+@section('title', translate('currency_management'))
 
 @section('content')
 <div class="content container-fluid">
@@ -8,12 +8,12 @@
     <div class="page-header">
         <div class="row align-items-center">
             <div class="col-sm mb-2 mb-sm-0">
-                <h1 class="page-header-title">{{translate('Currency Management')}}</h1>
+                <h1 class="page-header-title">{{translate('currency_management')}}</h1>
             </div>
             <div class="col-sm-auto">
                 <a class="btn btn-primary" href="{{route('admin.currency.create')}}">
                     <i class="tio-add-circle"></i>
-                    {{translate('Add New Currency')}}
+                    {{translate('add_new_currency')}}
                 </a>
             </div>
         </div>
@@ -26,7 +26,7 @@
             <div class="row justify-content-between align-items-center flex-grow-1">
                 <div class="col-12 col-md-6 mb-3 mb-md-0">
                     <h5 class="card-header-title">
-                        {{translate('Currency List')}} 
+                        {{translate('currency_list')}} 
                         <span class="badge badge-soft-dark ml-2">{{$currencies->total()}}</span>
                     </h5>
                 </div>
@@ -39,12 +39,12 @@
                 <thead class="thead-light">
                     <tr>
                         <th>{{translate('SL')}}</th>
-                        <th>{{translate('Currency Name')}}</th>
-                        <th>{{translate('Code')}}</th>
-                        <th>{{translate('Symbol')}}</th>
-                        <th>{{translate('Exchange Rate')}}</th>
-                        <th>{{translate('Status')}}</th>
-                        <th>{{translate('Primary')}}</th>
+                        <th>{{translate('currency_name')}}</th>
+                        <th>{{translate('code')}}</th>
+                        <th>{{translate('symbol')}}</th>
+                        <th>{{translate('exchange_rate')}}</th>
+                        <th>{{translate('status')}}</th>
+                        <th>{{translate('primary')}}</th>
                         <th class="text-center">{{translate('Action')}}</th>
                     </tr>
                 </thead>

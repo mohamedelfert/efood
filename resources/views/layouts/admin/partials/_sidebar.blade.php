@@ -474,7 +474,7 @@
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/report/*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                     <i class="tio-chart-pie-1 nav-icon"></i>
-                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('Reports')}}</span>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('reports')}}</span>
                                 </a>
                                 <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/report/*')?'block':'none'}}">
                                     <li class="nav-item {{Request::is('admin/report/earning')?'active':''}}">
@@ -529,7 +529,7 @@
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/currency*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                     <i class="tio-pages nav-icon"></i>
-                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('currency-management')}}</span>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('currency_management')}}</span>
                                 </a>
                                 <ul class="js-navbar-vertical-aside-submenu nav nav-sub" 
                                     style="display: {{Request::is('admin/currency*')?'block':'none'}}">

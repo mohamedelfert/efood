@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Edit Currency'))
+@section('title', translate('edit_currency'))
 
 @section('content')
 <div class="content container-fluid">
@@ -11,13 +11,13 @@
                     <ol class="breadcrumb breadcrumb-no-gutter">
                         <li class="breadcrumb-item">
                             <a class="breadcrumb-link" href="{{route('admin.currency.index')}}">
-                                {{translate('Currency Management')}}
+                                {{translate('currency_management')}}
                             </a>
                         </li>
-                        <li class="breadcrumb-item active">{{translate('Edit Currency')}}</li>
+                        <li class="breadcrumb-item active">{{translate('edit_currency')}}</li>
                     </ol>
                 </nav>
-                <h1 class="page-header-title">{{translate('Edit Currency')}}</h1>
+                <h1 class="page-header-title">{{translate('edit_currency')}}</h1>
             </div>
         </div>
     </div>
@@ -29,19 +29,19 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">{{translate('Currency Information')}}</h4>
+                        <h4 class="card-title">{{translate('currency_information')}}</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Currency Name')}}</label>
+                                    <label class="input-label">{{translate('currency_name')}}</label>
                                     <input type="text" class="form-control" value="{{$currency->name}}" readonly>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Currency Code')}}</label>
+                                    <label class="input-label">{{translate('currency_code')}}</label>
                                     <input type="text" class="form-control" value="{{$currency->code}}" readonly>
                                 </div>
                             </div>
@@ -50,20 +50,20 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Currency Symbol')}}</label>
+                                    <label class="input-label">{{translate('currency_symbol')}}</label>
                                     <input type="text" class="form-control" value="{{$currency->symbol}}" readonly>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Exchange Rate')}} *</label>
+                                    <label class="input-label">{{translate('exchange_rate')}} *</label>
                                     <input type="number" step="0.0001" name="exchange_rate" class="form-control" 
                                            value="{{old('exchange_rate', $currency->exchange_rate)}}" 
                                            {{$currency->is_primary ? 'readonly' : ''}} required>
                                     @if($currency->is_primary)
-                                        <small class="text-muted">{{translate('Primary currency rate is fixed at 1.0000')}}</small>
+                                        <small class="text-muted">{{translate('primary_currency_rate_is_fixed_at_1.0000')}}</small>
                                     @else
-                                        <small class="text-muted">{{translate('Rate against primary currency')}}</small>
+                                        <small class="text-muted">{{translate('rate_against_primary_currency')}}</small>
                                     @endif
                                 </div>
                             </div>
@@ -72,7 +72,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Decimal Places')}}</label>
+                                    <label class="input-label">{{translate('decimal_places')}}</label>
                                     <select name="decimal_places" class="form-control">
                                         <option value="0" {{old('decimal_places', $currency->decimal_places) == '0' ? 'selected' : ''}}>0</option>
                                         <option value="1" {{old('decimal_places', $currency->decimal_places) == '1' ? 'selected' : ''}}>1</option>
@@ -84,13 +84,13 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label">{{translate('Symbol Position')}}</label>
+                                    <label class="input-label">{{translate('symbol_position')}}</label>
                                     <select name="position" class="form-control">
                                         <option value="before" {{old('position', $currency->position) == 'before' ? 'selected' : ''}}>
                                             {{translate('Before Amount')}} ({{translate('Ex: $ 100.00')}})
                                         </option>
                                         <option value="after" {{old('position', $currency->position) == 'after' ? 'selected' : ''}}>
-                                            {{translate('After Amount')}} ({{translate('Ex: 100.00 $')}})
+                                            {{translate('after_amount')}} ({{translate('Ex: 100.00 $')}})
                                         </option>
                                     </select>
                                 </div>
@@ -105,10 +105,10 @@
                                                id="is_primary" name="is_primary" value="1"
                                                {{old('is_primary', $currency->is_primary) ? 'checked' : ''}}>
                                         <label class="custom-control-label" for="is_primary">
-                                            {{translate('Set as Primary Currency')}}
+                                            {{translate('set_as_primary_currency')}}
                                         </label>
                                     </div>
-                                    <small class="text-muted">{{translate('This will replace current primary currency')}}</small>
+                                    <small class="text-muted">{{translate('this_will_replace_current_primary_currency')}}</small>
                                 </div>
                             </div>
                             <div class="col-md-6">

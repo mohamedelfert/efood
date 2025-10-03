@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Exchange Rates'))
+@section('title', translate('exchange_rates'))
 
 @section('content')
 <div class="content container-fluid">
@@ -11,13 +11,13 @@
                     <ol class="breadcrumb breadcrumb-no-gutter">
                         <li class="breadcrumb-item">
                             <a class="breadcrumb-link" href="{{route('admin.currency.index')}}">
-                                {{translate('Currency Management')}}
+                                {{translate('currency_management')}}
                             </a>
                         </li>
-                        <li class="breadcrumb-item active">{{translate('Exchange Rates')}}</li>
+                        <li class="breadcrumb-item active">{{translate('exchange_rates')}}</li>
                     </ol>
                 </nav>
-                <h1 class="page-header-title">{{translate('Update Exchange Rates')}}</h1>
+                <h1 class="page-header-title">{{translate('update_exchange_rates')}}</h1>
             </div>
         </div>
     </div>
@@ -28,12 +28,12 @@
             <div class="card-header">
                 <div class="row justify-content-between align-items-center">
                     <div class="col">
-                        <h4 class="card-title">{{translate('Current Exchange Rates')}}</h4>
-                        <p class="card-text">{{translate('Update exchange rates against primary currency')}}</p>
+                        <h4 class="card-title">{{translate('current_exchange_rates')}}</h4>
+                        <p class="card-text">{{translate('update_exchange_rates_against_primary_currency')}}</p>
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center">
-                            <span class="text-muted mr-2">{{translate('Last Updated')}}:</span>
+                            <span class="text-muted mr-2">{{translate('last_updated')}}:</span>
                             <span class="badge badge-soft-info">{{date('M d, Y H:i')}}</span>
                         </div>
                     </div>
@@ -46,8 +46,8 @@
                 @if($primaryCurrency)
                     <div class="alert alert-info">
                         <i class="tio-info-outlined"></i>
-                        {{translate('Primary Currency')}}: <strong>{{$primaryCurrency->name}} ({{$primaryCurrency->code}})</strong>
-                        - {{translate('Exchange rate is fixed at 1.0000')}}
+                        {{translate('primary_currency')}}: <strong>{{$primaryCurrency->name}} ({{$primaryCurrency->code}})</strong>
+                        - {{translate('exchange_rate_is_fixed_at_1.0000')}}
                     </div>
                 @endif
 
@@ -55,11 +55,11 @@
                     <table class="table table-borderless table-thead-bordered table-align-middle">
                         <thead class="thead-light">
                             <tr>
-                                <th>{{translate('Currency')}}</th>
-                                <th>{{translate('Code')}}</th>
-                                <th>{{translate('Symbol')}}</th>
-                                <th>{{translate('Current Rate')}}</th>
-                                <th>{{translate('Example')}}</th>
+                                <th>{{translate('currency')}}</th>
+                                <th>{{translate('code')}}</th>
+                                <th>{{translate('symbol')}}</th>
+                                <th>{{translate('current_rate')}}</th>
+                                <th>{{translate('example')}}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -68,7 +68,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @if($currency->is_primary)
-                                                <span class="badge badge-primary mr-2">{{translate('Primary')}}</span>
+                                                <span class="badge badge-primary mr-2">{{translate('primary')}}</span>
                                             @endif
                                             {{$currency->name}}
                                         </div>
@@ -106,12 +106,12 @@
                 <div class="row justify-content-between align-items-center">
                     <div class="col">
                         <small class="text-muted">
-                            {{translate('To update rates, edit individual currencies from the main currency list')}}
+                            {{translate('to_update_rates_edit_individual_currencies_from_the_main_currency_list')}}
                         </small>
                     </div>
                     <div class="col-auto">
                         <a href="{{route('admin.currency.index')}}" class="btn btn-primary">
-                            {{translate('Back to Currency List')}}
+                            {{translate('back_to_currency_list')}}
                         </a>
                     </div>
                 </div>
