@@ -41,7 +41,7 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
     private function createOrder(string $token, array $data): ?array
     {
         $amountCents = $data['amount'] * 100;
-        if ($amountCents > env('PAYMOB_MAX_AMOUNT', 100000) || $amountCents < env('PAYMOB_MIN_AMOUNT', 1)) {
+        if ($amountCents > env('PAYMOB_MAX_AMOUNT', 1000000000) || $amountCents < env('PAYMOB_MIN_AMOUNT', 1)) {
             return ['status' => false, 'error' => 'Amount out of range'];
         }
 
@@ -91,7 +91,7 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
                 'amount_cents' => $orderData['amount_cents'],
                 'currency' => $orderData['currency'],
                 'integration_id' => $this->integrationId,
-                'expiration' => 3600, // Optional: 1 hour expiration
+                'expiration' => 3600,
             ]);
 
         Log::debug('Paymob Payment Key Response', ['status' => $response->status(), 'body' => $response->body(), 'billing_data' => $billingData]);
@@ -128,8 +128,8 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
             'iframe_url' => $iframeUrl,
             'order_id' => $order['id'],
             'payment_key' => $paymentKey['token'],
-            'id' => $paymentKey['id'] ?? null, // Paymob transaction ID
-            'transaction_id' => 'PAY_' . time() . '_' . ($data['customer_data']['user_id'] ?? 'guest'), // Generate transaction ID
+            'id' => $paymentKey['id'] ?? null,
+            'transaction_id' => 'PAY_' . time() . '_' . ($data['customer_data']['user_id'] ?? 'guest'),
         ];
 
         Log::info('Paymob Payment Request Response', ['response' => $response, 'order' => $order, 'payment_key' => $paymentKey]);
@@ -149,7 +149,6 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
             ->get("{$this->baseUrl}/ecommerce/transactions/{$transactionId}");
 
         if ($response->successful() && $response->json()['success'] === true) {
-            // Update WalletTransaction with Paymob transaction ID
             $walletTransaction = WalletTransaction::where('transaction_id', $transactionId)->first();
             if ($walletTransaction) {
                 $metadata = $walletTransaction->metadata;

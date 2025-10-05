@@ -78,7 +78,7 @@ class OrderController extends Controller
             'distance' => 'required|numeric',
             'guest_id' => auth('api')->user() ? 'nullable' : 'required|integer',
             'is_partial' => 'required|in:0,1',
-            'callback_url' => 'required_if:payment_method,paymob,qib|url',
+            // 'callback_url' => 'required_if:payment_method,paymob,qib|url',
             'customer_data' => 'required_if:payment_method,paymob,qib|array',
             'customer_data.email' => 'required_if:payment_method,paymob,qib|email',
             'customer_data.phone' => 'required_if:payment_method,paymob,qib|string',
@@ -389,6 +389,8 @@ class OrderController extends Controller
                         'phone' => $request->customer_data['phone'],
                     ];
 
+                    $callbackUrl = env('APP_URL') . config('payment.callback_url')  ?? null;
+
                     $transactionId = 'PAY_' . time() . '_' . $userId;
                     $amountCents = round($dueAmount * 100);
                     $paymentData = [
@@ -399,7 +401,7 @@ class OrderController extends Controller
                         'order_id' => $o_id,
                         'order_type' => $request->order_type,
                         'customer_data' => $customerData,
-                        'callback_url' => rtrim($request->callback_url, '?') . '?transaction_id=' . $transactionId,
+                        'callback_url' => $callbackUrl,
                         'transaction_id' => $transactionId,
                         // Add cart items for Paymob (if required)
                         'items' => array_map(function ($item) use ($request) {
@@ -511,6 +513,7 @@ class OrderController extends Controller
                     'phone' => $request->customer_data['phone'],
                 ];
 
+                $callbackUrl = env('APP_URL') . config('payment.callback_url')  ?? null;
                 $transactionId = 'PAY_' . time() . '_' . $userId;
                 $paymentData = [
                     'gateway' => $request->payment_method,
@@ -519,7 +522,7 @@ class OrderController extends Controller
                     'purpose' => 'order_payment',
                     'order_id' => $o_id, // Internal order ID
                     'customer_data' => $customerData,
-                    'callback_url' => rtrim($request->callback_url, '?') . '?transaction_id=' . $transactionId,
+                    'callback_url' => $callbackUrl,
                     'transaction_id' => $transactionId,
                 ];
 
@@ -668,6 +671,316 @@ class OrderController extends Controller
             ]);
             return response()->json(['errors' => [['code' => 'server_error', 'message' => $e->getMessage()]]], 500);
         }
+    }
+
+    /**
+     * Validate cart items before placing order
+     * This endpoint checks product availability, stock, and add-ons without creating an order
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function validateCart(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'branch_id' => 'required|integer|exists:branches,id',
+            'cart' => 'required|array|min:1',
+            'cart.*.product_id' => 'required|integer|exists:products,id',
+            'cart.*.quantity' => 'required|integer|min:1',
+            'cart.*.variations' => 'nullable|array',
+            'cart.*.add_on_ids' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => Helpers::error_processor($validator)
+            ], 403);
+        }
+
+        if (count($request['cart']) < 1) {
+            return response()->json([
+                'success' => false,
+                'errors' => [['code' => 'empty-cart', 'message' => translate('cart is empty')]]
+            ], 403);
+        }
+
+        // Update daily stock before validation
+        Helpers::update_daily_product_stock();
+
+        $validationErrors = [];
+        $validProducts = [];
+        $cartSummary = [
+            'subtotal' => 0,
+            'total_tax' => 0,
+            'total_discount' => 0,
+            'items_count' => 0,
+            'valid_items' => 0,
+            'invalid_items' => 0,
+        ];
+
+        foreach ($request['cart'] as $index => $cartItem) {
+            $itemValidation = [
+                'cart_index' => $index,
+                'product_id' => $cartItem['product_id'],
+                'is_valid' => true,
+                'errors' => [],
+                'warnings' => [],
+            ];
+
+            // Validate product exists
+            $product = $this->product->find($cartItem['product_id']);
+            if (!$product) {
+                $itemValidation['is_valid'] = false;
+                $itemValidation['errors'][] = [
+                    'code' => 'product_not_found',
+                    'message' => translate('Product not found'),
+                ];
+                $validationErrors[] = $itemValidation;
+                $cartSummary['invalid_items']++;
+                continue;
+            }
+
+            $itemValidation['product_name'] = $product->name;
+            $itemValidation['product_image'] = $product->image;
+
+            // Check if product is available
+            if ($product->status != 1) {
+                $itemValidation['is_valid'] = false;
+                $itemValidation['errors'][] = [
+                    'code' => 'product_unavailable',
+                    'message' => translate('Product is currently unavailable'),
+                ];
+            }
+
+            // Validate product in branch
+            $branch_product = $this->product_by_branch->where([
+                'product_id' => $cartItem['product_id'],
+                'branch_id' => $request['branch_id']
+            ])->first();
+
+            if (!$branch_product) {
+                $itemValidation['is_valid'] = false;
+                $itemValidation['errors'][] = [
+                    'code' => 'branch_product_not_found',
+                    'message' => translate('Product not available in selected branch'),
+                ];
+                $validationErrors[] = $itemValidation;
+                $cartSummary['invalid_items']++;
+                continue;
+            }
+
+            // Check branch product availability
+            if ($branch_product->is_available != 1) {
+                $itemValidation['is_valid'] = false;
+                $itemValidation['errors'][] = [
+                    'code' => 'branch_product_unavailable',
+                    'message' => translate('Product is currently unavailable in this branch'),
+                ];
+            }
+
+            // Stock validation
+            if ($branch_product->stock_type == 'daily' || $branch_product->stock_type == 'fixed') {
+                $available_stock = $branch_product->stock - $branch_product->sold_quantity;
+                $itemValidation['available_stock'] = $available_stock;
+                $itemValidation['requested_quantity'] = $cartItem['quantity'];
+                $itemValidation['stock_type'] = $branch_product->stock_type;
+
+                if ($available_stock < $cartItem['quantity']) {
+                    $itemValidation['is_valid'] = false;
+                    $itemValidation['errors'][] = [
+                        'code' => 'insufficient_stock',
+                        'message' => translate('Insufficient stock. Only :count items available', ['count' => $available_stock]),
+                        'available_stock' => $available_stock,
+                        'requested_quantity' => $cartItem['quantity'],
+                    ];
+                } elseif ($available_stock < ($cartItem['quantity'] * 1.5)) {
+                    // Warning if stock is running low
+                    $itemValidation['warnings'][] = [
+                        'code' => 'low_stock',
+                        'message' => translate('Low stock warning. Only :count items left', ['count' => $available_stock]),
+                    ];
+                }
+            } else {
+                $itemValidation['stock_type'] = 'unlimited';
+                $itemValidation['available_stock'] = 'unlimited';
+            }
+
+            // Validate variations
+            $price = $branch_product->price;
+            $variations = [];
+            
+            if (!empty($cartItem['variations'])) {
+                $branch_variations = is_string($branch_product->variations) 
+                    ? json_decode($branch_product->variations, true) 
+                    : $branch_product->variations;
+                $branch_variations = is_array($branch_variations) ? $branch_variations : [];
+
+                if (!empty($branch_variations)) {
+                    try {
+                        $variation_data = Helpers::get_varient($branch_variations, $cartItem['variations']);
+                        $price += $variation_data['price'] ?? 0;
+                        $variations = $variation_data['variations'] ?? [];
+                    } catch (\Exception $e) {
+                        $itemValidation['warnings'][] = [
+                            'code' => 'invalid_variation',
+                            'message' => translate('Selected variation may not be available'),
+                        ];
+                    }
+                }
+            }
+
+            // Validate add-ons
+            $total_addon_price = 0;
+            $valid_addons = [];
+            
+            foreach ($cartItem['add_on_ids'] ?? [] as $key => $addon_id) {
+                $addon = AddOn::find($addon_id);
+                if (!$addon) {
+                    $itemValidation['is_valid'] = false;
+                    $itemValidation['errors'][] = [
+                        'code' => 'addon_not_found',
+                        'message' => translate('Add-on not found for ID: :id', ['id' => $addon_id]),
+                        'addon_id' => $addon_id,
+                    ];
+                } else {
+                    $addon_qty = $cartItem['add_on_qtys'][$key] ?? 1;
+                    $total_addon_price += $addon->price * $addon_qty;
+                    $valid_addons[] = [
+                        'id' => $addon->id,
+                        'name' => $addon->name,
+                        'price' => $addon->price,
+                        'quantity' => $addon_qty,
+                        'total' => $addon->price * $addon_qty,
+                    ];
+                }
+            }
+
+            // Calculate item pricing
+            if ($itemValidation['is_valid']) {
+                $discount_data = [
+                    'discount_type' => $branch_product->discount_type ?? $product->discount_type,
+                    'discount' => $branch_product->discount ?? $product->discount,
+                ];
+
+                $discount_on_product = Helpers::discount_calculate($discount_data, $price);
+                $tax_amount = Helpers::new_tax_calculate($product, $price, $discount_data);
+                
+                $item_subtotal = (($price * $cartItem['quantity']) - $discount_on_product) + $total_addon_price;
+                $item_total_tax = $tax_amount * $cartItem['quantity'];
+
+                $itemValidation['pricing'] = [
+                    'base_price' => $branch_product->price,
+                    'price_with_variations' => $price,
+                    'discount' => $discount_on_product,
+                    'addon_total' => $total_addon_price,
+                    'subtotal' => $item_subtotal,
+                    'tax_amount' => $item_total_tax,
+                    'total' => $item_subtotal + $item_total_tax,
+                ];
+
+                $itemValidation['addons'] = $valid_addons;
+
+                $cartSummary['subtotal'] += $item_subtotal;
+                $cartSummary['total_tax'] += $item_total_tax;
+                $cartSummary['total_discount'] += $discount_on_product;
+                $cartSummary['valid_items']++;
+            } else {
+                $cartSummary['invalid_items']++;
+            }
+
+            $validationErrors[] = $itemValidation;
+            $cartSummary['items_count']++;
+        }
+
+        // Determine overall cart validity
+        $isCartValid = $cartSummary['invalid_items'] === 0;
+        $cartSummary['grand_total'] = $cartSummary['subtotal'] + $cartSummary['total_tax'];
+
+        return response()->json([
+            'success' => true,
+            'is_valid' => $isCartValid,
+            'message' => $isCartValid 
+                ? translate('All cart items are valid and available') 
+                : translate('Some cart items have issues'),
+            'cart_summary' => $cartSummary,
+            'items' => $validationErrors,
+            'timestamp' => now()->toIso8601String(),
+        ], 200);
+    }
+
+    /**
+     * Quick stock check for a single product
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function checkProductStock(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|integer|exists:products,id',
+            'branch_id' => 'required|integer|exists:branches,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => Helpers::error_processor($validator)
+            ], 403);
+        }
+
+        // Update daily stock
+        Helpers::update_daily_product_stock();
+
+        $product = $this->product->find($request->product_id);
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'available' => false,
+                'message' => translate('Product not found'),
+            ], 404);
+        }
+
+        $branch_product = $this->product_by_branch->where([
+            'product_id' => $request->product_id,
+            'branch_id' => $request->branch_id
+        ])->first();
+
+        if (!$branch_product) {
+            return response()->json([
+                'success' => false,
+                'available' => false,
+                'message' => translate('Product not available in selected branch'),
+            ], 404);
+        }
+
+        $response = [
+            'success' => true,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'branch_id' => $request->branch_id,
+            'is_available' => ($product->status == 1 && $branch_product->is_available == 1),
+            'stock_type' => $branch_product->stock_type,
+        ];
+
+        if ($branch_product->stock_type == 'daily' || $branch_product->stock_type == 'fixed') {
+            $available_stock = $branch_product->stock - $branch_product->sold_quantity;
+            $response['available_stock'] = $available_stock;
+            $response['requested_quantity'] = $request->quantity;
+            $response['sufficient_stock'] = $available_stock >= $request->quantity;
+            $response['can_fulfill'] = $response['is_available'] && $response['sufficient_stock'];
+        } else {
+            $response['available_stock'] = 'unlimited';
+            $response['sufficient_stock'] = true;
+            $response['can_fulfill'] = $response['is_available'];
+        }
+
+        $response['message'] = $response['can_fulfill'] 
+            ? translate('Product is available') 
+            : translate('Product cannot be fulfilled');
+
+        return response()->json($response, 200);
     }
 
     public function handleCallback(Request $request): JsonResponse

@@ -370,7 +370,7 @@ class CustomerWalletController extends Controller
             }
 
             $transactionId = 'PAY_' . time() . '_' . $user->id;
-            $callbackUrl = $request->callback_url ? rtrim($request->callback_url, '?') . '?transaction_id=' . $transactionId : route('wallet.topup.callback') . '?transaction_id=' . $transactionId;
+            $callbackUrl = env('APP_URL') . config('payment.callback_url')  ?? null;
 
             $data = [
                 'gateway' => $gateway,
