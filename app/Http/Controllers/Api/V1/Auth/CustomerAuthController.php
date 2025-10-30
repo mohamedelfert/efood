@@ -16,8 +16,10 @@ use Illuminate\Support\Carbon;
 use App\Model\PhoneVerification;
 use App\CentralLogics\SMS_module;
 use App\Model\EmailVerifications;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -32,7 +34,8 @@ class CustomerAuthController extends Controller
         private User              $user,
         private BusinessSetting   $businessSetting,
         private PhoneVerification $phoneVerification,
-        private LoginSetup $loginSetup
+        private LoginSetup $loginSetup,
+        private WhatsAppService $whatsapp,
     ){}
 
     /**
@@ -138,6 +141,19 @@ class CustomerAuthController extends Controller
                 $response = SMS_module::send($request['phone'], $token);
             }
 
+            $whatsappMessage = translate('Your verification code is: ') . $token;
+
+            try {
+                $this->whatsapp->sendMessage($request['phone'], $whatsappMessage);
+                Log::info('WhatsApp OTP sent (phone)', ['phone' => $request['phone'], 'otp' => $token]);
+            } catch (\Throwable $e) {
+                Log::warning('WhatsApp OTP failed (phone)', [
+                    'phone' => $request['phone'],
+                    'otp'   => $token,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             return response()->json([
                 'message' => $response,
                 'token' => 'active'
@@ -211,6 +227,26 @@ class CustomerAuthController extends Controller
                     ]
                 ], 403);
 
+            }
+
+            if ($request->filled('phone')) {
+                $whatsappMessage = translate('Your email verification code is: ') . $token;
+
+                try {
+                    $this->whatsapp->sendMessage($request->input('phone'), $whatsappMessage);
+                    Log::info('WhatsApp OTP sent (email flow)', [
+                        'email' => $request['email'],
+                        'phone' => $request['phone'],
+                        'otp'   => $token
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('WhatsApp OTP failed (email flow)', [
+                        'email' => $request['email'],
+                        'phone' => $request['phone'],
+                        'otp'   => $token,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             return response()->json([

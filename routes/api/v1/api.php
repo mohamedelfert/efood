@@ -164,7 +164,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
 
         Route::group(['prefix' => 'order'], function () {
             Route::get('track', [OrderController::class, 'trackOrder'])->withoutMiddleware(['auth:api', 'is_active']);
-            Route::post('place', [OrderController::class, 'placeOrder'])->withoutMiddleware(['auth:api', 'is_active']);
+            // Route::post('place', [OrderController::class, 'placeOrder'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::get('list', [OrderController::class, 'getOrderList'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::get('details', [OrderController::class, 'getOrderDetails'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::put('cancel', [OrderController::class, 'cancelOrder'])->withoutMiddleware(['auth:api', 'is_active']);
@@ -173,6 +173,11 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::post('details-guest', [OrderController::class, 'getGuestOrderDetails'])->withoutMiddleware(['auth:api', 'is_active']);
             Route::get('{order_id}/payment-methods', [OrderController::class, 'getOrderPaymentMethods']);
             Route::post('{order_id}/process-payment', [OrderController::class, 'processOrderPayment']);
+
+            // Cart Validation Routes
+            Route::post('product/check-stock', [OrderController::class, 'checkProductStock']);
+            Route::post('cart/validate', [OrderController::class, 'validateCart']);
+            Route::post('place', [OrderController::class, 'placeOrder'])->withoutMiddleware(['auth:api', 'is_active']);
         });
 
         // Chatting

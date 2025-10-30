@@ -1,35 +1,65 @@
-FROM php:8.2-apache
+# syntax = docker/dockerfile:experimental
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpq-dev libonig-dev libxml2-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+# Default to PHP 8.1 (match your local version; change if using 8.2+)
+ARG PHP_VERSION=8.1
+ARG NODE_VERSION=18
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite headers
+# Use the official Fly Laravel base image (includes Ubuntu + Nginx + PHP-FPM pre-configured)
+FROM fideloper/fly-laravel:${PHP_VERSION} as base
+
+# Repeat ARG for Docker scoping
+ARG PHP_VERSION
+
+LABEL fly_launch_runtime="laravel"
+
+# Copy source code (respects .dockerignore)
+COPY . /var/www/html
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
-COPY . .
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install PHP dependencies via Composer (no-dev for production)
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Multi-stage build for assets (if using npm/yarn for JS/CSS)
+FROM node:${NODE_VERSION} as asset-builder
 
-# Enable HTTPS redirect via .htaccess (optional)
-# Add this to your Laravel public/.htaccess:
-# RewriteEngine On
-# RewriteCond %{HTTPS} !=on
-# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+WORKDIR /var/www/html
+COPY . .
+COPY --from=base /var/www/html/vendor /var/www/html/vendor  # Reuse Composer deps
 
-# Expose port 80
-EXPOSE 80
+# Build assets (Vite or Mix)
+RUN if [ -f "vite.config.js" ]; then \
+      ASSET_CMD="build"; \
+    else \
+      ASSET_CMD="production"; \
+    fi && \
+    if [ -f "yarn.lock" ]; then \
+      yarn install --frozen-lockfile && yarn $ASSET_CMD; \
+    elif [ -f "pnpm-lock.yaml" ]; then \
+      corepack enable && corepack prepare pnpm@latest-7 --activate && pnpm install --frozen-lockfile && pnpm run $ASSET_CMD; \
+    elif [ -f "package-lock.json" ]; then \
+      npm ci --no-audit && npm run $ASSET_CMD; \
+    else \
+      npm install && npm run $ASSET_CMD; \
+    fi
 
-CMD ["apache2-foreground"]
+# Final image: Copy assets back
+FROM base
+COPY --from=asset-builder /var/www/html/public/build public/build  # If using Vite/Mix
+
+# Clear and cache Laravel config (run these after .env is set)
+RUN php artisan optimize:clear \
+    && mkdir -p storage/logs \
+    && chown -R www-data:www-data /var/www/html \
+    && sed -i 's/protected $proxies/protected $proxies = ""/g' app/Http/Middleware/TrustProxies.php \
+    && echo "MAILTO=\"\"\n * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel
+
+# Copy entrypoint for runtime (handles migrations, etc.)
+COPY .fly/entrypoint.sh /entrypoint
+RUN chmod +x /entrypoint
+
+# Expose port (Fly.io internal port)
+EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint"]

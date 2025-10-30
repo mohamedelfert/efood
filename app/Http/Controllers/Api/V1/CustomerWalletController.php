@@ -412,6 +412,7 @@ class CustomerWalletController extends Controller
                         'payment_key' => $response['payment_key'] ?? null,
                         'paymob_transaction_id' => $response['id'] ?? null,
                         'gateway' => $gateway,
+                        'currency' => $currency,
                     ],
                     'created_at' => now(),
                     'updated_at' => now(),

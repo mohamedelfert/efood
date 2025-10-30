@@ -12,18 +12,25 @@ use Illuminate\Support\Facades\DB;
 use App\Models\OrderPartialPayment;
 use Illuminate\Support\Facades\Log;
 use App\Services\Payment\PaymentGatewayFactory;
+use App\Services\WhatsAppService;
+use App\Services\ReceiptGeneratorService;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentsController extends Controller
 {
     protected $gateway;
+    private $whatsappService;
+    private $receiptGenerator;
 
-    public function __construct(Request $request)
+    public function __construct(Request $request,WhatsAppService $whatsappService,ReceiptGeneratorService $receiptGenerator)
     {
         $gatewayType = $request->input('gateway', 'paymob');
         $this->gateway = PaymentGatewayFactory::create($gatewayType);
         if (!$this->gateway) {
             throw new Exception('Invalid payment gateway');
         }
+        $this->whatsappService = $whatsappService;
+        $this->receiptGenerator = $receiptGenerator;
     }
 
     public function handleCallback(Request $request): JsonResponse
@@ -179,6 +186,13 @@ class PaymentsController extends Controller
                         'new_balance' => $transaction->user->wallet_balance
                     ]);
 
+                    $previousBalance = $transaction->balance - $transaction->credit;
+
+                    // Send WhatsApp notification with receipt for successful wallet top-up
+                    if ($transaction->transaction_type !== 'order_payment' && $transaction->user->phone) {
+                        $this->sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance);
+                    }
+
                     return response()->json([
                         'success' => true,
                         'message' => translate('Payment processed successfully'),
@@ -218,6 +232,121 @@ class PaymentsController extends Controller
                 'success' => false,
                 'errors' => [['code' => 'server_error', 'message' => translate('Callback processing failed')]]
             ], 500);
+        }
+    }
+
+    /**
+     * Send WhatsApp notification with receipt using template
+     */
+    private function sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance): void
+    {
+        try {
+            // Check status
+            $whatsappStatus = \App\Model\BusinessSetting::where('key', 'wallet_topup_whatsapp_status_user')->first();
+           
+            if (!$whatsappStatus || $whatsappStatus->value != '1') {
+                Log::info('WhatsApp notifications disabled', [
+                    'transaction_id' => $transaction->transaction_id
+                ]);
+                return;
+            }
+            $userPhone = '20' . ltrim($transaction->user->phone, '0');
+            $amount = number_format($transaction->credit, 2);
+            $newBalance = number_format($previousBalance + $transaction->credit, 2);
+            $previousBalanceFormatted = number_format($previousBalance, 2);
+            $currency = $metadata['currency'] ?? 'EGP';
+            $date = now()->format('d/m/Y h:i A');
+            // Prepare template data
+            $templateData = [
+                'customer_name' => $transaction->user->f_name . ' ' . $transaction->user->l_name,
+                'amount' => $amount,
+                'currency' => $currency,
+                'new_balance' => $newBalance,
+                'previous_balance' => $previousBalanceFormatted,
+                'transaction_id' => $transaction->transaction_id,
+                'date' => $date,
+                'account_number' => $transaction->user->id,
+                'branch' => config('company.branch', 'Main Branch'),
+            ];
+            // Build message from template
+            $message = $this->whatsappService->sendTemplateMessage('wallet_topup', $templateData);
+            $receiptData = [
+                'transaction_id' => $transaction->transaction_id,
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
+                'customer_name' => $templateData['customer_name'],
+                'account_number' => $templateData['account_number'],
+                'branch' => $templateData['branch'],
+                'amount' => $amount,
+                'currency' => $currency,
+                'previous_balance' => $previousBalanceFormatted,
+                'new_balance' => $newBalance,
+                'tax' => '0.00',
+            ];
+            $receiptPath = $this->receiptGenerator->generateReceiptImage($receiptData);
+            $receiptUrl = url(Storage::url(str_replace(storage_path('app/public/'), '', $receiptPath)));
+            // Try with media first (URL)
+            $whatsappResponse = $this->whatsappService->sendMessage($userPhone, $message, $receiptUrl);
+            if (isset($whatsappResponse['success']) && $whatsappResponse['success'] === false) {
+                $errorMsg = $whatsappResponse['error'] ?? $whatsappResponse['message'] ?? 'Unknown error';
+                Log::warning('WhatsApp media failed, falling back to text', [
+                    'user_id' => $transaction->user_id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'whatsapp_error' => $errorMsg
+                ]);
+                // Fallback: Send text-only
+                $textResponse = $this->whatsappService->sendMessage($userPhone, $message);
+                if (isset($textResponse['success']) && $textResponse['success'] === false) {
+                    $textError = $textResponse['error'] ?? $textResponse['message'] ?? 'Unknown error';
+                    Log::error('WhatsApp text fallback also failed', [
+                        'user_id' => $transaction->user_id,
+                        'transaction_id' => $transaction->transaction_id,
+                        'error' => $textError
+                    ]);
+                } else {
+                    Log::info('WhatsApp text fallback sent successfully', [
+                        'user_id' => $transaction->user_id,
+                        'transaction_id' => $transaction->transaction_id
+                    ]);
+                }
+            } else {
+                Log::info('WhatsApp notification with receipt sent successfully', [
+                    'user_id' => $transaction->user_id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'phone' => $userPhone,
+                    'receipt_url' => $receiptUrl
+                ]);
+            }
+            $this->cleanupOldReceipts();
+        } catch (Exception $e) {
+            Log::error('WhatsApp receipt notification exception', [
+                'user_id' => $transaction->user_id ?? null,
+                'transaction_id' => $transaction->transaction_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    private function cleanupOldReceipts(): void
+    {
+        try {
+            $receiptPaths = ['receipts/images/', 'receipts/pdf/'];
+            foreach ($receiptPaths as $path) {
+                $files = Storage::disk('public')->files($path);
+                $now = time();
+                $daysToKeep = 7;
+                foreach ($files as $file) {
+                    $fullPath = storage_path('app/public/' . $path . basename($file));
+                    if ($now - filemtime($fullPath) >= 60 * 60 * 24 * $daysToKeep) {
+                        Storage::disk('public')->delete($path . basename($file));
+                        Log::info('Old receipt deleted', ['file' => $file]);
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            Log::warning('Failed to cleanup old receipts', [
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

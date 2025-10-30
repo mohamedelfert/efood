@@ -13,6 +13,7 @@ use App\Traits\SystemAddonTrait;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use App\Services\WhatsAppService;
 
 ini_set('memory_limit', '-1');
 
@@ -27,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(WhatsAppService::class);
     }
 
     /**
@@ -55,15 +56,15 @@ class AppServiceProvider extends ServiceProvider
 
         Paginator::useBootstrap();
 
-        // --------------------------------------
-        // Force HTTPS for all URLs
-        // --------------------------------------
-        if(config('app.env') !== 'local') {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
+        // // --------------------------------------
+        // // Force HTTPS for all URLs
+        // // --------------------------------------
+        // if(config('app.env') !== 'local') {
+        //     \Illuminate\Support\Facades\URL::forceScheme('https');
+        // }
 
-        if(env('APP_ENV') !== 'local') {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
+        // if(env('APP_ENV') !== 'local') {
+        //     \Illuminate\Support\Facades\URL::forceScheme('https');
+        // }
     }
 }

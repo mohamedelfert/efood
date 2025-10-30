@@ -1,44 +1,45 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\POSController;
 use App\Http\Controllers\Admin\AddonController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BranchController;
-use App\Http\Controllers\Admin\BusinessSettingsController;
-use App\Http\Controllers\Admin\BranchPromotionController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\ConversationController;
 use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\CuisineController;
-use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\CustomerWalletController;
-use App\Http\Controllers\Admin\CustomRoleController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\DatabaseSettingsController;
-use App\Http\Controllers\Admin\DeliveryManController;
-use App\Http\Controllers\Admin\EmailTemplateController;
-use App\Http\Controllers\Admin\EmployeeController;
-use App\Http\Controllers\Admin\KitchenController;
-use App\Http\Controllers\Admin\LanguageController;
-use App\Http\Controllers\Admin\LocationSettingsController;
-use App\Http\Controllers\Admin\LoyaltyPointController;
-use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\Admin\OfflinePaymentMethodController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\POSController;
-use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\QRCodeController;
 use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\ReviewsController;
-use App\Http\Controllers\Admin\SMSModuleController;
 use App\Http\Controllers\Admin\SystemController;
-use App\Http\Controllers\Admin\TableController;
-use App\Http\Controllers\Admin\TableOrderController;
-use App\Http\Controllers\Admin\TimeScheduleController;
-use App\Http\Controllers\Admin\WalletBonusController;
+use App\Http\Controllers\Admin\CuisineController;
+use App\Http\Controllers\Admin\KitchenController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReviewsController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\LanguageController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SMSModuleController;
+use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\CustomRoleController;
 use App\Http\Controllers\Admin\LoginSetupController;
+use App\Http\Controllers\Admin\TableOrderController;
+use App\Http\Controllers\Admin\DeliveryManController;
+use App\Http\Controllers\Admin\WalletBonusController;
+use App\Http\Controllers\Admin\ConversationController;
+use App\Http\Controllers\Admin\LoyaltyPointController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\TimeScheduleController;
+use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\CustomerWalletController;
+use App\Http\Controllers\Admin\BranchPromotionController;
+use App\Http\Controllers\Admin\BusinessSettingsController;
+use App\Http\Controllers\Admin\DatabaseSettingsController;
+use App\Http\Controllers\Admin\LocationSettingsController;
+use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Admin\DeliveryChargeSetupController;
+use App\Http\Controllers\Admin\OfflinePaymentMethodController;
 
 Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
     Route::get('lang/{locale}', [LanguageController::class, 'lang'])->name('lang');
@@ -286,6 +287,12 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('{type}/{tab?}', [EmailTemplateController::class, 'emailIndex'])->name('email-setup');
                 Route::POST('update/{type}/{tab?}', [EmailTemplateController::class, 'updateEmailIndex'])->name('email-setup.update');
                 Route::get('{type}/{tab}/{status}', [EmailTemplateController::class, 'updateEmailStatus'])->name('email-status');
+            });
+
+            Route::group(['prefix' => 'whatsapp', 'as' => 'whatsapp.'], function () {
+                Route::get('/', [WhatsAppTemplateController::class, 'index'])->name('index');
+                Route::post('/update', [WhatsAppTemplateController::class, 'updateIndex'])->name('update');
+                Route::get('/status/{status}', [WhatsAppTemplateController::class, 'updateStatus'])->name('status');
             });
 
             Route::group(['prefix' => 'restaurant', 'as' => 'restaurant.'], function () {
