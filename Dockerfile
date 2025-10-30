@@ -1,65 +1,117 @@
-# syntax = docker/dockerfile:experimental
+# Multi-stage build for Laravel (Railway + Fly.io compatible)
+FROM php:8.2-apache as base
 
-# Default to PHP 8.1 (match your local version; change if using 8.2+)
-ARG PHP_VERSION=8.1
-ARG NODE_VERSION=18
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git curl zip unzip \
+    libpq-dev libonig-dev libxml2-dev libzip-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Use the official Fly Laravel base image (includes Ubuntu + Nginx + PHP-FPM pre-configured)
-FROM fideloper/fly-laravel:${PHP_VERSION} as base
+# Enable Apache modules
+RUN a2enmod rewrite headers
 
-# Repeat ARG for Docker scoping
-ARG PHP_VERSION
+# Configure Apache for Laravel with dynamic port
+RUN echo '<VirtualHost *:${PORT}>\n\
+    ServerName localhost\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Require all granted\n\
+        Options -Indexes +FollowSymLinks\n\
+    </Directory>\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
-LABEL fly_launch_runtime="laravel"
-
-# Copy source code (respects .dockerignore)
-COPY . /var/www/html
+# Configure Apache to use PORT environment variable
+RUN echo 'Listen ${PORT}' > /etc/apache2/ports.conf
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install PHP dependencies via Composer (no-dev for production)
-RUN composer install --no-dev --optimize-autoloader
+# Copy composer files first (for layer caching)
+COPY composer.json composer.lock ./
 
-# Multi-stage build for assets (if using npm/yarn for JS/CSS)
-FROM node:${NODE_VERSION} as asset-builder
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+# Install PHP dependencies
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Copy application code
 COPY . .
-COPY --from=base /var/www/html/vendor /var/www/html/vendor  # Reuse Composer deps
 
-# Build assets (Vite or Mix)
-RUN if [ -f "vite.config.js" ]; then \
-      ASSET_CMD="build"; \
-    else \
-      ASSET_CMD="production"; \
-    fi && \
-    if [ -f "yarn.lock" ]; then \
-      yarn install --frozen-lockfile && yarn $ASSET_CMD; \
-    elif [ -f "pnpm-lock.yaml" ]; then \
-      corepack enable && corepack prepare pnpm@latest-7 --activate && pnpm install --frozen-lockfile && pnpm run $ASSET_CMD; \
-    elif [ -f "package-lock.json" ]; then \
-      npm ci --no-audit && npm run $ASSET_CMD; \
-    else \
-      npm install && npm run $ASSET_CMD; \
+# Complete Composer setup
+RUN composer dump-autoload --optimize
+
+# Set permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Create universal startup script
+COPY <<'EOF' /start.sh
+#!/bin/bash
+set -e
+
+echo "Starting Laravel application..."
+
+# Default to port 8080 if not set (Fly.io default)
+# Railway will override this with their PORT variable
+export PORT=${PORT:-8080}
+
+echo "Configuring Apache to listen on port ${PORT}..."
+echo "Listen ${PORT}" > /etc/apache2/ports.conf
+
+# Wait for database if configured
+if [ -n "$DB_HOST" ]; then
+    echo "Waiting for database connection..."
+    max_attempts=30
+    attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        if php artisan db:show 2>/dev/null; then
+            echo "✓ Database connected!"
+            break
+        fi
+        attempt=$((attempt + 1))
+        echo "Attempt $attempt/$max_attempts: Database not ready, waiting..."
+        sleep 2
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        echo "⚠ Warning: Could not connect to database after $max_attempts attempts"
+        echo "Continuing anyway..."
     fi
+fi
 
-# Final image: Copy assets back
-FROM base
-COPY --from=asset-builder /var/www/html/public/build public/build  # If using Vite/Mix
+# Run migrations if enabled
+if [ "$AUTO_RUN_MIGRATIONS" = "true" ] || [ "$RAILWAY_RUN_MIGRATIONS" = "true" ]; then
+    echo "Running database migrations..."
+    php artisan migrate --force --no-interaction || echo "⚠ Migrations failed, continuing..."
+fi
 
-# Clear and cache Laravel config (run these after .env is set)
-RUN php artisan optimize:clear \
-    && mkdir -p storage/logs \
-    && chown -R www-data:www-data /var/www/html \
-    && sed -i 's/protected $proxies/protected $proxies = ""/g' app/Http/Middleware/TrustProxies.php \
-    && echo "MAILTO=\"\"\n * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel
+# Optimize Laravel
+echo "Optimizing Laravel..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-# Copy entrypoint for runtime (handles migrations, etc.)
-COPY .fly/entrypoint.sh /entrypoint
-RUN chmod +x /entrypoint
+# Fix permissions
+echo "Setting permissions..."
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-# Expose port (Fly.io internal port)
-EXPOSE 8080
+echo "✓ Application ready!"
+echo "Apache starting on port ${PORT}..."
+exec apache2-foreground
+EOF
 
-ENTRYPOINT ["/entrypoint"]
+RUN chmod +x /start.sh
+
+# Expose port (Railway and Fly.io will handle mapping)
+EXPOSE ${PORT}
+
+CMD ["/start.sh"]
