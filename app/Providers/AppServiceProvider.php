@@ -56,15 +56,15 @@ class AppServiceProvider extends ServiceProvider
 
         Paginator::useBootstrap();
 
-        // // --------------------------------------
-        // // Force HTTPS for all URLs
-        // // --------------------------------------
-        // if(config('app.env') !== 'local') {
-        //     \Illuminate\Support\Facades\URL::forceScheme('https');
-        // }
+        // --------------------------------------
+        // Force HTTPS for all URLs
+        // --------------------------------------
+        if(config('app.env') !== 'local') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
 
-        // if(env('APP_ENV') !== 'local') {
-        //     \Illuminate\Support\Facades\URL::forceScheme('https');
-        // }
+        if(env('APP_ENV') !== 'local') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
