@@ -217,9 +217,19 @@ class CustomerAuthController extends Controller
 
                 if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
                     Mail::to($request['email'])->send(new EmailVerifyOtp($token, $languageCode));
+                    Log::info('Email OTP sent', [
+                        'email' => $request['email'],
+                        'otp'   => $token
+                    ]);
                 }
 
             } catch (\Exception $exception) {
+
+                Log::error('Email OTP faileds', [
+                        'email' => $request['email'],
+                        'otp'   => $token,
+                        'error' => $exception->getMessage()
+                    ]);
 
                 return response()->json([
                     'errors' => [
