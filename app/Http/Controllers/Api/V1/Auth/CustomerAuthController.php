@@ -130,17 +130,6 @@ class CustomerAuthController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $publishedStatus = 0;
-            $paymentPublishedStatus = config('get_payment_publish_status');
-            if (isset($paymentPublishedStatus[0]['is_published'])) {
-                $publishedStatus = $paymentPublishedStatus[0]['is_published'];
-            }
-            if($publishedStatus == 1){
-                $response = SmsGateway::send($request['phone'], $token);
-            }else{
-                $response = SMS_module::send($request['phone'], $token);
-            }
-
             $whatsappMessage = translate('Your verification code is: ') . $token;
 
             try {
@@ -152,6 +141,17 @@ class CustomerAuthController extends Controller
                     'otp'   => $token,
                     'error' => $e->getMessage()
                 ]);
+            }
+
+            $publishedStatus = 0;
+            $paymentPublishedStatus = config('get_payment_publish_status');
+            if (isset($paymentPublishedStatus[0]['is_published'])) {
+                $publishedStatus = $paymentPublishedStatus[0]['is_published'];
+            }
+            if($publishedStatus == 1){
+                $response = SmsGateway::send($request['phone'], $token);
+            }else{
+                $response = SMS_module::send($request['phone'], $token);
             }
 
             return response()->json([
