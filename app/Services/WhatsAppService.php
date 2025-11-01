@@ -42,7 +42,7 @@ class WhatsAppService
         ];
 
         if ($fileUrl) {
-            $data['file'] = $fileUrl;  // As URL string
+            $data['file'] = $fileUrl;
         }
 
         try {
@@ -67,8 +67,20 @@ class WhatsAppService
                 return ['success' => false, 'error' => $errorMsg];
             }
         } catch (RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : null;
+            $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null;
+            
+            // Check for session not found error
+            if ($statusCode === 401 && strpos($responseBody, 'Session not found') !== false) {
+                Log::critical('WhatsApp session not found - Please reconnect WhatsApp session', [
+                    'to' => $to,
+                    'error' => 'Session not found'
+                ]);
+                return ['success' => false, 'error' => 'WhatsApp session disconnected. Please contact administrator.'];
+            }
+            
             $error = $e->getMessage();
-            Log::error('WhatsApp send failed', ['to' => $to, 'error' => $error]);
+            Log::error('WhatsApp send failed', ['to' => $to, 'error' => $error, 'status' => $statusCode]);
             return ['success' => false, 'error' => $error];
         }
     }

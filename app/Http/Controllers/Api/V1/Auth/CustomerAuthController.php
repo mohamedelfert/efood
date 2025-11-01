@@ -136,7 +136,7 @@ class CustomerAuthController extends Controller
                 $this->whatsapp->sendMessage($request['phone'], $whatsappMessage);
                 Log::info('WhatsApp OTP sent (phone)', ['phone' => $request['phone'], 'otp' => $token]);
             } catch (\Throwable $e) {
-                Log::warning('WhatsApp OTP failed (phone)', [
+                Log::warning('WhatsApp OTP failed, falling back to SMS', [
                     'phone' => $request['phone'],
                     'otp'   => $token,
                     'error' => $e->getMessage()
