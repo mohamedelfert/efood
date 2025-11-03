@@ -133,7 +133,7 @@ class CustomerAuthController extends Controller
             $whatsappMessage = translate('Your verification code is: ') . $token;
 
             try {
-                $whatsappResult = $this->whatsapp->sendOtp($request['phone'], $whatsappMessage);
+                $whatsappResult = $this->whatsapp->sendMessage($request['phone'], $whatsappMessage);
                 
                 if ($whatsappResult['success']) {
                     Log::info('WhatsApp OTP sent successfully', [
