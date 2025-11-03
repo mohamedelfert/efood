@@ -55,7 +55,8 @@ class ConfigController extends Controller
             'default_payment_gateways' =>  $publishedStatus ? "false" : "true"
         );
 
-        $currencySymbol = $this->currency->where(['code' => Helpers::currency_code()])->first()->symbol;
+        $currency = $this->currency->where(['code' => Helpers::currency_code()])->first();
+        $currencySymbol = $currency?->symbol ?? '$';
         $cod = Helpers::get_business_settings('cash_on_delivery');
 
         $deliveryConfig = Helpers::get_business_settings('delivery_management');
