@@ -164,7 +164,7 @@ class PasswordResetController extends Controller
                 $mailStatus = Helpers::get_business_settings('forget_password_mail_status_user');
 
                 if (isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1) {
-                    Mail::to($customer->email)->send(new ResetPasswordOtp($token, $customer->language_code));
+                    // Mail::to($customer->email)->send(new ResetPasswordOtp($token, $customer->language_code));
 
                     Log::info('Email password reset OTP sent', [
                         'email' => $customer->email,
