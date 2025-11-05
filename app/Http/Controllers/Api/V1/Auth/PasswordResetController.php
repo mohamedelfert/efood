@@ -175,9 +175,7 @@ class PasswordResetController extends Controller
                         $payload = ['message' => translate('OTP sent successfully via Email and WhatsApp')];
                     } else {
                         $payload = ['message' => translate('Email sent successfully.')];
-                            if ($this->shouldExposeOtp()) {
-                            $payload['debug_otp'] = $token;
-                        }
+                        $payload['debug_otp'] = $token;
                     }
 
                     if ($this->shouldExposeOtp()) {
