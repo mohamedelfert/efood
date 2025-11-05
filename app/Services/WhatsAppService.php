@@ -14,15 +14,18 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->client = new Client();
+        $this->client = new Client([
+            'timeout' => env('WHATSAPP_TIMEOUT', 30),
+            'connect_timeout' => 10,
+            'verify' => env('WHATSAPP_VERIFY_SSL', false) == false ? false : true,
+            'curl' => [
+                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                CURLOPT_SSL_VERIFYPEER => env('WHATSAPP_VERIFY_SSL', false) == false ? false : true,
+                CURLOPT_SSL_VERIFYHOST => env('WHATSAPP_VERIFY_SSL', false) == false ? 0 : 2,
+            ],
+        ]);
     }
 
-    /**
-     * @param string $to
-     * @param string $message
-     * @param string|null $fileUrl Public URL for attachment (string)
-     * @return array
-     */
     public function sendMessage(string $to, string $message, ?string $fileUrl = null): array
     {
         $appKey = env('WHATSAPP_APP_KEY');
@@ -31,6 +34,12 @@ class WhatsAppService
         if (!$appKey || !$authKey) {
             Log::error('WhatsApp keys missing');
             return ['success' => false, 'error' => 'Missing API keys'];
+        }
+
+        // Clean phone number: remove + or leading zeros if needed
+        $to = preg_replace('/[^0-9]/', '', $to);
+        if (strlen($to) > 10 && substr($to, 0, 2) === '20') {
+            $to = substr($to, 2); // Remove country code if already included
         }
 
         $data = [
@@ -48,6 +57,10 @@ class WhatsAppService
         try {
             $response = $this->client->post($this->baseUrl, [
                 'form_params' => $data,
+                'headers' => [
+                    'User-Agent' => 'Laravel-WhatsApp/1.0',
+                    'Accept' => 'application/json',
+                ],
             ]);
 
             $body = $response->getBody()->getContents();
@@ -58,30 +71,53 @@ class WhatsAppService
                 return ['success' => false, 'error' => 'Invalid API response format'];
             }
 
-            if ((isset($result['success']) && $result['success'] === true) || (isset($result['message_status']) && $result['message_status'] === 'Success')) {
-                Log::info('WhatsApp sent successfully', ['to' => $to, 'response' => $result]);
+            if (
+                (isset($result['success']) && $result['success'] === true) ||
+                (isset($result['message_status']) && $result['message_status'] === 'Success')
+            ) {
+                Log::info('WhatsApp sent successfully', [
+                    'to' => $to,
+                    'response' => $result
+                ]);
                 return $result ?: ['success' => true];
             } else {
-                $errorMsg = $result['message'] ?? ($result['data']['file'][0] ?? null) ?? 'Unknown API error';
-                Log::warning('WhatsApp API returned error', ['to' => $to, 'response' => $result, 'error' => $errorMsg]);
+                $errorMsg = $result['message'] ?? ($result['data']['file'][0] ?? 'Unknown API error');
+                Log::warning('WhatsApp API error', [
+                    'to' => $to,
+                    'response' => $result,
+                    'error' => $errorMsg
+                ]);
                 return ['success' => false, 'error' => $errorMsg];
             }
         } catch (RequestException $e) {
             $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : null;
-            $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null;
-            
-            // Check for session not found error
+            $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : 'No response';
+
+            // Session not found
             if ($statusCode === 401 && strpos($responseBody, 'Session not found') !== false) {
-                Log::critical('WhatsApp session not found - Please reconnect WhatsApp session', [
+                Log::critical('WhatsApp session expired', [
                     'to' => $to,
                     'error' => 'Session not found'
                 ]);
                 return ['success' => false, 'error' => 'WhatsApp session disconnected. Please contact administrator.'];
             }
-            
-            $error = $e->getMessage();
-            Log::error('WhatsApp send failed', ['to' => $to, 'error' => $error, 'status' => $statusCode]);
-            return ['success' => false, 'error' => $error];
+
+            $errorMsg = $e->getMessage();
+            Log::error('WhatsApp send failed', [
+                'to' => $to,
+                'error' => $errorMsg,
+                'status' => $statusCode,
+                'response' => $responseBody
+            ]);
+
+            return ['success' => false, 'error' => $errorMsg];
+        } catch (\Exception $e) {
+            Log::error('WhatsApp unexpected error', [
+                'to' => $to,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return ['success' => false, 'error' => 'Unexpected error'];
         }
     }
 
