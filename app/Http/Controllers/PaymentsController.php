@@ -4,17 +4,19 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Model\Order;
+use App\Models\Setting;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Model\OrderTransaction;
 use App\Model\WalletTransaction;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\OrderPartialPayment;
 use Illuminate\Support\Facades\Log;
-use App\Services\Payment\PaymentGatewayFactory;
-use App\Services\WhatsAppService;
-use App\Services\ReceiptGeneratorService;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ReceiptGeneratorService;
+use App\Services\Payment\PaymentGatewayFactory;
 
 class PaymentsController extends Controller
 {
@@ -348,5 +350,39 @@ class PaymentsController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+   public function getPaymentMethods(): JsonResponse
+    {
+        $rows = Setting::where('settings_type', 'payment_config')
+            ->whereIn('key_name', [
+                'ssl_commerz','paypal','stripe','razor_pay','senang_pay',
+                'paystack','paymob_accept','flutterwave','bkash','mercadopago',
+            ])
+            ->get();
+
+        $methods = $rows->map(function ($setting) {
+            $mode   = $setting->mode;
+            $values = $mode === 'live' ? $setting->live_values : $setting->test_values;
+            $enabled = $setting->is_active == 1
+                || Arr::get($values, 'status') == '1';
+
+            $extra = $setting->additional_data ? json_decode($setting->additional_data, true) : [];
+
+            return [
+                'gateway'     => $setting->key_name,
+                'title'       => $extra['gateway_title'] ?? ucwords(str_replace('_', ' ', $setting->key_name)),
+                'image'       => $extra['gateway_image'] ?? null,
+                'mode'        => $mode,
+                'is_enabled'  => $enabled ? 1 : 0,
+            ];
+        })
+        ->filter(fn($m) => $m['is_enabled'] === 1)
+        ->values();
+
+        return response()->json([
+            'success' => true,
+            'methods' => $methods,
+        ]);
     }
 }
