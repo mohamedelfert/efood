@@ -1330,55 +1330,96 @@ class OrderController extends Controller
      */
     public function getOrderList(Request $request): JsonResponse
     {
-        $userId = (bool)auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
-        $userType = (bool)auth('api')->user() ? 0 : 1;
-        $orderFilter = $request->order_filter;
+        $userId   = auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
+        $userType = auth('api')->user() ? 0 : 1;
 
-        $orders = $this->order->with(['customer', 'delivery_man.rating'])
+        $orderFilter = $request->input('order_filter');
+        $orderFilter = $orderFilter ? trim(strtolower($orderFilter)) : null;
+
+        $limit  = $request->filled('limit')  ? (int)$request->limit  : 10;
+        $offset = $request->filled('offset') ? (int)$request->offset : 0;
+
+        $ordersQuery = $this->order
+            ->with(['customer', 'delivery_man.rating'])
             ->withCount('details')
-            ->withCount(['details as total_quantity' => function($query) {
-                $query->select(DB::raw('sum(quantity)'));
-            }])
+            ->withCount([
+                'details as total_quantity' => fn($q) => $q->select(DB::raw('sum(quantity)'))
+            ])
             ->where(['user_id' => $userId, 'is_guest' => $userType])
-            ->when($orderFilter == 'history', function ($query) use ($orderFilter) {
-                $query->whereIn('order_status', ['delivered', 'canceled', 'failed', 'returned']);
-            })
-            ->when($orderFilter == 'ongoing', function ($query) use ($orderFilter) {
-                $query->whereNotIn('order_status', ['delivered', 'canceled', 'failed', 'returned']);
-            })
-            ->orderBy('id', 'DESC')
-            ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+            ->when($orderFilter === 'ongoing', fn($q) => 
+                $q->whereIn('order_status', [
+                    'pending', 'confirmed', 'preparing', 'picked_up', 'on_the_way'
+                ])
+            )
+            ->when($orderFilter === 'history', fn($q) => 
+                $q->whereIn('order_status', [
+                    'delivered', 'canceled', 'failed', 'returned'
+                ])
+            )
+            ->when(
+                $orderFilter && !in_array($orderFilter, ['ongoing', 'history']),
+                fn($q) => $q->where('order_status', $orderFilter)
+            )
+            ->when($request->filled('search'), fn($q) => 
+                $q->where(function ($sq) use ($request, $userType) {
+                    $key = "%{$request->search}%";
+                    $sq->where('id', 'like', $key)
+                    ->orWhere('order_status', 'like', $key);
+                    if ($userType == 0) {
+                        $sq->orWhereHas('customer', fn($c) => 
+                            $c->where('f_name', 'like', $key)
+                            ->orWhere('l_name', 'like', $key)
+                            ->orWhere('phone', 'like', $key)
+                        );
+                    }
+                })
+            )
+            ->orderBy('id', 'DESC');
 
-        $orders->map(function ($data) {
-            $data['deliveryman_review_count'] = DMReview::where(['delivery_man_id' => $data['delivery_man_id'], 'order_id' => $data['id']])->count();
+        $total = $ordersQuery->count();
+        $ordersList = $ordersQuery->offset($offset)->limit($limit)->get();
 
+        $ordersList->transform(function ($data) {
             $order_id = $data->id;
-            $order_details = $this->order_detail->where('order_id', $order_id)->first();
-            $product_id = $order_details?->product_id;
 
-            $data['is_product_available'] = $product_id ? $this->product->find($product_id) ? 1 : 0 : 0;
+            $data['deliveryman_review_count'] = DMReview::where([
+                'delivery_man_id' => $data->delivery_man_id,
+                'order_id'        => $data->id
+            ])->count();
+
+            $firstDetail      = $this->order_detail->where('order_id', $order_id)->first();
+            $product_id       = $firstDetail?->product_id ?? null;
+            $data['is_product_available'] = $product_id ? ($this->product->find($product_id) ? 1 : 0) : 0;
+
             $data['details_count'] = (int)$data->details_count;
 
-            $productImages = $this->order_detail->where('order_id', $order_id)->pluck('product_id')
+            $productImages = $this->order_detail->where('order_id', $order_id)
+                ->pluck('product_id')
                 ->filter()
-                ->map(function ($product_id) {
-                    $product = $this->product->find($product_id);
-                    return $product ? $product->image : null;
-                })->filter();
+                ->map(fn($pid) => ($p = $this->product->find($pid)) ? $p->image : null)
+                ->filter()
+                ->values();
 
             $data['product_images'] = $productImages->toArray();
+
+            $data['variants'] = $this->order_detail->where('order_id', $order_id)
+                ->get(['variant', 'variation'])
+                ->map(function ($detail) {
+                    return [
+                        'variant'   => $detail->variant ? json_decode($detail->variant, true) : [],
+                        'variation' => $detail->variation ? json_decode($detail->variation, true) : [],
+                    ];
+                })->toArray();
 
             return $data;
         });
 
-        $ordersArray = [
-            'total_size' => $orders->total(),
-            'limit' => $request['limit'],
-            'offset' => $request['offset'],
-            'orders' => $orders->items(),
-        ];
-
-        return response()->json($ordersArray, 200);
+        return response()->json([
+            'total_size' => $total,
+            'limit'      => $limit,
+            'offset'     => $offset,
+            'orders'     => $ordersList->values()->toArray(),
+        ], 200);
     }
 
     /**
