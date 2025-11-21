@@ -72,6 +72,8 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'payment_method' => 'required|in:wallet_payment,paymob,qib,cash_on_delivery,offline_payment',
             'order_type' => 'required|in:delivery,take_away,in_car,in_restaurant',
+            'car_color' => 'required_if:order_type,in_car|string|max:50',
+            'car_registration_number' => 'required_if:order_type,in_car|string|max:50',
             'branch_id' => 'required|integer|exists:branches,id',
             'delivery_time' => 'required',
             'delivery_date' => 'required',
@@ -347,6 +349,8 @@ class OrderController extends Controller
                 'is_cutlery_required' => $request['is_cutlery_required'] ?? 0,
                 'bring_change_amount' => $request->payment_method != 'cash_on_delivery' ? 0 : ($request->bring_change_amount ?? 0),
                 'total_tax_amount' => $totalTaxAmount,
+                'car_color' => $request->order_type == 'in_car' ? $request->car_color : null,
+                'car_registration_number' => $request->order_type == 'in_car' ? $request->car_registration_number : null,
                 'created_at' => now(),
                 'updated_at' => now()
             ];
