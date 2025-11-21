@@ -71,7 +71,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'payment_method' => 'required|in:wallet_payment,paymob,qib,cash_on_delivery,offline_payment',
-            'order_type' => 'required|in:delivery,take_away',
+            'order_type' => 'required|in:delivery,take_away,in_car,in_restaurant',
             'branch_id' => 'required|integer|exists:branches,id',
             'delivery_time' => 'required',
             'delivery_date' => 'required',
@@ -1347,18 +1347,13 @@ class OrderController extends Controller
                 'details as total_quantity' => fn($q) => $q->select(DB::raw('sum(quantity)'))
             ])
             ->where(['user_id' => $userId, 'is_guest' => $userType])
-            ->when($orderFilter === 'ongoing', fn($q) => 
+            ->when($orderFilter === 'in_prepare', fn($q) => 
                 $q->whereIn('order_status', [
                     'pending', 'confirmed', 'preparing', 'picked_up', 'on_the_way'
                 ])
             )
-            ->when($orderFilter === 'history', fn($q) => 
-                $q->whereIn('order_status', [
-                    'delivered', 'canceled', 'failed', 'returned'
-                ])
-            )
             ->when(
-                $orderFilter && !in_array($orderFilter, ['ongoing', 'history']),
+                $orderFilter && $orderFilter !== 'in_prepare',
                 fn($q) => $q->where('order_status', $orderFilter)
             )
             ->when($request->filled('search'), fn($q) => 
