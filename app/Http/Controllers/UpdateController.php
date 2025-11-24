@@ -763,7 +763,7 @@ class UpdateController extends Controller
                     $gateway='ssl_commerz';
                 }
                 if($key == 'paymob' ){
-                    $gateway='paymob_accept';
+                    $gateway='paymob';
                 }
 
                 $decoded_value= json_decode($value , true);
@@ -812,7 +812,7 @@ class UpdateController extends Controller
                         'secret_key' => $decoded_value['secretKey'],
                         'merchant_email' => $decoded_value['merchantEmail'],
                     ];
-                } elseif ($gateway == 'paymob_accept') {
+                } elseif ($gateway == 'paymob') {
                     $additional_data = [
                         'status' => $decoded_value['status'],
                         'callback_url' => null,
@@ -944,12 +944,12 @@ class UpdateController extends Controller
 
     private function updatePaymobConfigForSupportCountry(): void
     {
-        $paymobAccept = Setting::where(['key_name' => 'paymob_accept'])->first()?->live_values ?? [];
+        $paymobAccept = Setting::where(['key_name' => 'paymob'])->first()?->live_values ?? [];
         $paymobAcceptValues = is_array($paymobAccept) ? $paymobAccept : json_decode($paymobAccept, true);
 
         if (!isset($paymobAcceptValues['supported_country']) || !isset($paymobAcceptValues['secret_key'])) {
-            Setting::updateOrCreate(['key_name' => 'paymob_accept', 'settings_type' => 'payment_config'], [
-                'key_name' => 'paymob_accept',
+            Setting::updateOrCreate(['key_name' => 'paymob', 'settings_type' => 'payment_config'], [
+                'key_name' => 'paymob',
                 'live_values' => [
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "live",

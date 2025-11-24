@@ -327,7 +327,7 @@ class BusinessSettingsController extends Controller
         }
 
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paystack', 'paymob_accept', 'flutterwave', 'bkash', 'mercadopago'])
+            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paystack', 'paymob', 'flutterwave', 'bkash', 'mercadopago'])
             ->get();
 
         return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'data_values'));
@@ -380,7 +380,7 @@ class BusinessSettingsController extends Controller
     {
 
         $validation = [
-            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paystack,paymob_accept,flutterwave,bkash,mercadopago',
+            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paystack,paymob,flutterwave,bkash,mercadopago',
             'mode' => 'required|in:live,test'
         ];
 
@@ -426,7 +426,7 @@ class BusinessSettingsController extends Controller
                 'secret_key' => 'required_if:status,1',
                 'merchant_email' => 'required_if:status,1'
             ];
-        } elseif ($request['gateway'] == 'paymob_accept') {
+        } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [
                 'status' => 'required|in:1,0',
                 'supported_country' => 'required',
@@ -2066,12 +2066,12 @@ class BusinessSettingsController extends Controller
 
     private function updatePaymobConfigForSupportCountry(): void
     {
-        $paymobAccept = Setting::where(['key_name' => 'paymob_accept'])->first()?->live_values ?? [];
+        $paymobAccept = Setting::where(['key_name' => 'paymob'])->first()?->live_values ?? [];
         $paymobAcceptValues = is_array($paymobAccept) ? $paymobAccept : json_decode($paymobAccept, true);
 
         if (!isset($paymobAcceptValues['supported_country']) || !isset($paymobAcceptValues['secret_key'])) {
-            Setting::updateOrCreate(['key_name' => 'paymob_accept', 'settings_type' => 'payment_config'], [
-                'key_name' => 'paymob_accept',
+            Setting::updateOrCreate(['key_name' => 'paymob', 'settings_type' => 'payment_config'], [
+                'key_name' => 'paymob',
                 'live_values' => [
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "live",

@@ -34,7 +34,7 @@ class PaymobController extends Controller
 
     public function __construct(PaymentRequest $payment, User $user)
     {
-        $config = $this->payment_config('paymob_accept', 'payment_config');
+        $config = $this->payment_config('paymob', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config_values = json_decode($config->live_values, true);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -264,7 +264,7 @@ class PaymobController extends Controller
         if ($hased == $hmac && $data['success'] === "true") {
 
             $this->payment::where(['id' => session('payment_id')])->update([
-                'payment_method' => 'paymob_accept',
+                'payment_method' => 'paymob',
                 'is_paid' => 1,
                 'transaction_id' => session('payment_id'),
             ]);
