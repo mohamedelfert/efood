@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
+use App\Model\Branch;
 use App\Model\Category;
 use App\Model\Product;
 use App\Model\ProductByBranch;
 use App\Model\Review;
 use App\Model\Tag;
 use App\Model\Translation;
-use App\Models\Cuisine;
 use Box\Spout\Common\Exception\InvalidArgumentException;
 use Box\Spout\Common\Exception\IOException;
 use Box\Spout\Common\Exception\UnsupportedTypeException;
@@ -36,7 +36,7 @@ class ProductController extends Controller
         private Category        $category,
         private ProductByBranch $productByBranch,
         private Translation     $translation,
-        private Cuisine         $cuisine,
+        private Branch         $branch,
     )
     {}
 
@@ -98,8 +98,8 @@ class ProductController extends Controller
     public function index(): Renderable
     {
         $categories = $this->category->where(['position' => 0])->get();
-        $cuisines = $this->cuisine::active()->orderBy('priority', 'ASC')->get();
-        return view('admin-views.product.index', compact('categories', 'cuisines'));
+        $branches = $this->branch::active()->get();
+        return view('admin-views.product.index', compact('categories', 'branches'));
     }
 
     /**
@@ -180,96 +180,81 @@ class ProductController extends Controller
             'tax_type' => 'required',
             'stock_type' => 'required|in:unlimited,daily,fixed',
             'product_stock' => 'required_if:stock_type,daily,fixed',
+            'branches' => 'required|array|min:1',
+            'branches.*' => 'exists:branches,id',
         ], [
             'name.required' => translate('Product name is required!'),
             'name.unique' => translate('Product name has been taken.'),
-            'category_id.required' => translate('category  is required!'),
+            'category_id.required' => translate('category is required!'),
+            'branches.required' => translate('At least one branch must be selected!'),
         ]);
 
-        if (in_array(request('stock_type'), ['daily', 'fixed'])) {
-            if($request->product_stock < 1){
+        // Stock validation
+        if (in_array($request->stock_type, ['daily', 'fixed'])) {
+            if ($request->product_stock < 1) {
                 $validator->getMessageBag()->add('product_stock', translate('Product stock must be at least 1!'));
             }
         }
 
-        if ($request['discount_type'] == 'percent') {
-            $discount = ($request['price'] / 100) * $request['discount'];
+        // Discount validation
+        if ($request->discount_type == 'percent') {
+            $discount = ($request->price / 100) * $request->discount;
         } else {
-            $discount = $request['discount'];
+            $discount = $request->discount;
         }
 
-
-        if ($request['price'] <= $discount) {
+        if ($request->price <= $discount) {
             $validator->getMessageBag()->add('unit_price', translate('Discount can not be more or equal to the price!'));
         }
 
-        if ($request['price'] <= $discount || (in_array(request('stock_type'), ['daily', 'fixed']) && $request->product_stock < 1) || $validator->fails()) {
+        if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
+        // Handle tags
         $tagIds = [];
         if ($request->tags != null) {
             $tags = explode(",", $request->tags);
-        }
-        if (isset($tags)) {
-            foreach ($tags as $key => $value) {
-                $tag = Tag::firstOrNew(
-                    ['tag' => $value]
-                );
+            foreach ($tags as $value) {
+                $tag = Tag::firstOrNew(['tag' => $value]);
                 $tag->save();
                 $tagIds[] = $tag->id;
             }
         }
 
-        $imageNames = [];
-        if (!empty($request->file('images'))) {
-            foreach ($request->images as $img) {
-                $imageData = Helpers::upload('product/', 'png', $img);
-                $imageNames[] = $imageData;
-            }
-            $imageData = json_encode($imageNames);
-        } else {
-            $imageData = json_encode([]);
-        }
-
+        // Save main product
         $product = $this->product;
         $product->name = $request->name[array_search('en', $request->lang)];
-
+        
+        // Build category hierarchy
         $category = [];
         if ($request->category_id != null) {
-            $category[] = [
-                'id' => $request->category_id,
-                'position' => 1,
-            ];
+            $category[] = ['id' => $request->category_id, 'position' => 1];
         }
         if ($request->sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_category_id,
-                'position' => 2,
-            ];
+            $category[] = ['id' => $request->sub_category_id, 'position' => 2];
         }
         if ($request->sub_sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_sub_category_id,
-                'position' => 3,
-            ];
+            $category[] = ['id' => $request->sub_sub_category_id, 'position' => 3];
         }
-
+        
         $product->category_ids = json_encode($category);
         $product->description = strip_tags($request->description[array_search('en', $request->lang)]);
-
-        $choiceOptions = [];
-        $product->choice_options = json_encode($choiceOptions);
-
-        //new variation
+        $product->choice_options = json_encode([]);
+        
+        // Build variations
         $variations = [];
         if (isset($request->options)) {
             foreach (array_values($request->options) as $key => $option) {
-                $temp_variation['name'] = $option['name'];
-                $temp_variation['type'] = $option['type'];
-                $temp_variation['min'] = $option['min'] ?? 0;
-                $temp_variation['max'] = $option['max'] ?? 0;
-                $temp_variation['required'] = $option['required'] ?? 'off';
+                $temp_variation = [
+                    'name' => $option['name'],
+                    'type' => $option['type'],
+                    'min' => $option['min'] ?? 0,
+                    'max' => $option['max'] ?? 0,
+                    'required' => $option['required'] ?? 'off',
+                ];
+                
+                // Validation for variations
                 if ($option['min'] > 0 && $option['min'] >= $option['max']) {
                     $validator->getMessageBag()->add('name', translate('maximum_value_can_not_be_smaller_or_equal_then_minimum_value'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
@@ -282,20 +267,20 @@ class ProductController extends Controller
                     $validator->getMessageBag()->add('name', translate('please_add_more_options_or_change_the_max_value_for') . ' ' . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
+                
                 $temp_value = [];
-
                 foreach (array_values($option['values']) as $value) {
-                    if (isset($value['label'])) {
-                        $temp_option['label'] = $value['label'];
-                    }
-                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    $temp_option = [
+                        'label' => $value['label'] ?? '',
+                        'optionPrice' => $value['optionPrice'],
+                    ];
                     $temp_value[] = $temp_option;
                 }
                 $temp_variation['values'] = $temp_value;
                 $variations[] = $temp_variation;
             }
         }
-
+        
         $product->variations = json_encode($variations);
         $product->price = $request->price;
         $product->set_menu = $request->item_type;
@@ -303,60 +288,64 @@ class ProductController extends Controller
         $product->image = Helpers::upload('product/', 'png', $request->file('image'));
         $product->available_time_starts = $request->available_time_starts;
         $product->available_time_ends = $request->available_time_ends;
-
-        $product->tax = $request->tax_type == 'amount' ? $request->tax : $request->tax;
+        $product->tax = $request->tax;
         $product->tax_type = $request->tax_type;
-
-        $product->discount = $request->discount_type == 'amount' ? $request->discount : $request->discount;
+        $product->discount = $request->discount;
         $product->discount_type = $request->discount_type;
-
         $product->attributes = $request->has('attribute_id') ? json_encode($request->attribute_id) : json_encode([]);
         $product->add_ons = $request->has('addon_ids') ? json_encode($request->addon_ids) : json_encode([]);
         $product->status = $request->status == 'on' ? 1 : 0;
         $product->is_recommended = $request->is_recommended == 'on' ? 1 : 0;
         $product->save();
 
+        // Sync tags and branches
         $product->tags()->sync($tagIds);
-        $product->cuisines()->sync($request->cuisines);
+        $product->branches()->sync($request->branches);
 
-        $mainBranchProduct = $this->productByBranch;
-        $mainBranchProduct->product_id = $product->id;
-        $mainBranchProduct->price = $request->price;
-        $mainBranchProduct->discount_type = $request->discount_type;
-        $mainBranchProduct->discount = $request->discount;
-        $mainBranchProduct->branch_id = 1;
-        $mainBranchProduct->is_available = 1;
-        $mainBranchProduct->variations = $variations;
-        $mainBranchProduct->stock_type = $request->stock_type;
-        $mainBranchProduct->stock = $request->product_stock ?? 0;
-        $mainBranchProduct->save();
+        // Create ProductByBranch records for ALL selected branches
+        foreach ($request->branches as $branchId) {
+            $this->productByBranch->create([
+                'product_id' => $product->id,
+                'branch_id' => $branchId,
+                'price' => $request->price,
+                'discount_type' => $request->discount_type,
+                'discount' => $request->discount,
+                'is_available' => 1,
+                'variations' => $variations,
+                'stock_type' => $request->stock_type,
+                'stock' => $request->product_stock ?? 0,
+                'sold_quantity' => 0,
+            ]);
+        }
 
+        // Save translations
         $data = [];
         foreach ($request->lang as $index => $key) {
             if ($request->name[$index] && $key != 'en') {
-                $data[] = array(
+                $data[] = [
                     'translationable_type' => 'App\Model\Product',
                     'translationable_id' => $product->id,
                     'locale' => $key,
                     'key' => 'name',
                     'value' => $request->name[$index],
-                );
+                ];
             }
             if ($request->description[$index] && $key != 'en') {
-                $data[] = array(
+                $data[] = [
                     'translationable_type' => 'App\Model\Product',
                     'translationable_id' => $product->id,
                     'locale' => $key,
                     'key' => 'description',
                     'value' => strip_tags($request->description[$index]),
-                );
+                ];
             }
         }
-        $this->translation->insert($data);
+        if (!empty($data)) {
+            $this->translation->insert($data);
+        }
 
         return response()->json([], 200);
     }
-
 
     /**
      * @param $id
@@ -364,12 +353,12 @@ class ProductController extends Controller
      */
     public function edit($id): View|Factory|Application
     {
-        $product = $this->product->withoutGlobalScopes()->with(['translations', 'main_branch_product', 'cuisines'])->find($id);
+        $product = $this->product->withoutGlobalScopes()->with(['translations', 'main_branch_product', 'branches'])->find($id);
         $product_category = json_decode($product->category_ids);
         $categories = $this->category->where(['parent_id' => 0])->get();
-        $cuisines = $this->cuisine::active()->orderBy('priority', 'ASC')->get();
+        $branches = $this->branch::active()->get();
 
-        return view('admin-views.product.edit', compact('product', 'product_category', 'categories', 'cuisines'));
+        return view('admin-views.product.edit', compact('product', 'product_category', 'categories', 'branches'));
     }
 
     /**
@@ -419,82 +408,80 @@ class ProductController extends Controller
             'tax_type' => 'required',
             'stock_type' => 'required|in:unlimited,daily,fixed',
             'product_stock' => 'required_if:stock_type,daily,fixed',
+            'branches' => 'required|array|min:1',
+            'branches.*' => 'exists:branches,id',
         ], [
             'name.required' => translate('Product name is required!'),
-            'category_id.required' => translate('category  is required!'),
+            'category_id.required' => translate('category is required!'),
+            'branches.required' => translate('At least one branch must be selected!'),
         ]);
 
-        if (in_array(request('stock_type'), ['daily', 'fixed'])) {
-            if($request->product_stock < 1){
+        // Stock validation
+        if (in_array($request->stock_type, ['daily', 'fixed'])) {
+            if ($request->product_stock < 1) {
                 $validator->getMessageBag()->add('product_stock', translate('Product stock must be at least 1!'));
             }
         }
 
-        if ($request['discount_type'] == 'percent') {
-            $discount = ($request['price'] / 100) * $request['discount'];
+        // Discount validation
+        if ($request->discount_type == 'percent') {
+            $discount = ($request->price / 100) * $request->discount;
         } else {
-            $discount = $request['discount'];
+            $discount = $request->discount;
         }
 
-        if ($request['price'] <= $discount) {
+        if ($request->price <= $discount) {
             $validator->getMessageBag()->add('unit_price', translate('Discount can not be more or equal to the price!'));
         }
 
-        if ($request['price'] <= $discount || (in_array(request('stock_type'), ['daily', 'fixed']) && $request->product_stock < 1) || $validator->fails()) {
+        if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
+        // Handle tags
         $tagIds = [];
         if ($request->tags != null) {
             $tags = explode(",", $request->tags);
-        }
-        if (isset($tags)) {
-            foreach ($tags as $key => $value) {
-                $tag = Tag::firstOrNew(
-                    ['tag' => $value]
-                );
+            foreach ($tags as $value) {
+                $tag = Tag::firstOrNew(['tag' => $value]);
                 $tag->save();
                 $tagIds[] = $tag->id;
             }
         }
 
+        // Update main product
         $product = $this->product->find($id);
         $product->name = $request->name[array_search('en', $request->lang)];
 
+        // Build category hierarchy
         $category = [];
         if ($request->category_id != null) {
-            $category[] = [
-                'id' => $request->category_id,
-                'position' => 1,
-            ];
+            $category[] = ['id' => $request->category_id, 'position' => 1];
         }
         if ($request->sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_category_id,
-                'position' => 2,
-            ];
+            $category[] = ['id' => $request->sub_category_id, 'position' => 2];
         }
         if ($request->sub_sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_sub_category_id,
-                'position' => 3,
-            ];
+            $category[] = ['id' => $request->sub_sub_category_id, 'position' => 3];
         }
 
         $product->category_ids = json_encode($category);
         $product->description = strip_tags($request->description[array_search('en', $request->lang)]);
+        $product->choice_options = json_encode([]);
 
-        $choiceOptions = [];
-        $product->choice_options = json_encode($choiceOptions);
-
-        //new variation
+        // Build variations
         $variations = [];
         if (isset($request->options)) {
             foreach (array_values($request->options) as $key => $option) {
-                $temp_variation['name'] = $option['name'];
-                $temp_variation['type'] = $option['type'];
-                $temp_variation['min'] = $option['min'] ?? 0;
-                $temp_variation['max'] = $option['max'] ?? 0;
+                $temp_variation = [
+                    'name' => $option['name'],
+                    'type' => $option['type'],
+                    'min' => $option['min'] ?? 0,
+                    'max' => $option['max'] ?? 0,
+                    'required' => $option['required'] ?? 'off',
+                ];
+                
+                // Validation
                 if ($option['min'] > 0 && $option['min'] >= $option['max']) {
                     $validator->getMessageBag()->add('name', translate('maximum_value_can_not_be_smaller_or_equal_then_minimum_value'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
@@ -507,15 +494,13 @@ class ProductController extends Controller
                     $validator->getMessageBag()->add('name', translate('please_add_more_options_or_change_the_max_value_for') . ' ' . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
-                $temp_variation['required'] = $option['required'] ?? 'off';
 
                 $temp_value = [];
-
                 foreach (array_values($option['values']) as $value) {
-                    if (isset($value['label'])) {
-                        $temp_option['label'] = $value['label'];
-                    }
-                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    $temp_option = [
+                        'label' => $value['label'] ?? '',
+                        'optionPrice' => $value['optionPrice'],
+                    ];
                     $temp_value[] = $temp_option;
                 }
                 $temp_variation['values'] = $temp_value;
@@ -524,112 +509,138 @@ class ProductController extends Controller
         }
 
         $product->variations = json_encode($variations);
-
-        // branch variation update start
-        $branch_products = $this->productByBranch->where(['product_id' => $id])->get();
-
-        foreach ($branch_products as $branch_product) {
-            $mapped = array_map(function ($variation) use ($branch_product) {
-                $variation_array = [];
-                $variation_array['name'] = $variation['name'];
-                $variation_array['type'] = $variation['type'];
-                $variation_array['min'] = $variation['min'];
-                $variation_array['max'] = $variation['max'];
-                $variation_array['required'] = $variation['required'];
-                $variation_array['values'] = array_map(function ($value) use ($branch_product, $variation) {
-                    $option_array = [];
-                    $option_array['label'] = $value['label'];
-
-                    $price = $value['optionPrice'];
-                    foreach ($branch_product['variations'] as $branch_variation) {
-                        if ($branch_variation['name'] == $variation['name']) {
-                            foreach ($branch_variation['values'] as $branch_value) {
-                                if ($branch_value['label'] == $value['label']) {
-                                    $price = $branch_value['optionPrice'];
-                                }
-                            }
-                        }
-                    }
-                    $option_array['optionPrice'] = $price;
-
-                    return $option_array;
-                }, $variation['values']);
-                return $variation_array;
-            }, $variations);
-
-            $data = [
-                'variations' => $mapped,
-            ];
-
-            $this->productByBranch->whereIn('product_id', [$id])->update($data);
-        }
-
-        // branch variation update end
         $product->price = $request->price;
         $product->set_menu = $request->item_type;
         $product->product_type = $request->product_type;
-        $product->image = $request->has('image') ? Helpers::update('product/', $product->image, 'png', $request->file('image')) : $product->image;
+        $product->image = $request->has('image') 
+            ? Helpers::update('product/', $product->image, 'png', $request->file('image')) 
+            : $product->image;
         $product->available_time_starts = $request->available_time_starts;
         $product->available_time_ends = $request->available_time_ends;
-
-        $product->tax = $request->tax_type == 'amount' ? $request->tax : $request->tax;
+        $product->tax = $request->tax;
         $product->tax_type = $request->tax_type;
-
-        $product->discount = $request->discount_type == 'amount' ? $request->discount : $request->discount;
+        $product->discount = $request->discount;
         $product->discount_type = $request->discount_type;
-
         $product->attributes = $request->has('attribute_id') ? json_encode($request->attribute_id) : json_encode([]);
         $product->add_ons = $request->has('addon_ids') ? json_encode($request->addon_ids) : json_encode([]);
         $product->status = $request->status == 'on' ? 1 : 0;
         $product->is_recommended = $request->is_recommended == 'on' ? 1 : 0;
         $product->save();
 
+        // Sync tags and branches
         $product->tags()->sync($tagIds);
-        $product->cuisines()->sync($request->cuisines);
+        $product->branches()->sync($request->branches);
 
-        $updatedProduct = $this->productByBranch->updateOrCreate([
-            'product_id' => $product->id,
-            'branch_id' => 1,
-        ], [
-                'product_id' => $product->id,
-                'price' => $request->price,
-                'discount_type' => $request->discount_type,
-                'discount' => $request->discount,
-                'branch_id' => 1,
-                'is_available' => 1,
-                'variations' => $variations,
-                'stock_type' => $request->stock_type,
-                'stock' =>  $request->product_stock ?? 0,
-            ]
-        );
+        // Get existing branch products
+        $existingBranchProducts = $this->productByBranch
+            ->where('product_id', $id)
+            ->get()
+            ->keyBy('branch_id');
 
-        if ($updatedProduct->wasChanged('stock_type') || $updatedProduct->wasChanged('stock')) {
-            $updatedProduct->sold_quantity = 0;
-            $updatedProduct->save();
+        // Update or create ProductByBranch for selected branches
+        foreach ($request->branches as $branchId) {
+            $existingProduct = $existingBranchProducts->get($branchId);
+            
+            // Preserve existing variation prices if they exist
+            $preservedVariations = $variations;
+            if ($existingProduct && !empty($existingProduct->variations)) {
+                $preservedVariations = $this->mergeVariationPrices(
+                    $variations, 
+                    $existingProduct->variations
+                );
+            }
+
+            $updatedProduct = $this->productByBranch->updateOrCreate(
+                [
+                    'product_id' => $id,
+                    'branch_id' => $branchId,
+                ],
+                [
+                    'price' => $request->price,
+                    'discount_type' => $request->discount_type,
+                    'discount' => $request->discount,
+                    'is_available' => 1,
+                    'variations' => $preservedVariations,
+                    'stock_type' => $request->stock_type,
+                    'stock' => $request->product_stock ?? 0,
+                ]
+            );
+
+            // Reset sold quantity if stock settings changed
+            if ($updatedProduct->wasChanged('stock_type') || $updatedProduct->wasChanged('stock')) {
+                $updatedProduct->sold_quantity = 0;
+                $updatedProduct->save();
+            }
         }
 
+        // Remove ProductByBranch records for unselected branches
+        $this->productByBranch
+            ->where('product_id', $id)
+            ->whereNotIn('branch_id', $request->branches)
+            ->delete();
+
+        // Update translations
         foreach ($request->lang as $index => $key) {
             if ($request->name[$index] && $key != 'en') {
                 $this->translation->updateOrInsert(
-                    ['translationable_type' => 'App\Model\Product',
-                        'translationable_id' => $product->id,
+                    [
+                        'translationable_type' => 'App\Model\Product',
+                        'translationable_id' => $id,
                         'locale' => $key,
-                        'key' => 'name'],
+                        'key' => 'name'
+                    ],
                     ['value' => $request->name[$index]]
                 );
             }
             if ($request->description[$index] && $key != 'en') {
                 $this->translation->updateOrInsert(
-                    ['translationable_type' => 'App\Model\Product',
-                        'translationable_id' => $product->id,
+                    [
+                        'translationable_type' => 'App\Model\Product',
+                        'translationable_id' => $id,
                         'locale' => $key,
-                        'key' => 'description'],
+                        'key' => 'description'
+                    ],
                     ['value' => strip_tags($request->description[$index])]
                 );
             }
         }
 
         return response()->json([], 200);
+    }
+
+    /**
+     * Helper method to merge variation prices from existing branch products
+     */
+    private function mergeVariationPrices(array $newVariations, array $existingVariations): array
+    {
+        $merged = [];
+        
+        foreach ($newVariations as $newVar) {
+            $mergedVar = $newVar;
+            
+            // Find matching variation in existing
+            foreach ($existingVariations as $existingVar) {
+                if ($existingVar['name'] === $newVar['name']) {
+                    // Merge values, preserving existing prices
+                    $mergedValues = [];
+                    foreach ($newVar['values'] as $newValue) {
+                        $matchingValue = collect($existingVar['values'])
+                            ->firstWhere('label', $newValue['label']);
+                        
+                        $mergedValues[] = [
+                            'label' => $newValue['label'],
+                            'optionPrice' => $matchingValue['optionPrice'] ?? $newValue['optionPrice'],
+                        ];
+                    }
+                    $mergedVar['values'] = $mergedValues;
+                    break;
+                }
+            }
+            
+            $merged[] = $mergedVar;
+        }
+        
+        return $merged;
     }
 
     /**

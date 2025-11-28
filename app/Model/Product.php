@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
+    protected $guarded = [];
+    
     protected $casts = [
         'tax' => 'float',
         'price' => 'float',
@@ -85,6 +87,12 @@ class Product extends Model
     {
         return $this->belongsToMany(Tag::class);
     }
+    
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_product', 'product_id', 'branch_id')
+            ->withTimestamps();
+    }
 
     public function product_by_branch(): HasMany
     {
@@ -112,19 +120,23 @@ class Product extends Model
     {
         return $this->hasOne(ProductByBranch::class)->where(['branch_id' => 1]);
     }
+    
     public function sub_branch_product(): HasOne
     {
         return $this->hasOne(ProductByBranch::class)->where(['branch_id' => auth('branch')->id()]);
     }
 
+    /**
+     * All ProductByBranch records for this product
+     */
+    public function b_product(): HasMany
+    {
+        return $this->hasMany(ProductByBranch::class);
+    }
+
     public function cuisines(): BelongsToMany
     {
         return $this->belongsToMany(Cuisine::class, 'cuisine_product', 'product_id', 'cuisine_id');
-    }
-
-    public function b_product()
-    {
-        return $this->hasMany(ProductByBranch::class);
     }
 
     public function getImageFullPathAttribute(): string
@@ -146,5 +158,4 @@ class Product extends Model
             }]);
         });
     }
-
 }

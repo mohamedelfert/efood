@@ -370,18 +370,18 @@
                                         <div class="card-header">
                                             <h4 class="mb-0 d-flex gap-2 align-items-center">
                                                 <i class="tio-label"></i>
-                                                {{translate('cuisine')}}
+                                                {{translate('Branch')}}
                                             </h4>
                                         </div>
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <div class="">
-                                                        <label class="input-label">{{translate('select cuisine')}}</label>
-                                                        <select name="cuisines[]" class="form-control js-select2-custom" multiple>
-                                                            <option value="" disabled>---{{translate('select cuisine')}}---</option>
-                                                            @foreach($cuisines as $cuisine)
-                                                                <option value="{{$cuisine['id']}}" {{ $product->cuisines->pluck('id')->contains($cuisine['id']) ? 'selected' : '' }}>{{$cuisine['name']}}</option>
+                                                        <label class="input-label">{{translate('select branch')}}</label>
+                                                        <select name="branches[]" class="form-control js-select2-custom" multiple>
+                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                            @foreach($branches as $branch)
+                                                                <option value="{{$branch['id']}}" {{ $product->branches->pluck('id')->contains($branch['id']) ? 'selected' : '' }}>{{$branch['name']}}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
