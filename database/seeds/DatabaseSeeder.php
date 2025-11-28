@@ -1,8 +1,8 @@
 <?php
 
+namespace Database\Seeders;
+
 use Illuminate\Database\Seeder;
-use Database\Seeders\TestDataTableSeeder;
-use Database\Seeders\CurrenciesTableSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,9 +14,10 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
          $this->call([
-             AdminTableSeeder::class,
-             CurrenciesTableSeeder::class,
-             TestDataTableSeeder::class
+            AdminTableSeeder::class,
+            CurrenciesTableSeeder::class,
+            AddonSettingsSeeder::class,
+            LoginSetupsSeeder::class,
          ]);
     }
 }
