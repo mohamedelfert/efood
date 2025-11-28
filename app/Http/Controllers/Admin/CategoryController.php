@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
+use App\Model\Branch;
 use App\Model\Category;
 use App\Model\Translation;
 use Brian2694\Toastr\Facades\Toastr;
@@ -16,7 +17,8 @@ class CategoryController extends Controller
 {
     public function __construct(
         private Category    $category,
-        private Translation $translation
+        private Translation $translation,
+        private Branch $branch
     )
     {}
 
@@ -24,13 +26,13 @@ class CategoryController extends Controller
      * @param Request $request
      * @return Renderable
      */
-    function index(Request $request): Renderable
+    public function index(Request $request)
     {
         $queryParam = [];
         $search = $request['search'];
+
         if ($request->has('search')) {
             $key = explode(' ', $request['search']);
-
             $categories = $this->category->where('position', 0)->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%");
@@ -41,8 +43,10 @@ class CategoryController extends Controller
             $categories = $this->category->where('position', 0);
         }
 
-        $categories = $categories->orderBY('priority', 'ASC')->paginate(Helpers::getPagination())->appends($queryParam);
-        return view('admin-views.category.index', compact('categories', 'search'));
+        $categories = $categories->latest()->paginate(Helpers::getPagination())->appends($queryParam);
+        $branches = $this->branch->active()->get();
+
+        return view('admin-views.category.index', compact('categories', 'search', 'branches'));
     }
 
     /**
@@ -71,69 +75,63 @@ class CategoryController extends Controller
      * @param Request $request
      * @return RedirectResponse
      */
-    function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|array',
+            'name.*' => 'required|string|max:255',
+            'branch_ids' => 'required|array',
+            'branch_ids.*' => 'exists:branches,id',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'name.*.required' => translate('Category name is required in all languages'),
+            'branch_ids.required' => translate('Please select at least one branch'),
         ]);
 
-        if ($request->has('type')) {
-            $request->validate([
-                'parent_id' => 'required',
-            ], [
-                'parent_id.required' => translate('Select a category first')
-            ]);
-        }
-
-        foreach ($request->name as $name) {
-            if (strlen($name) > 255) {
-                toastr::error(translate('Name is too long!'));
+        // Check duplicate
+        foreach ($request->name as $index => $name) {
+            if ($this->category->where('name', $name)
+                ->where('parent_id', $request->parent_id ?? 0)
+                ->whereJsonContains('branch_ids', $request->branch_ids[0])
+                ->exists()) {
+                Toastr::error(translate('Category already exists in selected branch!'));
                 return back();
             }
         }
 
-        $categoryExist = $this->category->where('name', $request->name)->where('parent_id', $request->parent_id ?? 0)->first();
-        if (isset($categoryExist)) {
-            Toastr::error(translate(($request->parent_id == null ? 'Category' : 'Sub-category') . ' already exists!'));
-            return back();
-        }
+        $imageName = Helpers::upload('category/', 'png', $request->file('image'));
+        $bannerImageName = $request->hasFile('banner_image')
+            ? Helpers::upload('category/banner/', 'png', $request->file('banner_image'))
+            : 'def.png';
 
-        if (!empty($request->file('image'))) {
-            $imageName = Helpers::upload('category/', 'png', $request->file('image'));
-        } else {
-            $imageName = 'def.png';
-        }
-        if (!empty($request->file('banner_image'))) {
-            $bannerImageName = Helpers::upload('category/banner/', 'png', $request->file('banner_image'));
-        } else {
-            $bannerImageName = 'def.png';
-        }
-
-        $category = $this->category;
-        $category->name = $request->name[array_search('en', $request->lang)];
+        $category = new $this->category();
+        $category->name = $request->name[array_search('en', $request->lang ?? ['en'])];
         $category->image = $imageName;
         $category->banner_image = $bannerImageName;
-        $category->parent_id = $request->parent_id == null ? 0 : $request->parent_id;
-        $category->position = $request->position;
+        $category->parent_id = $request->parent_id ?? 0;
+        $category->position = $request->position ?? 0;
+        $category->priority = $request->priority ?? 0;
+        $category->branch_ids = json_encode($request->branch_ids = $request->branch_ids); // Save as JSON
         $category->save();
 
+        // Translations
         $data = [];
-        foreach ($request->lang as $index => $key) {
+        foreach ($request->lang ?? ['en'] as $index => $key) {
             if ($request->name[$index] && $key != 'en') {
-                $data[] = array(
+                $data[] = [
                     'translationable_type' => 'App\Model\Category',
                     'translationable_id' => $category->id,
                     'locale' => $key,
                     'key' => 'name',
                     'value' => $request->name[$index],
-                );
+                ];
             }
         }
-        if (count($data)) {
+        if ($data) {
             $this->translation->insert($data);
         }
 
-        Toastr::success($request->parent_id == 0 ? translate('Category Added Successfully!') : translate('Sub Category Added Successfully!'));
+        Toastr::success(translate('Category added successfully!'));
         return back();
     }
 
@@ -141,10 +139,11 @@ class CategoryController extends Controller
      * @param $id
      * @return Renderable
      */
-    public function edit($id): Renderable
+    public function edit($id)
     {
-        $category = $this->category->withoutGlobalScopes()->with('translations')->find($id);
-        return view('admin-views.category.edit', compact('category'));
+        $category = $this->category->withoutGlobalScopes()->with('translations')->findOrFail($id);
+        $branches = $this->branch->active()->get();
+        return view('admin-views.category.edit', compact('category', 'branches'));
     }
 
     /**
@@ -166,38 +165,57 @@ class CategoryController extends Controller
      * @param $id
      * @return RedirectResponse
      */
-    public function update(Request $request, $id): RedirectResponse
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required',
+            'name'          => 'required|array',
+            'name.*'        => 'required|string|max:255',
+            'branch_ids'    => 'required|array',
+            'branch_ids.*'  => 'exists:branches,id',
+            'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'banner_image'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ], [
+            'branch_ids.required' => translate('Please select at least one branch'),
+            'name.*.required'     => translate('Category name is required'),
         ]);
 
-        foreach ($request->name as $name) {
-            if (strlen($name) > 255) {
-                toastr::error(translate('Name is too long!'));
-                return back();
-            }
+        $category = $this->category->findOrFail($id);
+
+        // English name (fallback)
+        $enIndex = array_search('en', $request->lang ?? ['en']);
+        $category->name = $request->name[$enIndex] ?? $request->name[$enIndex];
+
+        // Update images only if new file uploaded
+        if ($request->hasFile('image')) {
+            $category->image = Helpers::update('category/', $category->image, 'png', $request->file('image'));
         }
 
-        $category = $this->category->find($id);
-        $category->name = $request->name[array_search('en', $request->lang)];
-        $category->image = $request->has('image') ? Helpers::update('category/', $category->image, 'png', $request->file('image')) : $category->image;
-        $category->banner_image = $request->has('banner_image') ? Helpers::update('category/banner/', $category->banner_image, 'png', $request->file('banner_image')) : $category->banner_image;
+        if ($request->hasFile('banner_image')) {
+            $category->banner_image = Helpers::update('category/banner/', $category->banner_image, 'png', $request->file('banner_image'));
+        }
+
+        // Save selected branches as JSON
+        $category->branch_ids = json_encode($request->branch_ids);
         $category->save();
 
-        foreach ($request->lang as $index => $key) {
-            if ($request->name[$index] && $key != 'en') {
+        // Handle translations (non-English)
+        foreach ($request->lang ?? [] as $index => $langCode) {
+            if ($langCode === 'en') continue;
+
+            if (!empty($request->name[$index])) {
                 $this->translation->updateOrInsert(
-                    ['translationable_type' => 'App\Model\Category',
-                        'translationable_id' => $category->id,
-                        'locale' => $key,
-                        'key' => 'name'],
-                    ['value' => $request->name[$index]]
-                );
+                    ([
+                    'translationable_type'  => 'App\Model\Category',
+                    'translationable_id'    => $category->id,
+                    'locale'                => $langCode,
+                    'key'                   => 'name',
+                ]), [
+                    'value' => $request->name[$index]
+                ]);
             }
         }
 
-        Toastr::success($category->parent_id == 0 ? translate('Category updated successfully!') : translate('Sub Category updated successfully!'));
+        Toastr::success(translate('Category updated successfully!'));
         return back();
     }
 

@@ -367,7 +367,7 @@
                                                 <div class="col-12">
                                                     <div class="">
                                                         <label class="input-label">{{translate('select branch')}}</label>
-                                                        <select name="branches[]" class="form-control js-select2-custom" multiple>
+                                                        <select name="branches[]" class="form-control" id="choose_branch" multiple>
                                                             <option value="" disabled>---{{translate('select branch')}}---</option>
                                                             @foreach($branches as $branch)
                                                                 <option value="{{$branch['id']}}">{{$branch['name']}}</option>
@@ -624,6 +624,12 @@
             placeholder: "Select Addons",
             allowClear: true
         });
+
+        $("#choose_branch").select2({
+            placeholder: "Select Branch",
+            allowClear: true
+        });
+
 
     </script>
 

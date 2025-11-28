@@ -7,110 +7,127 @@
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
-            <h2 class="h1 mb-0 d-flex align-items-center gap-2">
-                <img width="20" class="avatar-img" src="{{asset('public/assets/admin/img/icons/category.png')}}" alt="">
-                <span class="page-header-title">
-                    {{translate('add_New_Category')}}
-                </span>
-            </h2>
-        </div>
+<div class="content container-fluid">
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <h2 class="h1 mb-0 d-flex align-items-center gap-2">
+            <img width="20" src="{{asset('public/assets/admin/img/icons/category.png')}}" alt="">
+            {{translate('add_New_Category')}}
+        </h2>
+    </div>
 
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="card card-body">
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
                     <form action="{{route('admin.category.store')}}" method="post" enctype="multipart/form-data">
                         @csrf
-                        @php($data = Helpers::get_business_settings('language'))
+
+                        @php($languages = Helpers::get_business_settings('language') ?? [])
                         @php($defaultLang = Helpers::get_default_language())
 
-                        @if ($data && array_key_exists('code', $data[0]))
-                        <ul class="nav w-fit-content nav-tabs mb-4">
-                            @foreach ($data as $lang)
-                                <li class="nav-item">
-                                    <a class="nav-link lang_link {{ $lang['default'] == true ? 'active' : '' }}" href="#"
-                                    id="{{ $lang['code'] }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang['code']) . '(' . strtoupper($lang['code']) . ')' }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-
-                        <div class="row align-items-end">
-                            <div class="col-12">
-                                @foreach ($data as $lang)
-                                    <div class="form-group {{ $lang['default'] == false ? 'd-none' : '' }} lang_form"
-                                        id="{{ $lang['code'] }}-form">
-                                        <label class="input-label" >{{ translate('name') }} ({{ strtoupper($lang['code']) }})</label>
-                                        <input type="text" name="name[]" class="form-control" placeholder="{{ translate('New Category') }}" maxlength="255"
-                                            {{$lang['status'] == true ? 'required':''}}
-                                            @if($lang['status'] == true) oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
-                                    </div>
-                                    <input type="hidden" name="lang[]" value="{{ $lang['code'] }}">
+                        <!-- Language Tabs -->
+                        @if($languages && count($languages))
+                            <ul class="nav nav-tabs mb-4">
+                                @foreach($languages as $lang)
+                                    <li class="nav-item">
+                                        <a class="nav-link lang_link {{ $lang['default'] ? 'active' : '' }}"
+                                           href="#" id="{{ $lang['code'] }}-link">
+                                            {{ \App\CentralLogics\Helpers::get_language_name($lang['code']) }}
+                                            ({{ strtoupper($lang['code']) }})
+                                        </a>
+                                    </li>
                                 @endforeach
-                                @else
-                                <div class="row gy-4">
-                                    <div class="col-md-6 mb-4">
-                                        <div class="form-group lang_form" id="{{ $defaultLang }}-form">
-                                            <label class="input-label"
-                                                for="exampleFormControlInput1">{{ translate('name') }}
-                                                ({{ strtoupper($defaultLang) }})</label>
-                                            <input type="text" name="name[]" class="form-control" maxlength="255"
-                                                placeholder="{{ translate('New Category') }}" required>
-                                        </div>
-                                        <input type="hidden" name="lang[]" value="{{ $defaultLang }}">
-                                        @endif
-                                        <input name="position" value="0" class="d--none">
+                            </ul>
+                        @endif
+
+                        <div class="row">
+                            <!-- Left: Name + Branch Selection -->
+                            <div class="col-lg-8">
+                                <!-- Multi-language Name Inputs -->
+                                @foreach($languages ?? [['code' => $defaultLang, 'default' => true]] as $lang)
+                                    <div class="form-group lang_form {{ !$lang['default'] ? 'd-none' : '' }}"
+                                         id="{{ $lang['code'] }}-form">
+                                        <label class="input-label">
+                                            {{ translate('name') }} ({{ strtoupper($lang['code']) }})
+                                            @if($lang['default'] ?? true) <span class="text-danger">*</span> @endif
+                                        </label>
+                                        <input type="text" name="name[]" class="form-control"
+                                               placeholder="{{ translate('New Category') }}"
+                                               {{ ($lang['default'] ?? true) ? 'required' : '' }}>
                                     </div>
-                                    <div class="col-md-6 mb-4">
-                                        <div class="from_part_2 mt-2">
-                                            <div class="form-group">
-                                                <div class="text-center">
-                                                    <img width="105" class="rounded-10 border" id="viewer"
-                                                        src="{{ asset('public/assets/admin/img/400x400/img2.jpg') }}" alt="image" />
+                                    <input type="hidden" name="lang[]" value="{{ $lang['code'] ?? $defaultLang }}">
+                                @endforeach
+
+                                <!-- Branch Selection -->
+                                <div class="col-12">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h4 class="mb-0 d-flex gap-2 align-items-center">
+                                                <i class="tio-label"></i>
+                                                {{translate('Branch')}}
+                                            </h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="">
+                                                        <label class="input-label">{{translate('select branch')}}</label>
+                                                        <select name="branch_ids[]" class="form-control js-select2-custom" id="choose_branch" required multiple>
+                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                            @foreach($branches as $branch)
+                                                                <option value="{{$branch['id']}}">{{$branch['name']}}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div class="from_part_2">
-                                            <label>{{ translate('category_Image') }}</label>
-                                            <small class="text-danger">* ( {{ translate('ratio') }} 1:1 )</small>
-                                            <div class="custom-file">
-                                                <input type="file" name="image" id="customFileEg1" class="custom-file-input"
-                                                    accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required
-                                                    oninvalid="document.getElementById('en-link').click()">
-                                                <label class="custom-file-label" for="customFileEg1">{{ translate('choose file') }}</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-4">
-                                        <div class="from_part_2 mb-4 px-4">
-                                            <div class="form-group">
-                                                <div class="text-center max-h-200px overflow-hidden">
-                                                    <img width="500" class="rounded-10 border" id="viewer2"
-                                                        src="{{ asset('public/assets/admin/img/900x400/img1.jpg') }}" alt="image" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="from_part_2">
-                                            <label>{{ translate('banner image') }}</label>
-                                            <small class="text-danger">* ( {{ translate('ratio') }} 8:1 )</small>
-                                            <div class="custom-file">
-                                                <input type="file" name="banner_image" id="customFileEg2" class="custom-file-input"
-                                                    accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required
-                                                    oninvalid="document.getElementById('en-link').click()">
-                                                <label class="custom-file-label" for="customFileEg2">{{ translate('choose file') }}</label>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="d-flex justify-content-end gap-3">
-                                    <button type="reset" id="reset" class="btn btn-secondary">{{translate('reset')}}</button>
-                                    <button type="submit" class="btn btn-primary">{{translate('submit')}}</button>
+                            <!-- Right: Images -->
+                            <div class="col-lg-4">
+                                <!-- Category Image -->
+                                <div class="mb-4">
+                                    <div class="text-center mb-3">
+                                        <img id="viewer" width="150" class="rounded border"
+                                             src="{{ asset('public/assets/admin/img/400x400/img2.jpg') }}" alt="Category">
+                                    </div>
+                                    <label>{{ translate('category_Image') }} <small class="text-danger">(1:1)</small></label>
+                                    <div class="custom-file">
+                                        <input type="file" name="image" id="customFileEg1" class="custom-file-input"
+                                               accept="image/*" required>
+                                        <label class="custom-file-label" for="customFileEg1">{{ translate('choose file') }}</label>
+                                    </div>
+                                </div>
+
+                                <!-- Banner Image -->
+                                <div>
+                                    <div class="text-center mb-3">
+                                        <img id="viewer2" width="100%" class="rounded border"
+                                             src="{{ asset('public/assets/admin/img/900x400/img1.jpg') }}" alt="Banner">
+                                    </div>
+                                    <label>{{ translate('banner image') }} <small class="text-danger">(8:1)</small></label>
+                                    <div class="custom-file">
+                                        <input type="file" name="banner_image" id="customFileEg2" class="custom-file-input"
+                                               accept="image/*">
+                                        <label class="custom-file-label" for="customFileEg2">{{ translate('choose file') }}</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
 
+                        <div class="d-flex justify-content-end gap-3 mt-4">
+                            <button type="reset" class="btn btn-secondary">{{ translate('reset') }}</button>
+                            <button type="submit" class="btn btn-primary">{{ translate('submit') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-4">
             <div class="col-12 mb-3">
                 <div class="card">
                     <div class="card-top px-card pt-4">
@@ -213,7 +230,7 @@
             </div>
         </div>
     </div>
-
+</div>
 @endsection
 
 @push('script_2')
@@ -301,6 +318,13 @@
                }
            })
        }
+    </script>
+
+    <script>
+        $("#choose_branch").select2({
+            placeholder: "Select Branch",
+            allowClear: true
+        });
     </script>
 
 @endpush

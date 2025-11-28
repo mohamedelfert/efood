@@ -72,6 +72,35 @@
                                             @endif
                                             <input class="position-area" name="position" value="0">
                                         </div>
+
+                                        <div class="col-12">
+                                            <div class="card h-100">
+                                                <div class="card-header">
+                                                    <h4 class="mb-0 d-flex gap-2 align-items-center">
+                                                        <i class="tio-label"></i>
+                                                        {{translate('Branch')}}
+                                                    </h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-12">
+                                                            <div class="">
+                                                                <label class="input-label">{{translate('select branch')}}</label>
+                                                                <select name="branch_ids[]" class="form-control js-select2-custom" multiple>
+                                                                    <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                                    @foreach(\App\Model\Branch::active()->get() as $branch)
+                                                                        <option value="{{ $branch->id }}"
+                                                                            {{ in_array($branch->id, json_decode($category->branch_ids ?? '[]', true)) ? 'selected' : '' }}>
+                                                                            {{ $branch->name }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                             <div class="col-md-6 mb-4">
                                                 <div class="from_part_2 mt-2">
                                                     <div class="form-group">
@@ -167,6 +196,12 @@
             {
                 $(".from_part_2").addClass('d-none');
             }
+        });
+
+        $(document).on('ready', function () {
+            $('.js-select2-custom').each(function () {
+                var select2 = $.HSCore.components.HSSelect2.init($(this));
+            });
         });
     </script>
 @endpush
