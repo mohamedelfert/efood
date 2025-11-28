@@ -955,6 +955,7 @@
   'number' => 'الرقم',
   'without country code' => 'بدون رمز الدولة',
   'WhatsApp Number' => 'رقم واتساب',
+  'WhatsApp Template' => 'قالب واتساب',
   'Social Login' => 'تسجيل الدخول الاجتماعي',
   'google_login' => 'تسجيل الدخول بجوجل',
   'facebook_login' => 'تسجيل الدخول بفيسبوك',
@@ -2704,10 +2705,10 @@
   'translations' => 'Translations',
   'System Addonssss' => 'System Addonssss',
   'Customer Loyalty Points' => 'Customer Loyalty Points',
-  'Email Template' => 'Email Template',
+  'Email Template' => 'قالب البريد الإلكتروني',
   'POS New Sale' => 'POS New Sale',
-  'Offline Verification' => 'Offline Verification',
-  'Special Settings' => 'Special Settings',
+  'Offline Verification' => 'التحقق دون اتصال',
+  'Special Settings' => 'اعدادات خاصة',
   'Reports' => 'Reports',
   'Currency Management' => 'Currency Management',
   'Exchange Rates' => 'Exchange Rates',
@@ -2757,6 +2758,7 @@
   'Payment initiation failed' => 'فشل بدء عملية الدفع.',
   'User not found' => 'المستخدم غير موجود.',
   'invalid_amount' => 'يجب ألا يقل مبلغ الطلب عن 0.01.',
+  'select branch' => 'اختيار فرع',
 
 
 );

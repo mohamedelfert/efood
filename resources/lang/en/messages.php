@@ -179,6 +179,7 @@
   'wallet_bonuses' => 'Wallet Bonuses',
   'payments' => 'Payments',
   'whatsapp_payments' => 'WhatsApp Payments',
+  'WhatsApp Template' => 'WatsApp Template',
   'payment_notifications' => 'Payment Notifications',
   'send_invoice' => 'Send Invoice',
   'orders_setup' => 'Orders Setup',
