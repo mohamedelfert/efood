@@ -74,46 +74,16 @@ class UpdateController extends Controller
             'value' => 1
         ]);
 
-        if (BusinessSetting::where(['key' => 'paystack'])->first() == false) {
-            BusinessSetting::insert([
-                'key' => 'paystack',
-                'value' => '{"status":"1","publicKey":"","razor_secret":"","secretKey":"","paymentUrl":"","merchantEmail":""}'
-            ]);
-        }
-        if (BusinessSetting::where(['key' => 'senang_pay'])->first() == false) {
-            BusinessSetting::insert([
-                'key' => 'senang_pay',
-                'value' => '{"status":"1","secret_key":"","merchant_id":""}'
-            ]);
-        }
-        if (BusinessSetting::where(['key' => 'bkash'])->first() == false) {
-            BusinessSetting::insert([
-                'key' => 'bkash',
-                'value' => '{"status":"1","api_key":"","api_secret":"","username":"","password":""}'
-            ]);
-        }
         if (BusinessSetting::where(['key' => 'paymob'])->first() == false) {
             BusinessSetting::insert([
                 'key' => 'paymob',
                 'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'
             ]);
         }
-        if (BusinessSetting::where(['key' => 'flutterwave'])->first() == false) {
+        if (BusinessSetting::where(['key' => 'qib'])->first() == false) {
             BusinessSetting::insert([
-                'key' => 'flutterwave',
-                'value' => '{"status":"1","public_key":"","secret_key":"","hash":""}'
-            ]);
-        }
-        if (BusinessSetting::where(['key' => 'mercadopago'])->first() == false) {
-            BusinessSetting::insert([
-                'key' => 'mercadopago',
-                'value' => '{"status":"1","public_key":"","access_token":""}'
-            ]);
-        }
-        if (BusinessSetting::where(['key' => 'paypal'])->first() == false) {
-            BusinessSetting::insert([
-                'key' => 'paypal',
-                'value' => '{"status":"1","paypal_client_id":"","paypal_secret":""}'
+                'key' => 'qib',
+                'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'
             ]);
         }
         if (BusinessSetting::where(['key' => 'internal_point'])->first() == false) {
@@ -141,18 +111,6 @@ class UpdateController extends Controller
 
         DB::table('business_settings')->updateOrInsert(['key' => 'phone_verification'], [
             'value' => 0
-        ]);
-        DB::table('business_settings')->updateOrInsert(['key' => 'msg91_sms'], [
-            'key' => 'msg91_sms',
-            'value' => '{"status":0,"template_id":null,"authkey":null}'
-        ]);
-        DB::table('business_settings')->updateOrInsert(['key' => '2factor_sms'], [
-            'key' => '2factor_sms',
-            'value' => '{"status":"0","api_key":null}'
-        ]);
-        DB::table('business_settings')->updateOrInsert(['key' => 'nexmo_sms'], [
-            'key' => 'nexmo_sms',
-            'value' => '{"status":0,"api_key":null,"api_secret":null,"signature_secret":"","private_key":"","application_id":"","from":null,"otp_template":null}'
         ]);
         DB::table('business_settings')->updateOrInsert(['key' => 'twilio_sms'], [
             'key' => 'twilio_sms',
@@ -742,16 +700,8 @@ class UpdateController extends Controller
     private function set_payment_data(){
         try{
             $gateway= [
-                'ssl_commerz_payment',
-                'razor_pay',
-                'paypal',
-                'stripe',
-                'senang_pay',
-                'paystack',
-                'bkash',
                 'paymob',
-                'flutterwave',
-                'mercadopago',
+                'qib',
             ];
 
 
@@ -759,9 +709,6 @@ class UpdateController extends Controller
 
             foreach($data as $key => $value){
                 $gateway=$key;
-                if($key == 'ssl_commerz_payment' ){
-                    $gateway='ssl_commerz';
-                }
                 if($key == 'paymob' ){
                     $gateway='paymob';
                 }
@@ -773,38 +720,7 @@ class UpdateController extends Controller
 
                 $additional_data =[];
 
-                if ($gateway == 'ssl_commerz') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'store_id' => $decoded_value['store_id'],
-                        'store_password' => $decoded_value['store_password'],
-                    ];
-                } elseif ($gateway == 'paypal') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'client_id' => $decoded_value['paypal_client_id'],
-                        'client_secret' => $decoded_value['paypal_secret'],
-                    ];
-                } elseif ($gateway == 'stripe') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'api_key' => $decoded_value['api_key'],
-                        'published_key' => $decoded_value['published_key'],
-                    ];
-                } elseif ($gateway == 'razor_pay') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'api_key' => $decoded_value['razor_key'],
-                        'api_secret' => $decoded_value['razor_secret'],
-                    ];
-                } elseif ($gateway == 'senang_pay') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'callback_url' => null,
-                        'secret_key' => $decoded_value['secret_key'],
-                        'merchant_id' => $decoded_value['merchant_id'],
-                    ];
-                } elseif ($gateway == 'paystack') {
+               if ($gateway == 'qib') {
                     $additional_data = [
                         'status' => $decoded_value['status'],
                         'callback_url' => $decoded_value['paymentUrl'],
@@ -820,27 +736,6 @@ class UpdateController extends Controller
                         'iframe_id' => $decoded_value['iframe_id'],
                         'integration_id' => $decoded_value['integration_id'],
                         'hmac' => $decoded_value['hmac'],
-                    ];
-                } elseif ($gateway == 'mercadopago') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'access_token' => $decoded_value['access_token'],
-                        'public_key' => $decoded_value['public_key'],
-                    ];
-                } elseif ($gateway == 'flutterwave') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'secret_key' => $decoded_value['secret_key'],
-                        'public_key' => $decoded_value['public_key'],
-                        'hash' => $decoded_value['hash'],
-                    ];
-                } elseif ($gateway == 'bkash') {
-                    $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'app_key' => $decoded_value['api_key'],
-                        'app_secret' => $decoded_value['api_secret'],
-                        'username' => $decoded_value['username'],
-                        'password' => $decoded_value['password'],
                     ];
                 }
 
@@ -868,7 +763,7 @@ class UpdateController extends Controller
 
     private function set_sms_data(){
         try{
-            $sms_gateway= ['twilio_sms', 'nexmo_sms', 'msg91_sms', '2factor_sms', 'signalwire_sms'];
+            $sms_gateway= ['twilio_sms'];
 
             $data= BusinessSetting::whereIn('key',$sms_gateway)->pluck('value','key')->toArray();
             foreach($data as $key => $value){
@@ -883,39 +778,6 @@ class UpdateController extends Controller
                         'token' => data_get($decoded_value,'token',null),
                         'from' =>data_get($decoded_value,'from',null),
                         'otp_template' => data_get($decoded_value,'otp_template',null),
-                    ];
-                } elseif ($key == 'nexmo_sms') {
-                    $sms_gateway='nexmo';
-                    $additional_data = [
-                        'status' => data_get($decoded_value,'status',null),
-                        'api_key' => data_get($decoded_value,'api_key',null),
-                        'api_secret' =>  data_get($decoded_value,'api_secret',null),
-                        'token' => data_get($decoded_value,'token',null),
-                        'from' =>  data_get($decoded_value,'from',null),
-                        'otp_template' =>  data_get($decoded_value,'otp_template',null),
-                    ];
-                } elseif ($key == '2factor_sms') {
-                    $sms_gateway='2factor';
-                    $additional_data = [
-                        'status' => data_get($decoded_value,'status',null),
-                        'api_key' => data_get($decoded_value,'api_key',null),
-                    ];
-                } elseif ($key == 'msg91_sms') {
-                    $sms_gateway='msg91';
-                    $additional_data = [
-                        'status' => data_get($decoded_value,'status',null),
-                        'template_id' =>  data_get($decoded_value,'template_id',null),
-                        'auth_key' =>  data_get($decoded_value,'authkey',null),
-                    ];
-                }elseif ($key == 'signalwire_sms') {
-                    $sms_gateway='signal_wire';
-                    $additional_data = [
-                        'status' => data_get($decoded_value,'status',null),
-                        'project_id' =>  data_get($decoded_value,'project_id',null),
-                        'token' => data_get($decoded_value,'token',null),
-                        'space_url' => data_get($decoded_value,'space_url',null),
-                        'from' =>  data_get($decoded_value,'from',null),
-                        'otp_template' =>  data_get($decoded_value,'otp_template',null),
                     ];
                 }
 

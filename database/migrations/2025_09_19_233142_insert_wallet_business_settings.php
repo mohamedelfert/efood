@@ -41,9 +41,6 @@ return new class extends Migration
             ['key' => 'logo', 'value' => '2024-07-11-668efdc7ca05e.png'],
             ['key' => 'mail_config', 'value' => '{"status":1,"name":"Delivery APP","host":"smtp.hostinger.com","driver":"smtp","port":"465","username":"efood@modernhome-ye.com","email_id":"efood@modernhome-ye.com","encryption":"tls","password":"E@food_root10500"}'],
             ['key' => 'delivery_charge', 'value' => '0'],
-            ['key' => 'ssl_commerz_payment', 'value' => '{"status":"0","store_id":null,"store_password":null}'],
-            ['key' => 'paypal', 'value' => '{"status":"0","paypal_client_id":null,"paypal_secret":null}'],
-            ['key' => 'stripe', 'value' => '{"status":"0","api_key":null,"published_key":null}'],
             ['key' => 'phone', 'value' => '+44 7388 024469'],
             [
                 'key'   => 'footer_text',
@@ -74,7 +71,6 @@ return new class extends Migration
             ['key' => 'senang_pay', 'value' => '{"status":"0","secret_key":null,"merchant_id":null}'],
             ['key' => 'privacy_policy', 'value' => '<p><strong>Privacy Policy – سياسة الخصوصية</strong></p><p> </p><p><br></p><p>سياسة افتراضية توضح كيفية التعامل مع البيانات، قابلة للتخصيص.</p><p>نحن نحترم خصوصيتكم وملتزمون بحماية بياناتكم الشخصية. سيتم توضيح كيف ومتى ولماذا نجمع المعلومات.</p><p><br></p><p> </p><p><br></p><p>Sample privacy policy outlining data use and protection, customizable as needed.</p><p>We respect your privacy and are committed to protecting your personal information. This section explains how, when, and why we collect and use your data.</p>'],
             ['key' => 'about_us', 'value' => '<p>هذه الصفحة توضح معلومات عامة عن مطعمكم ويمكن تخصيصها بالكامل حسب طلبكم.</p><p>نظام DineHub هو منصة ذكية لإدارة المطاعم وتوصيل الطلبات، تم تطويرها بواسطة شركة Ecore Techco LTD، لتقديم حلول مبتكرة تواكب تطلعات أصحاب المطاعم وتمنحهم تجربة إدارة فعالة وشاملة.</p><p>نحن نؤمن بأن التكنولوجيا هي مفتاح النمو، ونهدف إلى تمكينكم من تحويل أفكاركم إلى واقع ملموس من خلال أدوات رقمية متطورة وسهلة الاستخدام.</p><p>ملاحظة: جميع الأقسام والمنتجات المعروضة في هذا الموقع هي وهمية لأغراض العرض والتجربة فقط، ويمكن تعديلها أو تخصيصها بالكامل حسب طلبكم.</p><p><br></p><p>يمكنك شراء هذه النسخة من Ecore Techco LTD، وهي شركة محدودة مسجلة في إنجلترا، المملكة المتحدة تحت رقم الشركة 14140130.</p><p>البريد الإلكتروني: info@ecoretechco.com</p><p>الموقع الإلكتروني: www.ecoretechco.com</p><p><br></p>This is a placeholder page and can be fully customized to reflect your brand.</p><p>DineHub is an advanced platform for restaurant and delivery management, developed by Ecore Techco LTD. It’s designed to offer innovative solutions that meet the expectations of restaurant owners and provide a complete, seamless management experience.</p><p>We believe that technology is the key to growth, and our goal is to help you turn your ideas into reality through powerful, user-friendly digital tools.</p><p>Note: All sections and products displayed on this site are fictional and intended for demo and preview purposes only. They can be updated and customized according to your needs.</p><p><br></p><p>You can purchase this version from Ecore Techco LTD, a limited company registered in England, UK under company number 14140130.</p><p>Email: info@ecoretechco.com</p><p>Website: www.ecoretechco.com</p><p><br></p>'],
-            ['key' => 'paystack', 'value' => '{"status":"0","publicKey":null,"secretKey":null,"paymentUrl":"https://api.paystack.co","merchantEmail":null}'],
             ['key' => 'time_zone', 'value' => 'Africa/Cairo'],
             ['key' => 'maintenance_mode', 'value' => '0'],
             ['key' => 'currency_symbol_position', 'value' => 'right'],
@@ -85,10 +81,8 @@ return new class extends Migration
             ['key' => 'pagination_limit', 'value' => '10'],
             ['key' => 'map_api_key', 'value' => ''],
             ['key' => 'delivery_management', 'value' => '{"status":0,"min_shipping_charge":0,"shipping_per_km":0}'],
-            ['key' => 'bkash', 'value' => '{"status":"1","api_key":"","api_secret":"","username":"","password":""}'],
             ['key' => 'paymob', 'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'],
-            ['key' => 'flutterwave', 'value' => '{"status":"1","public_key":"","secret_key":"","hash":""}'],
-            ['key' => 'mercadopago', 'value' => '{"status":"1","public_key":"","access_token":""}'],
+            ['key' => 'qib', 'value' => '{"status":"1","public_key":"","access_token":""}'],
             ['key' => 'returned_message', 'value' => '{"status":0,"message":null}'],
             ['key' => 'failed_message', 'value' => '{"status":0,"message":null}'],
             ['key' => 'canceled_message', 'value' => '{"status":0,"message":null}'],
@@ -135,6 +129,8 @@ return new class extends Migration
             ['key' => 'google_map_status', 'value' => '1'],
             ['key' => 'admin_order_notification', 'value' => '1'],
             ['key' => 'admin_order_notification_type', 'value' => 'firebase'],
+            ['key' => 'wallet_topup_email_status_user', 'value' => '1'],
+            ['key' => 'wallet_topup_whatsapp_status_user', 'value' => '1'],
         ]);
     }
 
@@ -190,6 +186,8 @@ return new class extends Migration
             'order_processing_message',
             'out_for_delivery_message',
             'order_delivered_message',
+            'wallet_topup_email_status_user',
+            'wallet_topup_whatsapp_status_user',
         ])->delete();
     }
 };

@@ -327,7 +327,7 @@ class BusinessSettingsController extends Controller
         }
 
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paystack', 'paymob', 'flutterwave', 'bkash', 'mercadopago'])
+            ->whereIn('key_name', ['paymob', 'qib'])
             ->get();
 
         return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'data_values'));
@@ -380,7 +380,7 @@ class BusinessSettingsController extends Controller
     {
 
         $validation = [
-            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paystack,paymob,flutterwave,bkash,mercadopago',
+            'gateway' => 'required|in:qib,paymob',
             'mode' => 'required|in:live,test'
         ];
 
@@ -388,38 +388,7 @@ class BusinessSettingsController extends Controller
 
         $additionalData = [];
 
-        if ($request['gateway'] == 'ssl_commerz') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'store_id' => 'required_if:status,1',
-                'store_password' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'paypal') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'client_id' => 'required_if:status,1',
-                'client_secret' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'stripe') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'api_key' => 'required_if:status,1',
-                'published_key' => 'required_if:status,1',
-            ];
-        } elseif ($request['gateway'] == 'razor_pay') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'api_key' => 'required_if:status,1',
-                'api_secret' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'senang_pay') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'callback_url' => 'required_if:status,1',
-                'secret_key' => 'required_if:status,1',
-                'merchant_id' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'paystack') {
+        if ($request['gateway'] == 'qib') {
             $additionalData = [
                 'status' => 'required|in:1,0',
                 'public_key' => 'required_if:status,1',
@@ -434,27 +403,6 @@ class BusinessSettingsController extends Controller
                 'secret_key' => 'required',
                 'integration_id' => 'required',
                 'hmac' => 'required'
-            ];
-        } elseif ($request['gateway'] == 'mercadopago') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'access_token' => 'required_if:status,1',
-                'public_key' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'flutterwave') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'secret_key' => 'required_if:status,1',
-                'public_key' => 'required_if:status,1',
-                'hash' => 'required_if:status,1'
-            ];
-        } elseif ($request['gateway'] == 'bkash') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'app_key' => 'required_if:status,1',
-                'app_secret' => 'required_if:status,1',
-                'username' => 'required_if:status,1',
-                'password' => 'required_if:status,1',
             ];
         }
 

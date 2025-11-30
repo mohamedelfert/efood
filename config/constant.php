@@ -52,15 +52,8 @@ const ADD_WALLET_MESSAGE = 'add_wallet_message';
 const ADD_WALLET_BONUS_MESSAGE = 'add_wallet_bonus_message';
 
 const PAYMENT_GATEWAY_IMAGE_ARRAY = [
-    'ssl_commerz_payment' => 'ssl.png',
-    'razor_pay' => 'razor_pay.png',
-    'paypal' => 'paypal.png',
-    'stripe' => 'stripe.png',
-    'paystack' => 'paystack.png',
-    'bkash' => 'bkash.png',
+    'qib' => 'qib.png',
     'paymob' => 'paymob.png',
-    'flutterwave' => 'flutterwave.png',
-    'mercadopago' => 'mercadopago.png',
 ];
 
 const TELEPHONE_CODES = [

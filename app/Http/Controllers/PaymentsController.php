@@ -355,10 +355,7 @@ class PaymentsController extends Controller
    public function getPaymentMethods(): JsonResponse
     {
         $rows = Setting::where('settings_type', 'payment_config')
-            ->whereIn('key_name', [
-                'ssl_commerz','paypal','stripe','razor_pay','senang_pay',
-                'paystack','paymob','flutterwave','bkash','mercadopago',
-            ])
+            ->whereIn('key_name', ['qib','paymob'])
             ->get();
 
         $methods = $rows->map(function ($setting) {
