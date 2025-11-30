@@ -326,9 +326,13 @@ class CustomerWalletController extends Controller
             'gateway' => 'required|in:paymob,qib,loyalty_points',
             'currency' => 'sometimes|string|in:SAR,USD,EUR,EGP,YER',
             'callback_url' => 'sometimes|url',
+            
+            // QIB specific fields
             'payment_CustomerNo' => 'required_if:gateway,qib|string',
             'payment_DestNation' => 'required_if:gateway,qib|integer',
             'payment_Code' => 'required_if:gateway,qib|integer',
+            
+            // Loyalty points field
             'points' => 'required_if:gateway,loyalty_points|integer|min:1',
         ]);
 
@@ -370,7 +374,7 @@ class CustomerWalletController extends Controller
             }
 
             $transactionId = 'PAY_' . time() . '_' . $user->id;
-            $callbackUrl = env('APP_URL') . config('payment.callback_url')  ?? null;
+            $callbackUrl = $gateway === 'qib' ? null : (env('APP_URL') . config('payment.callback_url') ?? null);
 
             $data = [
                 'gateway' => $gateway,
@@ -386,6 +390,7 @@ class CustomerWalletController extends Controller
                 'callback_url' => $callbackUrl,
             ];
 
+            // Add QIB-specific fields
             if ($gateway === 'qib') {
                 $data['payment_CustomerNo'] = $request->payment_CustomerNo;
                 $data['payment_DestNation'] = $request->payment_DestNation;
@@ -396,6 +401,29 @@ class CustomerWalletController extends Controller
 
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
+                
+                // Prepare metadata based on gateway
+                $metadata = [
+                    'gateway' => $gateway,
+                    'currency' => $currency,
+                ];
+
+                if ($gateway === 'qib') {
+                    // Store QIB-specific data for confirmation step
+                    $metadata = array_merge($metadata, [
+                        'payment_CustomerNo' => $request->payment_CustomerNo,
+                        'payment_DestNation' => $request->payment_DestNation,
+                        'payment_Code' => $request->payment_Code,
+                    ]);
+                } else {
+                    // Paymob metadata
+                    $metadata = array_merge($metadata, [
+                        'order_id' => $response['order_id'] ?? null,
+                        'payment_key' => $response['payment_key'] ?? null,
+                        'paymob_transaction_id' => $response['id'] ?? null,
+                    ]);
+                }
+
                 $this->walletTransaction->create([
                     'user_id' => $user->id,
                     'transaction_id' => $transactionId,
@@ -407,36 +435,39 @@ class CustomerWalletController extends Controller
                     'gateway' => $gateway,
                     'balance' => $currentBalance,
                     'admin_bonus' => $request->admin_bonus ? json_encode($request->admin_bonus) : null,
-                    'metadata' => [
-                        'order_id' => $response['order_id'] ?? null,
-                        'payment_key' => $response['payment_key'] ?? null,
-                        'paymob_transaction_id' => $response['id'] ?? null,
-                        'gateway' => $gateway,
-                        'currency' => $currency,
-                    ],
+                    'metadata' => json_encode($metadata),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
                 Log::info('WalletTransaction Created', [
                     'transaction_id' => $transactionId,
-                    'order_id' => $response['order_id'] ?? null,
                     'user_id' => $user->id,
                     'amount' => $amount,
                     'gateway' => $gateway
                 ]);
 
-                return response()->json([
+                $responseData = [
                     'success' => true,
-                    'message' => translate('Payment initiated successfully'),
+                    'message' => translate($gateway === 'qib' ? 'OTP sent to your WhatsApp' : 'Payment initiated successfully'),
                     'transaction_id' => $transactionId,
                     'gateway' => $gateway,
                     'amount' => $amount,
                     'currency' => $currency,
-                    'payment_url' => $response['iframe_url'] ?? null,
-                    'requires_otp' => ($gateway === 'qib'),
-                    'redirect_required' => true,
-                ], 200);
+                ];
+
+                // Gateway-specific response fields
+                if ($gateway === 'qib') {
+                    $responseData['requires_otp'] = true;
+                    $responseData['otp_sent'] = true;
+                    $responseData['message_en'] = $response['message_en'] ?? 'OTP sent successfully';
+                } else {
+                    $responseData['payment_url'] = $response['iframe_url'] ?? null;
+                    $responseData['requires_otp'] = false;
+                    $responseData['redirect_required'] = true;
+                }
+
+                return response()->json($responseData, 200);
             }
 
             return response()->json([

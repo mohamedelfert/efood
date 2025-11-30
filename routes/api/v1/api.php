@@ -200,6 +200,19 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
 
         Route::get('loyalty-point-transactions', [LoyaltyPointController::class, 'pointTransactions']);
 
+        Route::group(['prefix' => 'payment'], function () {
+            Route::group(['prefix' => 'qib'], function () {
+                // Confirm wallet top-up with OTP
+                Route::post('confirm-topup', 'QIBPaymentController@confirmTopUp');
+                
+                // Confirm order payment with OTP  
+                Route::post('confirm-order', 'QIBPaymentController@confirmOrder');
+                
+                // Resend OTP for any pending transaction
+                Route::post('resend-otp', 'QIBPaymentController@resendOTP');
+            });
+        });
+
         // Wallet Management Endpoints
         Route::group(['prefix' => 'wallet'], function () {
             Route::post('add-fund', [CustomerWalletController::class, 'addFund']);
