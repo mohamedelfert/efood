@@ -307,6 +307,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     Route::group(['prefix' => 'branch'], function () {
         Route::get('list', [BranchController::class, 'list']);
         Route::get('products', [BranchController::class, 'products']);
+        Route::get('categories', [BranchController::class, 'categories']);
     });
 
     Route::group(['prefix' => 'payment'], function () {

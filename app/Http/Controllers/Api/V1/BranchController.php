@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\CentralLogics\Helpers;
-use App\Http\Controllers\Controller;
 use App\Model\Branch;
 use App\Model\Product;
-use Illuminate\Http\JsonResponse;
+use App\Model\Category;
 use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class BranchController extends Controller
@@ -86,5 +87,43 @@ class BranchController extends Controller
 
         $products['products'] = Helpers::product_data_formatting($products['products'], true);
         return response()->json($products, 200);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function categories(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'branch_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $branchId = $request['branch_id'];
+        $limit = is_null($request['limit']) ? 10 : $request['limit'];
+        $offset = is_null($request['offset']) ? 1 : $request['offset'];
+
+        $categories = Category::active()
+            ->where(function($query) use ($branchId) {
+                $query->whereJsonContains('branch_ids', (int)$branchId)
+                    ->orWhereNull('branch_ids')
+                    ->orWhere('branch_ids', '[]');
+            })
+            ->orderBy('priority', 'desc')
+            ->orderBy('name', 'asc')
+            ->paginate($limit, ['*'], 'page', $offset);
+
+        $formattedCategories = [
+            'total_size' => $categories->total(),
+            'limit' => $limit,
+            'offset' => $offset,
+            'categories' => $categories->items(),
+        ];
+
+        return response()->json($formattedCategories, 200);
     }
 }

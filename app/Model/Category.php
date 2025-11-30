@@ -23,6 +23,11 @@ class Category extends Model
         return $this->morphMany('App\Model\Translation', 'translationable');
     }
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', '=', 1);
