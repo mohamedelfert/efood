@@ -251,7 +251,7 @@ class ConfigController extends Controller
 
         $methods = DB::table('addon_settings')
             ->whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['ssl_commerz','paypal','stripe','razor_pay','senang_pay','paystack','paymob','flutterwave','bkash','mercadopago'])
+            ->whereIn('key_name', ['paymob','qib'])
             ->get();
 
         $env = env('APP_ENV') == 'live' ? 'live' : 'test';
