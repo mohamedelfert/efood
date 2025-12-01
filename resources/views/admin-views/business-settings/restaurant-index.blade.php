@@ -24,20 +24,34 @@
             </div>
             <div class="card-body">
                 <?php
-                    $config=\App\CentralLogics\Helpers::get_business_settings('maintenance_mode');
-                    $selectedMaintenanceSystem = \App\CentralLogics\Helpers::get_business_settings('maintenance_system_setup') ?? [];
-                    $selectedMaintenanceDuration = \App\CentralLogics\Helpers::get_business_settings('maintenance_duration_setup');
-                    $startDate = new DateTime($selectedMaintenanceDuration['start_date']);
-                    $endDate = new DateTime($selectedMaintenanceDuration['end_date']);
+                    $config = $config ?? 0;
+                    $selectedMaintenanceDuration = $selectedMaintenanceDuration ?? ['maintenance_duration' => 'until_change', 'start_date' => null, 'end_date' => null];
+                    $selectedMaintenanceSystem = $selectedMaintenanceSystem ?? [];
+                    $startDate = $startDate ?? now();
+                    $endDate = $endDate ?? now();
+                    
+                    // Safely get the maintenance message
+                    $selectedMaintenanceMessage = \App\CentralLogics\Helpers::get_business_settings('maintenance_message_setup');
+                    $selectedMaintenanceMessage = is_string($selectedMaintenanceMessage) ? json_decode($selectedMaintenanceMessage, true) : $selectedMaintenanceMessage;
+                    $selectedMaintenanceMessage = $selectedMaintenanceMessage ?? [
+                        'business_number' => 0,
+                        'business_email' => 0,
+                        'maintenance_message' => '',
+                        'message_body' => ''
+                    ];
                 ?>
                 <div class="row">
                     <div class="col-8">
                         @if($config)
                             <div class="d-flex flex-wrap gap-3 align-items-center">
                                 <p class="mb-0">
-                                    {{ translate('Your maintenance mode is activated ') }}
-                                    @if($selectedMaintenanceDuration['maintenance_duration'] != 'until_change')
-                                        {{ translate('from ') }}<strong>{{ $startDate->format('m/d/Y, h:i A') }}</strong> to <strong>{{ $endDate->format('m/d/Y, h:i A') }}</strong>.
+                                    @if($config)
+                                        {{ translate('Your maintenance mode is activated ') }} 
+                                        @if(isset($selectedMaintenanceDuration['maintenance_duration']) && $selectedMaintenanceDuration['maintenance_duration'] != 'until_change')
+                                            {{ translate('from ') }}{{ $startDate->format('m/d/Y, h:i A') }} to {{ $endDate->format('m/d/Y, h:i A') }}.
+                                        @endif
+                                    @else
+                                        <p>*{{ translate('By turning on maintenance mode Control your all system & function') }}</p>
                                     @endif
                                 </p>
                                 <a class="btn btn-outline-primary btn-sm edit square-btn maintenance-mode-show" href="#"><i class="tio-edit"></i></a>
@@ -929,10 +943,34 @@
                 </div>
                 <form method="post" action="{{route('admin.business-settings.restaurant.maintenance-mode-setup')}}">
                     <?php
-                    $selectedMaintenanceSystem = \App\CentralLogics\Helpers::get_business_settings('maintenance_system_setup');
-                    $selectedMaintenanceDuration = \App\CentralLogics\Helpers::get_business_settings('maintenance_duration_setup');
-                    $selectedMaintenanceMessage = \App\CentralLogics\Helpers::get_business_settings('maintenance_message_setup');
-                    $maintenanceMode = \App\CentralLogics\Helpers::get_business_settings('maintenance_mode') ?? 0;
+                        $selectedMaintenanceSystem = \App\CentralLogics\Helpers::get_business_settings('maintenance_system_setup');
+                        $selectedMaintenanceSystem = is_string($selectedMaintenanceSystem) 
+                            ? json_decode($selectedMaintenanceSystem, true) 
+                            : $selectedMaintenanceSystem;
+                        $selectedMaintenanceSystem = $selectedMaintenanceSystem ?? [];
+
+                        $selectedMaintenanceDuration = \App\CentralLogics\Helpers::get_business_settings('maintenance_duration_setup');
+                        $selectedMaintenanceDuration = is_string($selectedMaintenanceDuration) 
+                            ? json_decode($selectedMaintenanceDuration, true) 
+                            : $selectedMaintenanceDuration;
+                        $selectedMaintenanceDuration = array_merge([
+                            'maintenance_duration' => 'until_change',
+                            'start_date' => null,
+                            'end_date' => null
+                        ], $selectedMaintenanceDuration ?? []);
+
+                        $selectedMaintenanceMessage = \App\CentralLogics\Helpers::get_business_settings('maintenance_message_setup');
+                        $selectedMaintenanceMessage = is_string($selectedMaintenanceMessage) 
+                            ? json_decode($selectedMaintenanceMessage, true) 
+                            : $selectedMaintenanceMessage;
+                        $selectedMaintenanceMessage = array_merge([
+                            'business_number' => 0,
+                            'business_email' => 0,
+                            'maintenance_message' => '',
+                            'message_body' => ''
+                        ], $selectedMaintenanceMessage ?? []);
+
+                        $maintenanceMode = \App\CentralLogics\Helpers::get_business_settings('maintenance_mode') ?? 0;
                     ?>
                     <div class="modal-body">
                         @csrf
@@ -1072,14 +1110,14 @@
                                         <div class="d-flex flex-wrap gap-5 mb-3">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="business_number"
-                                                       {{ isset($selectedMaintenanceMessage) && $selectedMaintenanceMessage['business_number'] == 1 ? 'checked' : '' }}
-                                                       id="businessNumber">
+                                                    {{ isset($selectedMaintenanceMessage['business_number']) && $selectedMaintenanceMessage['business_number'] == 1 ? 'checked' : '' }}
+                                                    id="businessNumber">
                                                 <label class="form-check-label" for="businessNumber">{{ translate('Business Number') }}</label>
                                             </div>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="business_email"
-                                                       {{ isset($selectedMaintenanceMessage) && $selectedMaintenanceMessage['business_email'] == 1 ? 'checked' : '' }}
-                                                       id="businessEmail">
+                                                    {{ isset($selectedMaintenanceMessage['business_email']) && $selectedMaintenanceMessage['business_email'] == 1 ? 'checked' : '' }}
+                                                    id="businessEmail">
                                                 <label class="form-check-label" for="businessEmail">{{ translate('Business Email') }}</label>
                                             </div>
                                         </div>
@@ -1094,7 +1132,9 @@
                                             </i>
                                         </label>
                                         <input type="text" class="form-control" name="maintenance_message" placeholder="We're Working On Something Special!"
-                                               maxlength="100" value="{{ $selectedMaintenanceMessage['maintenance_message'] ?? '' }}">
+                                            maxlength="100" value="{{ $selectedMaintenanceMessage['maintenance_message'] ?? '' }}">
+
+                                        <textarea class="form-control" name="message_body" maxlength="255" rows="3" placeholder="{{ translate('Our system is currently undergoing maintenance...') }}">{{ $selectedMaintenanceMessage['message_body'] ?? '' }}</textarea>
                                     </div>
                                     <div class="form-group">
                                         <label>{{ translate('Message Body') }}

@@ -24,7 +24,7 @@ use App\Models\Setting;
 use Illuminate\Support\Facades\Validator;
 use App\Model\Translation;
 use Illuminate\Validation\ValidationException;
-
+use Carbon\Carbon;
 
 class BusinessSettingsController extends Controller
 {
@@ -49,8 +49,59 @@ class BusinessSettingsController extends Controller
                 'value' => 1,
             ]);
         }
-
-        return view('admin-views.business-settings.restaurant-index');
+        
+        // Get maintenance mode settings with proper defaults
+        $config = Helpers::get_business_settings('maintenance_mode') ?? 0;
+        
+        // Handle maintenance duration - decode JSON if exists, otherwise use empty array
+        $maintenanceDurationSetting = Helpers::get_business_settings('maintenance_duration_setup');
+        $selectedMaintenanceDuration = is_string($maintenanceDurationSetting) 
+            ? json_decode($maintenanceDurationSetting, true) 
+            : $maintenanceDurationSetting;
+        
+        // Ensure it's an array with default values
+        $selectedMaintenanceDuration = $selectedMaintenanceDuration ?? [];
+        $selectedMaintenanceDuration = array_merge([
+            'maintenance_duration' => 'until_change',
+            'start_date' => null,
+            'end_date' => null,
+        ], $selectedMaintenanceDuration);
+        
+        // Handle maintenance system
+        $maintenanceSystemSetting = Helpers::get_business_settings('maintenance_system_setup');
+        $selectedMaintenanceSystem = is_string($maintenanceSystemSetting)
+            ? json_decode($maintenanceSystemSetting, true)
+            : $maintenanceSystemSetting;
+        $selectedMaintenanceSystem = $selectedMaintenanceSystem ?? [];
+        
+        // Handle dates safely
+        $startDate = null;
+        $endDate = null;
+        
+        try {
+            if (!empty($selectedMaintenanceDuration['start_date'])) {
+                $startDate = Carbon::parse($selectedMaintenanceDuration['start_date']);
+            }
+            if (!empty($selectedMaintenanceDuration['end_date'])) {
+                $endDate = Carbon::parse($selectedMaintenanceDuration['end_date']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error parsing maintenance dates: ' . $e->getMessage());
+            $startDate = now();
+            $endDate = now();
+        }
+        
+        // Set default dates if still null
+        $startDate = $startDate ?? now();
+        $endDate = $endDate ?? now();
+        
+        return view('admin-views.business-settings.restaurant-index', compact(
+            'config',
+            'selectedMaintenanceDuration',
+            'selectedMaintenanceSystem',
+            'startDate',
+            'endDate'
+        ));
     }
 
     /**
