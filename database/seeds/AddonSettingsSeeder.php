@@ -37,8 +37,8 @@ class AddonSettingsSeeder extends Seeder
             [
                 'id' => 'c41c0dcd-d119-11ed-9f67-0c7a158e4469',
                 'key_name' => 'qib',
-                'live_values' => '{"gateway":"qib","mode":"test","status":"0","merchantId":"data","merchantPassword":"data"}',
-                'test_values' => '{"gateway":"qib","mode":"test","status":"0","merchantId":"data","merchantPassword":"data"}',
+                'live_values' => '{"gateway":"qib","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
+                'test_values' => '{"gateway":"qib","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
                 'settings_type' => 'payment_config',
                 'mode' => 'test',
                 'is_active' => 0,
