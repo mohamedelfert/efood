@@ -28,12 +28,7 @@ return new class extends Migration
             ['key' => 'wallet_pin_max_attempts', 'value' => '3'],
             ['key' => 'wallet_enabled', 'value' => '1'],
             ['key' => 'wallet_two_factor_enabled', 'value' => '0'],
-            ['key' => 'paytabs_enabled', 'value' => '1'],
-            ['key' => 'paypal_enabled', 'value' => '1'],
             ['key' => 'qib_bank_enabled', 'value' => '1'],
-            ['key' => 'stripe_enabled', 'value' => '0'],
-            ['key' => 'flutterwave_enabled', 'value' => '0'],
-            ['key' => 'paystack_enabled', 'value' => '0'],
             ['key' => 'restaurant_open_time', 'value' => null],
             ['key' => 'restaurant_close_time', 'value' => null],
             ['key' => 'restaurant_name', 'value' => 'dinehub'],
@@ -82,7 +77,7 @@ return new class extends Migration
             ['key' => 'map_api_key', 'value' => ''],
             ['key' => 'delivery_management', 'value' => '{"status":0,"min_shipping_charge":0,"shipping_per_km":0}'],
             ['key' => 'paymob', 'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'],
-            ['key' => 'qib', 'value' => '{"status":"1","public_key":"","access_token":""}'],
+            ['key' => 'qib', 'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'],
             ['key' => 'returned_message', 'value' => '{"status":0,"message":null}'],
             ['key' => 'failed_message', 'value' => '{"status":0,"message":null}'],
             ['key' => 'canceled_message', 'value' => '{"status":0,"message":null}'],
@@ -131,6 +126,38 @@ return new class extends Migration
             ['key' => 'admin_order_notification_type', 'value' => 'firebase'],
             ['key' => 'wallet_topup_email_status_user', 'value' => '1'],
             ['key' => 'wallet_topup_whatsapp_status_user', 'value' => '1'],
+            ['key' => 'maintenance_duration_setup', 'value' => json_encode([
+                'maintenance_duration' => 'until_change',
+                'start_date' => null,
+                'end_date' => null
+            ])],
+            ['key' => 'maintenance_system_setup', 'value' => json_encode([])],
+            ['key' => 'maintenance_message_setup', 'value' => json_encode([
+                'business_number' => 0,
+                'business_email' => 0,
+                'maintenance_message' => '',
+                'message_body' => ''
+            ])],
+            ['key' => 'customer_notify_message', 'value' => '{"status":0,"message":null}'],
+            ['key' => 'customer_notify_message_for_time_change', 'value' => '{"status":0,"message":null}'],
+            ['key' => 'cutlery_status', 'value' => '0'],
+            ['key' => 'add_fund_to_wallet', 'value' => '0'],
+            ['key' => 'fcm_credentials', 'value' => json_encode([
+                'apiKey' => '',
+                'authDomain' => '',
+                'projectId' => '',
+                'storageBucket' => '',
+                'messagingSenderId' => '',
+                'appId' => '',
+                'measurementId' => ''
+            ])],
+            ['key' => 'map_api_server_key', 'value' => ''],
+            ['key' => 'map_api_client_key', 'value' => ''],
+            ['key' => 'search_placeholder', 'value' => json_encode([])],
+            ['key' => 'meta_pixel', 'value' => json_encode([
+                'status' => 0,
+                'meta_app_id' => ''
+            ])],
         ]);
     }
 
