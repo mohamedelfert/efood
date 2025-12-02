@@ -2,201 +2,78 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رمز تأكيد البريد الإلكتروني</title>
     <style>
-        body {
-            width: 100%;
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #4f4b51;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-        }
-
-        .header {
-            padding: 10px 0;
-            text-align: center;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 40px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        .content {
-            padding: 20px;
-        }
-        .logo {
-            text-align: center;
-        }
-        .code-box {
-            background: #037ac5;
-            padding: 20px;
-            border-radius: 8px;
-            font-size: 28px;
-            letter-spacing: 6px;
-            text-align: center;
-            margin: 30px 0;
-            font-family: monospace;
-            color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #4f4b51;
-            font-size: 28px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        p {
-            color: #4f4b51;
-            font-size: 16px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        a {
-            color: #037ac5;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        a:hover {
-            color: #1750b2;
-        }
-
-        hr {
-            border: 0;
-            height: 1px;
-            background: rgba(120, 119, 121, 0.27);
-            margin: 20px 0;
-        }
-        .footer-wrapper {
-            background: #4f4b51;
-            padding: 20px 0;
-            text-align: center;
-            border-radius: 8px;
-        }
-
-        .footer {
-            max-width: 600px;
-            margin: 0 auto;
-            color: #ffffff;
-        }
-        .social-links img {
-            margin: 0 10px;
-            transition: opacity 0.3s ease;
-            width: 34px;
-            height: 34px;
-        }
-
-        .social-links img:hover {
-            opacity: 0.8;
-        }
-
-        .legal-links {
-            margin-top: 10px;
-        }
-
-        .legal-links a {
-            color: #ffffff;
-            font-size: 13px;
-            margin: 0 10px;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .legal-links a:hover {
-            color: #037ac5;
-        }
-
-        .expiry-notice {
-            color: #e74c3c;
-            font-weight: bold;
-            background: #fce4e3;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        @media screen and (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-
-            .content {
-                padding: 10px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .code-box {
-                font-size: 24px;
-                padding: 15px;
-                letter-spacing: 4px;
-            }
-        }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; direction: rtl; text-align: right; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 30px 20px; }
+        .info-box { background: #f8f9fa; border-right: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-weight: bold; color: #495057; }
+        .info-value { color: #212529; }
+        .warning-box { background: #fff3cd; border-right: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .otp-notice { background: #d1ecf1; border-right: 4px solid #0c5460; padding: 15px; margin: 20px 0; border-radius: 4px; text-align: center; }
+        .otp-notice h3 { margin: 0 0 10px 0; color: #0c5460; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: #fff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header Section -->
-        <div class="header" align="center">
-            <a href="#" target="_blank">
-                <img src="{{ asset('logo/logo.png') }}" alt="8X Business" class="logo">
-            </a>
+        <div class="header">
+            <h1>🔔 إشعار رمز OTP</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">للمطعم</p>
         </div>
-
-        <hr>
-
-        <!-- Main Content -->
+        
         <div class="content">
-            <h1 style="text-align: center; margin-bottom: 25px; color: #1d1c1d;">
-            رمز تأكيد البريد الالكتروني
-            </h1>
-
-            <p style="text-align: center; color: #616061; margin-bottom: 30px;">
-            رمز التأكيد الخاص بك أدناه - أدخله في نافذة المتصفح المفتوحة 
-            وستساعدك في اكمال عمليه تأكيد البريد الالكتروني .
-            </p>
-
-            <div class="code-box">
-                {{ $otp }}
+            <p>عزيزي المستخدم،</p>
+            
+            <p>تم إرسال رمز OTP (كلمة مرور لمرة واحدة) إلى بريدك الإلكتروني لتأكيد البريد الإلكتروني.</p>
+            
+            <div class="otp-notice">
+                <h3>📱 تحقق من بريدك الإلكتروني</h3>
+                <p style="margin: 0;">يرجى التحقق من رسائل بريدك الإلكتروني للحصول على رمز OTP.</p>
+                <p style="margin: 5px 0 0 0; font-size: 14px; color: #6c757d;">ينتهي صلاحية OTP في 10 دقائق</p>
             </div>
-
-            <p class="expiry-notice">⚠️ تنتهي صلاحية هذا الرابط بعد 10 دقائق</p>
-
-            <p style="text-align: center; color: #616061; font-size: 14px;">
-            إذا لم تكن قد طلبت هذا البريد الإلكتروني، فلا داعي للقلق - لا داعي للقلق 
-            يمكنك تجاهلها بأمان.
-            </p>
+            
+            <div class="info-box">
+                <h3 style="margin-top: 0; color: #667eea;">🔑 تفاصيل الرمز</h3>
+                <div class="info-row">
+                    <span class="info-label">رمز OTP:</span>
+                    <span class="info-value"><strong>{{ $otp }}</strong></span>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ إشعار أمان:</strong>
+                <ul style="margin: 10px 0 0 0; padding-right: 20px;">
+                    <li>لا تشارك رمز OTP مع أي شخص</li>
+                    <li>لن يطلب موظفونا رمز OTP الخاص بك</li>
+                    <li>أكمل العملية في غضون 10 دقائق</li>
+                    <li>إذا لم تبدأ هذه العملية، اتصل بالدعم فورًا</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px;">شكرًا لاستخدامك للمطعم!</p>
         </div>
-
-        <hr>
-
-        <!-- Footer -->
+        
         <div class="footer">
-            <div class="social-links" style="text-align: center; margin-bottom: 10px;">
-                <a href="#" target="_blank">فيسبوك</a> |
-                <a href="#" target="_blank">انستغرام</a> |
-                <a href="#" target="_blank" title="Follow us on YouTube">يوتيوب</a>
+            <p>هذه رسالة آلية. يرجى عدم الرد على هذا البريد الإلكتروني.</p>
+            <p>&copy; {{ date('Y') }} للمطعم. جميع الحقوق محفوظة.</p>
+            <div class="social-links" style="margin-top: 10px;">
+                <a href="#" style="color: #6c757d; margin: 0 10px;">فيسبوك</a> |
+                <a href="#" style="color: #6c757d; margin: 0 10px;">انستغرام</a> |
+                <a href="#" style="color: #6c757d; margin: 0 10px;">يوتيوب</a>
             </div>
-
-            <div class="legal-links" style="text-align: center; margin-bottom: 10px;">
-                <a href="https://restaurent.biolab-ye.net/privacy">سياسه الخصوصيه</a> |
-                <a href="https://restaurent.biolab-ye.net/terms">شروط الخدمه</a> |
-                <a href="https://restaurent.biolab-ye.net/contact">اتصل بنا</a>
+            <div class="legal-links" style="margin-top: 10px;">
+                <a href="https://modernhome-ye.com/privacy" style="color: #6c757d; margin: 0 10px;">سياسة الخصوصية</a> |
+                <a href="https://modernhome-ye.com/terms" style="color: #6c757d; margin: 0 10px;">شروط الخدمة</a> |
+                <a href="https://modernhome-ye.com/contact" style="color: #6c757d; margin: 0 10px;">اتصل بنا</a>
             </div>
-
-            <p style="text-align: center; color: #888; margin-top: 20px;">
-                للمطعم © {{date("Y")}} جميع الحقوق محفوظة © 
-            </p>
         </div>
     </div>
 </body>
