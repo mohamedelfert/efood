@@ -447,6 +447,34 @@ class CustomerWalletController extends Controller
                     'gateway' => $gateway
                 ]);
 
+                // ========================================
+                // 🆕 SEND OTP NOTIFICATIONS (EMAIL + WHATSAPP)
+                // ========================================
+                if ($gateway === 'qib') {
+                    try {
+                        $notificationService = app(\App\Services\QIBNotificationService::class);
+                        $notificationService->sendOTPNotification($user, [
+                            'transaction_id' => $transactionId,
+                            'amount' => $amount,
+                            'currency' => $currency,
+                            'gateway' => 'QIB Bank',
+                        ]);
+                        
+                        Log::info('QIB OTP notifications initiated', [
+                            'transaction_id' => $transactionId,
+                            'user_id' => $user->id
+                        ]);
+                    } catch (\Exception $e) {
+                        // Don't fail the payment if notifications fail
+                        Log::warning('QIB OTP notification failed', [
+                            'error' => $e->getMessage(),
+                            'transaction_id' => $transactionId,
+                            'user_id' => $user->id
+                        ]);
+                    }
+                }
+                // ========================================
+
                 $responseData = [
                     'success' => true,
                     'message' => translate($gateway === 'qib' ? 'OTP sent to your WhatsApp' : 'Payment initiated successfully'),

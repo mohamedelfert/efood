@@ -158,6 +158,9 @@ return new class extends Migration
                 'status' => 0,
                 'meta_app_id' => ''
             ])],
+            ['key' => 'place_order_mail_status_user', 'value' => '1'],
+            ['key' => 'forget_password_mail_status_user', 'value' => '1'],
+            ['key' => 'registration_otp_mail_status_user', 'value' => '1'],
         ]);
     }
 

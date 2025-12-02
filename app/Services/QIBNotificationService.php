@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Model\User;
+use App\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -72,8 +72,10 @@ class QIBNotificationService
                 return;
             }
 
+            $userName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+
             Mail::send('emails.qib-otp-notification', [
-                'user_name' => $user->f_name . ' ' . $user->l_name,
+                'user_name' => $userName,
                 'transaction_id' => $data['transaction_id'],
                 'amount' => number_format($data['amount'], 2),
                 'currency' => $data['currency'],
@@ -95,6 +97,7 @@ class QIBNotificationService
             Log::error('QIB OTP email failed', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -120,10 +123,17 @@ class QIBNotificationService
                 return;
             }
 
-            // Format phone number (ensure proper format for your WhatsApp service)
-            $userPhone = ltrim($user->phone, '+');
-            if (!str_starts_with($userPhone, '967') && !str_starts_with($userPhone, '20')) {
-                $userPhone = '967' . ltrim($userPhone, '0'); // Default to Yemen if no country code
+            // Format phone number - adjust based on your country
+            $userPhone = $user->phone;
+            
+            // Remove any + prefix
+            $userPhone = ltrim($userPhone, '+');
+            
+            // Add country code if not present
+            // For Yemen: 967, For Egypt: 20, For Saudi: 966
+            if (!preg_match('/^(967|20|966)/', $userPhone)) {
+                // Remove leading zero and add Yemen country code by default
+                $userPhone = '967' . ltrim($userPhone, '0');
             }
 
             // Prepare message
@@ -150,6 +160,7 @@ class QIBNotificationService
             Log::error('QIB OTP WhatsApp exception', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -159,7 +170,8 @@ class QIBNotificationService
      */
     private function buildWhatsAppMessage(User $user, array $data): string
     {
-        $customerName = $user->f_name . ' ' . $user->l_name;
+        // Use 'name' field from users table
+        $customerName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
         $amount = number_format($data['amount'], 2);
         $currency = $data['currency'];
         $transactionId = $data['transaction_id'];
@@ -228,8 +240,10 @@ class QIBNotificationService
                 return;
             }
 
+            $userName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+
             Mail::send('emails.qib-payment-success', [
-                'user_name' => $user->f_name . ' ' . $user->l_name,
+                'user_name' => $userName,
                 'transaction_id' => $data['transaction_id'],
                 'amount' => number_format($data['amount'], 2),
                 'currency' => $data['currency'],
@@ -264,12 +278,14 @@ class QIBNotificationService
                 return;
             }
 
-            $userPhone = ltrim($user->phone, '+');
-            if (!str_starts_with($userPhone, '967') && !str_starts_with($userPhone, '20')) {
+            $userPhone = $user->phone;
+            $userPhone = ltrim($userPhone, '+');
+            
+            if (!preg_match('/^(967|20|966)/', $userPhone)) {
                 $userPhone = '967' . ltrim($userPhone, '0');
             }
 
-            $customerName = $user->f_name . ' ' . $user->l_name;
+            $customerName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
             $amount = number_format($data['amount'], 2);
             $currency = $data['currency'];
             $newBalance = number_format($data['new_balance'], 2);
