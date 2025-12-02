@@ -442,9 +442,11 @@ class BusinessSettingsController extends Controller
         if ($request['gateway'] == 'qib') {
             $additionalData = [
                 'status' => 'required|in:1,0',
-                'public_key' => 'required_if:status,1',
-                'secret_key' => 'required_if:status,1',
-                'merchant_email' => 'required_if:status,1'
+                'supported_country' => 'required',
+                'public_key' => 'required',
+                'secret_key' => 'required',
+                'integration_id' => 'required',
+                'hmac' => 'required'
             ];
         } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [

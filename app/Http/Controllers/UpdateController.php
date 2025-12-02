@@ -723,10 +723,11 @@ class UpdateController extends Controller
                if ($gateway == 'qib') {
                     $additional_data = [
                         'status' => $decoded_value['status'],
-                        'callback_url' => $decoded_value['paymentUrl'],
-                        'public_key' => $decoded_value['publicKey'],
-                        'secret_key' => $decoded_value['secretKey'],
-                        'merchant_email' => $decoded_value['merchantEmail'],
+                        'callback_url' => null,
+                        'api_key' => $decoded_value['api_key'],
+                        'iframe_id' => $decoded_value['iframe_id'],
+                        'integration_id' => $decoded_value['integration_id'],
+                        'hmac' => $decoded_value['hmac'],
                     ];
                 } elseif ($gateway == 'paymob') {
                     $additional_data = [
