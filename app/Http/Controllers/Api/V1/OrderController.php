@@ -1230,7 +1230,7 @@ class OrderController extends Controller
 
         if ($local != 'en') {
             $statusKey = Helpers::order_status_message_key($or['order_status']);
-            $translatedMessage = $this->business_setting->with('translations')->where(['key' => $statusKey])->first();
+            $translatedMessage = \App\Model\BusinessSetting::with('translations')->where(['key' => $statusKey])->first();
             if (isset($translatedMessage->translations)) {
                 foreach ($translatedMessage->translations as $translation) {
                     if ($local == $translation->locale) {
@@ -1239,6 +1239,7 @@ class OrderController extends Controller
                 }
             }
         }
+        
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $order_id);
 
@@ -1252,9 +1253,18 @@ class OrderController extends Controller
                     'type' => 'order_status',
                 ];
                 Helpers::send_push_notif_to_device($fcmToken, $data);
+                
+                Log::info('Push notification sent to customer', [
+                    'order_id' => $order_id,
+                    'customer_name' => $customerName,
+                    'fcm_token_exists' => !empty($fcmToken)
+                ]);
             }
         } catch (\Exception $e) {
-            //
+            Log::error('Failed to send push notification to customer', [
+                'order_id' => $order_id,
+                'error' => $e->getMessage()
+            ]);
         }
 
         try {
@@ -1262,11 +1272,20 @@ class OrderController extends Controller
             $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
             if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
                 Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
+                
+                Log::info('Order email sent', [
+                    'order_id' => $order_id,
+                    'email' => auth('api')->user()->email
+                ]);
             }
         } catch (\Exception $e) {
-            //
+            Log::error('Failed to send order email', [
+                'order_id' => $order_id,
+                'error' => $e->getMessage()
+            ]);
         }
 
+        // Notify kitchen if order is confirmed
         if ($or['order_status'] == 'confirmed') {
             $data = [
                 'title' => translate('You have a new order - (Order Confirmed).'),
@@ -1278,11 +1297,20 @@ class OrderController extends Controller
 
             try {
                 Helpers::send_push_notif_to_topic(data: $data, topic: "kitchen-{$or['branch_id']}", type: 'general', isNotificationPayloadRemove: true);
+                
+                Log::info('Kitchen notification sent', [
+                    'order_id' => $order_id,
+                    'branch_id' => $or['branch_id']
+                ]);
             } catch (\Exception $e) {
-                //
+                Log::error('Failed to send kitchen notification', [
+                    'order_id' => $order_id,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
 
+        // Notify admin and branch
         try {
             $data = [
                 'title' => translate('New Order Notification'),
@@ -1294,8 +1322,16 @@ class OrderController extends Controller
 
             Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'all']));
             Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-'. $or['branch_id'] .'-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'all']));
+            
+            Log::info('Admin and branch notifications sent', [
+                'order_id' => $order_id,
+                'branch_id' => $or['branch_id']
+            ]);
         } catch (\Exception $exception) {
-            //
+            Log::error('Failed to send admin/branch notifications', [
+                'order_id' => $order_id,
+                'error' => $exception->getMessage()
+            ]);
         }
     }
 
