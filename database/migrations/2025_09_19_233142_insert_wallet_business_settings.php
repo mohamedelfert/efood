@@ -233,6 +233,7 @@ return new class extends Migration
             'order_delivered_message',
             'wallet_topup_email_status_user',
             'wallet_topup_whatsapp_status_user',
+            'push_notification_service_file_content'
         ])->delete();
     }
 };
