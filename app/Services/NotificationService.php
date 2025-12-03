@@ -103,7 +103,7 @@ class NotificationService
             ];
 
             if ($sender->email) {
-                $this->sendEmail($sender->email, new MoneyTransferNotification($senderData));
+                $this->sendEmail($sender->email, new MoneyTransferNotification($sender, $receiver, $data));
             }
 
             if ($sender->cm_firebase_token) {
