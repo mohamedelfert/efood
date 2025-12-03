@@ -24,6 +24,8 @@ class EmailTemplateController extends Controller
             return view('admin-views.business-settings.email-format-setting.'.$type.'-email-formats.forgot-pass-format',compact('template'));
         }else if ($tab == 'registration-otp') {
             return view('admin-views.business-settings.email-format-setting.'.$type.'-email-formats.registration-otp-format',compact('template'));
+        }elseif ($tab == 'transfer-otp') {
+            return view('admin-views.business-settings.email-format-setting.'.$type.'-email-formats.transfer-otp-format', compact('template'));
         }
         //deliveryman
         else if ($tab == 'registration') {
@@ -58,6 +60,9 @@ class EmailTemplateController extends Controller
         }elseif($tab == 'registration-otp'){
             $emailType = 'registration_otp';
             $template = EmailTemplate::where('type',$type)->where('email_type', 'registration_otp')->first();
+        }elseif($tab == 'transfer-otp'){
+            $emailType = 'transfer_otp';
+            $template = EmailTemplate::where('type',$type)->where('email_type', 'transfer_otp')->first();
         }
 
         //deliveryman
@@ -264,6 +269,10 @@ class EmailTemplateController extends Controller
             ]);
         }else if ($tab == 'registration-otp') {
             $this->InsertOrUpdateBusinessData(['key' => 'registration_otp_mail_status_'.$type], [
+                'value' => $status
+            ]);
+        }else if ($tab == 'transfer-otp') {
+            $this->InsertOrUpdateBusinessData(['key' => 'transfer_otp_mail_status_'.$type], [
                 'value' => $status
             ]);
         }

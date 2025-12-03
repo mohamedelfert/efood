@@ -19,6 +19,12 @@
                     {{translate('Registration_OTP')}}
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/transfer-otp*') ? 'active' : '' }}"
+                    href="{{ route('admin.business-settings.email-setup', ['user','transfer-otp']) }}">
+                    {{ translate('Transfer_OTP') }}
+                </a>  
+            </li>
         </ul>
     </div>
 </div>
