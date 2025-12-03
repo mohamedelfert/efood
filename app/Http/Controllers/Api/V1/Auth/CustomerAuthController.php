@@ -19,6 +19,7 @@ use App\Model\EmailVerifications;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -75,10 +76,35 @@ class CustomerAuthController extends Controller
         $emailVerification = (int) $this->loginSetup->where(['key' => 'email_verification'])?->first()->value ?? 0;
         $phoneVerification = (int) $this->loginSetup->where(['key' => 'phone_verification'])?->first()->value ?? 0;
 
-        if ($phoneVerification && !$user->is_phone_verified) {
+        // Send OTP email if email verification is enabled
+        if ($emailVerification && $user->email_verified_at == null) {
+            $token = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
+
+            DB::table('email_verifications')->updateOrInsert(['email' => $request->email], [
+                'email' => $request->email,
+                'token' => $token,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            try {
+                $languageCode = $request->header('X-localization') ?? 'en';
+                $emailServices = Helpers::get_business_settings('mail_config');
+                $mailStatus = Helpers::get_business_settings('registration_otp_mail_status_user');
+
+                if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
+                    Mail::to($request->email)->send(new EmailVerification($token, $languageCode));
+                }
+
+            } catch (\Exception $exception) {
+                // Log the error but don't fail the registration
+                Log::error('Email OTP sending failed: ' . $exception->getMessage());
+            }
+
             return response()->json(['temporary_token' => $temporaryToken], 200);
         }
-        if ($emailVerification && $user->email_verified_at == null) {
+
+        if ($phoneVerification && !$user->is_phone_verified) {
             return response()->json(['temporary_token' => $temporaryToken], 200);
         }
 
