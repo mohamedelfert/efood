@@ -117,7 +117,7 @@ class PaymentController extends Controller
                 return response()->json(['errors' => ['message' => 'Customer not found']], 403);
             }
 
-            $payer = new Payer($customer['f_name'].' '.$customer['l_name'], $customer['email'], $customer['phone'], '');
+            $payer = new Payer($customer['name'], $customer['email'], $customer['phone'], '');
 
             $payment_info = new PaymentInfo(
                 success_hook: 'add_fund_success',
@@ -144,15 +144,13 @@ class PaymentController extends Controller
             $address = CustomerAddress::where(['user_id' => $customer_id, 'is_guest' => 1])->first();
             if ($address){
                 $customer = collect([
-                    'f_name' => $address['contact_person_name'] ?? '',
-                    'l_name' => '',
+                    'name' => $address['contact_person_name'] ?? '',
                     'phone' => $address['contact_person_number'] ?? '',
                     'email' => '',
                 ]);
             }else{
                 $customer = collect([
-                    'f_name' => 'example',
-                    'l_name' => 'customer',
+                    'name' => 'example',
                     'phone' => '+88011223344',
                     'email' => 'example@customer.com',
                 ]);
@@ -163,14 +161,13 @@ class PaymentController extends Controller
                 return response()->json(['errors' => ['message' => 'Customer not found']], 403);
             }
             $customer = collect([
-                'f_name' => $customer['f_name'],
-                'l_name' => $customer['l_name'],
+                'name' => $customer['name'],
                 'phone' => $customer['phone'],
                 'email' => $customer['email'],
             ]);
         }
 
-        $payer = new Payer($customer['f_name'] . ' ' . $customer['l_name'] , $customer['email'], $customer['phone'], '');
+        $payer = new Payer($customer['name'] , $customer['email'], $customer['phone'], '');
 
         $payment_info = new PaymentInfo(
             success_hook: 'order_place',

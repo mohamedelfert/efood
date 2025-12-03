@@ -107,7 +107,7 @@
                                     <h5
                                         style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
                                         {{ translate('Customer Name : ') }}<span
-                                            style="font-weight: normal">{{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</span>
+                                            style="font-weight: normal">{{ $order->customer['name'] }}</span>
                                     </h5>
                                     <h5
                                         style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">

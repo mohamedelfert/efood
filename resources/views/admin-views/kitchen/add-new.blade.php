@@ -36,8 +36,8 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="name">{{translate('First Name')}} <span class="text-danger">*</span></label>
-                                    <input type="text" name="f_name" class="form-control" id="f_name"
-                                           placeholder="{{translate('Ex')}} : {{translate('John')}}" value="{{old('f_name')}}" required>
+                                    <input type="text" name="name" class="form-control" id="name"
+                                           placeholder="{{translate('Ex')}} : {{translate('John')}}" value="{{old('name')}}" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="name">{{translate('Last Name')}} <span class="text-danger">*</span></label>

@@ -54,16 +54,15 @@ class SystemController extends Controller
     public function settingsUpdate(Request $request): RedirectResponse
     {
         $request->validate([
-            'f_name' => 'required',
+            'name' => 'required',
             'email' => ['required', 'unique:admins,email,' . auth('admin')->id() . ',id'],
             'phone' => 'required',
         ], [
-            'f_name.required' => translate('First name is required!'),
+            'name.required' => translate('Name is required!'),
         ]);
 
         $admin = $this->admin->find(auth('admin')->id());
-        $admin->f_name = $request->f_name;
-        $admin->l_name = $request->l_name;
+        $admin->name = $request->name;
         $admin->email = $request->email;
         $admin->phone = $request->phone;
         $admin->image = $request->has('image') ? Helpers::update('admin/', $admin->image, 'png', $request->file('image')) : $admin->image;

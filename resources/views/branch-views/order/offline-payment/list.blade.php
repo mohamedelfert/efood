@@ -76,7 +76,7 @@
                                     @if($order->is_guest == 0)
                                         @if($order->customer)
                                             <h6 class="text-capitalize mb-1">
-                                                <a class="text-dark" href="#">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</a>
+                                                <a class="text-dark" href="#">{{$order->customer['name']}}</a>
                                             </h6>
                                             <a class="text-dark fz-12" href="tel:{{$order->customer->phone}}">{{$order->customer->phone}}</a>
                                         @else

@@ -97,7 +97,7 @@ class ConversationController extends Controller
 
             $admin = $this->admin->first();
             $data = [
-                'title' => $request->user()->f_name . ' ' . $request->user()->l_name . translate(' send a message'),
+                'title' => $request->user()->name . translate(' send a message'),
                 'description' => $request->user()->id,
                 'order_id' => '',
                 'image' => asset('storage/app/public/restaurant') . '/' . $this->business_setting->where(['key' => 'logo'])->first()->value,
@@ -133,10 +133,10 @@ class ConversationController extends Controller
             ->with([
                 'order',
                 'order.delivery_man' => function ($query) {
-                    $query->select('id', 'f_name', 'l_name', 'phone', 'email', 'image');
+                    $query->select('id', 'name', 'phone', 'email', 'image');
                 },
                 'order.customer' => function ($query) {
-                    $query->select('id', 'f_name', 'l_name', 'phone', 'email', 'image');
+                    $query->select('id', 'name', 'phone', 'email', 'image');
                 },
                 'messages'
             ])
@@ -151,8 +151,7 @@ class ConversationController extends Controller
                         $query->where('order_id', 'LIKE', '%' . $keyword . '%');
                     })
                         ->orWhereHas('order.delivery_man', function ($query) use ($keyword) {
-                            $query->where('f_name', 'LIKE', '%' . $keyword . '%')
-                                ->orWhere('l_name', 'LIKE', '%' . $keyword . '%')
+                            $query->where('name', 'LIKE', '%' . $keyword . '%')
                                 ->orWhere('phone', 'LIKE', '%' . $keyword . '%')
                                 ->orWhere('email', 'LIKE', '%' . $keyword . '%');
                         });

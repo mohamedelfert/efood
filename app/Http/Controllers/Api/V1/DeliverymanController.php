@@ -76,8 +76,7 @@ class DeliverymanController extends Controller
 
         $validator = Validator::make($request->all(), [
             'token' => 'required',
-            'f_name' => 'required|string|max:255',
-            'l_name' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
             'phone' => [
                 'required',
                 Rule::unique('delivery_men')->ignore($deliveryman->id),
@@ -97,8 +96,7 @@ class DeliverymanController extends Controller
             $deliveryman->password = bcrypt($request->password);
         }
 
-        $deliveryman->f_name = $request->f_name;
-        $deliveryman->l_name = $request->l_name;
+        $deliveryman->name = $request->name;
         $deliveryman->phone = $request->phone;
         $deliveryman->image = $request->has('image') ? Helpers::update('delivery-man/', $deliveryman->image, 'png', $request->file('image')) : $deliveryman->image;
         $deliveryman->save();
@@ -271,8 +269,8 @@ class DeliverymanController extends Controller
         }
 
         $restaurantName = Helpers::get_business_settings('restaurant_name');
-        $deliverymanName = $order->delivery_man ? $order->delivery_man->f_name. ' '. $order->delivery_man->l_name : '';
-        $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->f_name. ' '. $order->customer->l_name : '') : '';
+        $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
+        $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : '';
         $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';;
 
         if ($request['status'] == 'out_for_delivery') {

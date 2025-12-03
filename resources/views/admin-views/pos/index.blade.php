@@ -70,8 +70,8 @@
                                 <div class="form-group d-flex gap-2">
                                     <select name="customer_id" data-placeholder="{{translate('Walk_In_Customer')}}" class="js-data-example-ajax form-control form-ellipsis customer">
                                         <option disabled selected>{{translate('select Customer')}}</option>
-                                        @foreach(\App\User::select('id', 'f_name', 'l_name')->get() as $customer)
-                                            <option value="{{$customer['id']}}" {{ session()->get('customer_id') == $customer['id'] ? 'selected' : '' }}>{{$customer['f_name']. ' '. $customer['l_name'] }}</option>
+                                        @foreach(\App\User::select('id', 'name')->get() as $customer)
+                                            <option value="{{$customer['id']}}" {{ session()->get('customer_id') == $customer['id'] ? 'selected' : '' }}>{{$customer['name']}}</option>
                                         @endforeach
                                     </select>
                                     <button class="btn btn-success rounded text-nowrap" id="add_new_customer" type="button" data-toggle="modal" data-target="#add-customer" title="Add Customer">
@@ -187,16 +187,7 @@
                                             {{translate('First_Name')}}
                                             <span class="input-label-secondary text-danger">*</span>
                                         </label>
-                                        <input type="text" name="f_name" class="form-control" value="" placeholder="{{translate('First name')}}" required="">
-                                    </div>
-                                </div>
-                                <div class="col-12 col-lg-6">
-                                    <div class="form-group">
-                                        <label class="input-label">
-                                            {{translate('Last_Name')}}
-                                            <span class="input-label-secondary text-danger">*</span>
-                                        </label>
-                                        <input type="text" name="l_name" class="form-control" value="" placeholder="{{translate('Last name')}}" required="">
+                                        <input type="text" name="name" class="form-control" value="" placeholder="{{translate('Name')}}" required="">
                                     </div>
                                 </div>
                             </div>

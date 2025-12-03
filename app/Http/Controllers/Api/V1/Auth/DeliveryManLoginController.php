@@ -27,8 +27,7 @@ class DeliveryManLoginController extends Controller
     public function registration(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'f_name' => 'required|max:100',
-            'l_name' => 'required|max:100',
+            'name' => 'required|max:100',
             'email' => 'required|regex:/(.+)@(.+)\.(.+)/i|unique:delivery_men',
             'phone' => 'required|unique:delivery_men',
             'password' => 'required|min:8',
@@ -38,7 +37,7 @@ class DeliveryManLoginController extends Controller
             'identity_image' => 'required|max:2048',
             'branch_id' => 'required',
         ], [
-            'f_name.required' => translate('First name is required!'),
+            'name.required' => translate('Name is required!'),
             'email.required' => translate('Email is required!'),
             'email.unique' => translate('Email is already registered'),
             'phone.required' => translate('Phone is required!'),
@@ -67,8 +66,7 @@ class DeliveryManLoginController extends Controller
         }
 
         $deliveryman = $this->deliveryman;
-        $deliveryman->f_name = $request->f_name;
-        $deliveryman->l_name = $request->l_name;
+        $deliveryman->name = $request->name;
         $deliveryman->email = $request->email;
         $deliveryman->phone = $request->phone;
         $deliveryman->identity_number = $request->identity_number;
@@ -86,7 +84,7 @@ class DeliveryManLoginController extends Controller
             $emailServices = Helpers::get_business_settings('mail_config');
             $mail_status = Helpers::get_business_settings('registration_mail_status_dm');
             if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mail_status == 1){
-                Mail::to($deliveryman->email)->send(new DMSelfRegistration('pending', $deliveryman->f_name.' '.$deliveryman->l_name, $deliveryman->language_code));
+                Mail::to($deliveryman->email)->send(new DMSelfRegistration('pending', $deliveryman->name, $deliveryman->language_code));
             }
         }catch(\Exception $ex){
             info($ex);

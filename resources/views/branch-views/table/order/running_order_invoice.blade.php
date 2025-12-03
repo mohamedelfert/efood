@@ -78,7 +78,7 @@
                     <!--                    <div class="col-12">
                         @if(isset($order->customer))
                         <h5>
-{{translate('Customer Name : ')}}<span class="font-weight-normal">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</span>
+{{translate('Customer Name : ')}}<span class="font-weight-normal">{{$order->customer['name']}}</span>
                             </h5>
                             <h5>
                                 {{translate('Phone : ')}}<span class="font-weight-normal">{{$order->customer['phone']}}</span>

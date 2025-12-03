@@ -30,13 +30,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{ translate('first_Name') }}</label>
-                                        <input value="{{ $deliveryman['f_name'] }}" type="text" name="f_name"
-                                            class="form-control" placeholder="{{ translate('first_Name') }}" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="input-label">{{ translate('last_Name') }}</label>
-                                        <input value="{{ $deliveryman['l_name'] }}" type="text" name="l_name"
-                                            class="form-control" placeholder="{{ translate('last_Name') }}" required>
+                                        <input value="{{ $deliveryman['name'] }}" type="text" name="name"
+                                            class="form-control" placeholder="{{ translate('name') }}" required>
                                     </div>
                                     <div class="form-group">
                                         <label class="input-label">{{ translate('phone number') }}</label>

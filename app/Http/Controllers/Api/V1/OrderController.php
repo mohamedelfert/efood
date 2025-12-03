@@ -1403,8 +1403,7 @@ class OrderController extends Controller
                     ->orWhere('order_status', 'like', $key);
                     if ($userType == 0) {
                         $sq->orWhereHas('customer', fn($c) => 
-                            $c->where('f_name', 'like', $key)
-                            ->orWhere('l_name', 'like', $key)
+                            $c->where('name', 'like', $key)
                             ->orWhere('phone', 'like', $key)
                         );
                     }
@@ -1479,8 +1478,7 @@ class OrderController extends Controller
             'order.delivery_man' => function ($query) {
                 $query->select(
                     'id',
-                    'f_name',
-                    'l_name',
+                    'name',
                     'phone',
                     'email',
                     'image',

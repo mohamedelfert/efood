@@ -94,12 +94,9 @@
 
                                 <div class="col-sm-9">
                                     <div class="input-group input-group-sm-down-break">
-                                        <input type="text" class="form-control" name="f_name" id="firstNameLabel"
+                                        <input type="text" class="form-control" name="name" id="firstNameLabel"
                                                placeholder="{{translate('Your first name')}}" aria-label="Your first name"
-                                               value="{{auth('admin')->user()->f_name}}">
-                                        <input type="text" class="form-control" name="l_name" id="lastNameLabel"
-                                               placeholder="{{translate('Your last name')}}" aria-label="Your last name"
-                                               value="{{auth('admin')->user()->l_name}}">
+                                               value="{{auth('admin')->user()->name}}">
                                     </div>
                                 </div>
                             </div>

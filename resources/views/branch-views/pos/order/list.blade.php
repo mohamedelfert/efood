@@ -119,7 +119,7 @@
                                 </td>
                                 <td>
                                     @if($order->customer)
-                                    <label class="badge badge-success">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</label>
+                                    <label class="badge badge-success">{{$order->customer['name']}}</label>
                                     @elseif($order['user_id'] == null)
                                         <label class="badge badge-soft-success">{{translate('walk_in_customer')}}</label>
                                     @else

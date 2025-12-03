@@ -53,7 +53,7 @@
                             <div class="mb-3">
                                 <select id='customer' name="customer_id" data-placeholder="{{translate('Select_Customer')}}" class="js-data-example-ajax form-control h--45px" title="{{translate('select_customer')}}">
                                     @if (request()->get('customer_id') && $customerInfo = \App\User::find(request()->get('customer_id')))
-                                        <option value="{{$customerInfo->id}}" selected>{{$customerInfo->f_name.' '.$customerInfo->l_name}}({{$customerInfo->phone}})</option>
+                                        <option value="{{$customerInfo->id}}" selected>{{$customerInfo->name}}({{$customerInfo->phone}})</option>
                                     @endif
                                 </select>
                             </div>
@@ -136,7 +136,7 @@
                             <tr scope="row">
                                 <td >{{$k+$transactions->firstItem()}}</td>
                                 <td>{{$wt->transaction_id}}</td>
-                                <td><a href="{{route('admin.customer.view',['user_id'=>$wt->user_id])}}">{{Str::limit($wt->user?$wt->user->f_name.' '.$wt->user->l_name:translate('not_found'),20,'...')}}</a></td>
+                                <td><a href="{{route('admin.customer.view',['user_id'=>$wt->user_id])}}">{{$wt->user?$wt->user->name:translate('not_found')}}</a></td>
                                 <td>{{$wt->credit}}</td>
                                 <td>{{$wt->debit}}</td>
                                 <td>{{$wt->balance}}</td>

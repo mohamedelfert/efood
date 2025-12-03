@@ -41,8 +41,7 @@ class KitchenController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'f_name' => 'required',
-            'l_name' => 'required',
+            'name' => 'required',
             'phone' => 'required|unique:users,phone',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
@@ -50,8 +49,7 @@ class KitchenController extends Controller
             'branch_id' => 'required',
             'confirm_password' => 'same:password'
         ], [
-            'f_name.required' => translate('First name is required!'),
-            'l_name.required' => translate('Last name is required!'),
+            'name.required' => translate('First name is required!'),
             'phone.required' => translate('Phone is required'),
             'phone.unique' => translate('This phone is already taken! please try another one'),
             'email.required' => translate('Email is Required'),
@@ -66,8 +64,7 @@ class KitchenController extends Controller
         DB::beginTransaction();
         try {
             $chef = $this->user;
-            $chef->f_name = $request->f_name;
-            $chef->l_name = $request->l_name;
+            $chef->name = $request->name;
             $chef->phone = $request->phone;
             $chef->email = $request->email;
             $chef->user_type = 'kitchen';
@@ -103,8 +100,7 @@ class KitchenController extends Controller
             ->when($search != null, function ($query) use ($key) {
                 $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
-                        $q->where('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%")
+                        $q->where('name', 'like', "%{$value}%")
                             ->orWhere('phone', 'like', "%{$value}%")
                             ->orWhere('email', 'like', "%{$value}%");
                     }
@@ -150,14 +146,12 @@ class KitchenController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         $request->validate([
-            'f_name' => 'required',
-            'l_name' => 'required',
+            'name' => 'required',
             'phone' => 'required|unique:users,phone,' . $id,
             'email' => 'required|email|unique:users,email,' . $id,
             'branch_id' => 'required',
         ], [
-            'f_name.required' => translate('First name is required!'),
-            'l_name.required' => translate('Last name is required!'),
+            'name.required' => translate('Name is required!'),
             'phone.required' => translate('Phone is Required'),
             'phone.unique' => translate('This email is already taken! please try another one'),
             'email.required' => translate('Email is Required'),
@@ -183,8 +177,7 @@ class KitchenController extends Controller
 
         DB::beginTransaction();
         try {
-            $chef->f_name = $request->f_name;
-            $chef->l_name = $request->l_name;
+            $chef->name = $request->name;
             $chef->phone = $request->phone;
             $chef->email = $request->email;
             $chef->password = $password;

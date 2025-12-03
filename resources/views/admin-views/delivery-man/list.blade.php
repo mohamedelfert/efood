@@ -189,7 +189,7 @@
                                                     </div>
                                                     <div class="media-body">
                                                         <a class="text-dark"
-                                                            href="{{ route('admin.delivery-man.details', [$dm['id']]) }}">{{ $dm['f_name'] . ' ' . $dm['l_name'] }}</a>
+                                                            href="{{ route('admin.delivery-man.details', [$dm['id']]) }}">{{ $dm['name'] }}</a>
                                                     </div>
                                                 </div>
                                             </td>

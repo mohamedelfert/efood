@@ -72,7 +72,7 @@ class QIBNotificationService
                 return;
             }
 
-            $userName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+            $userName = $user->name ?? 'Customer';
 
             Mail::send('emails.qib-otp-notification', [
                 'user_name' => $userName,
@@ -171,7 +171,7 @@ class QIBNotificationService
     private function buildWhatsAppMessage(User $user, array $data): string
     {
         // Use 'name' field from users table
-        $customerName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+        $customerName = $user->name ?? 'Customer';
         $amount = number_format($data['amount'], 2);
         $currency = $data['currency'];
         $transactionId = $data['transaction_id'];
@@ -240,7 +240,7 @@ class QIBNotificationService
                 return;
             }
 
-            $userName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+            $userName = $user->name ?? 'Customer';
 
             Mail::send('emails.qib-payment-success', [
                 'user_name' => $userName,
@@ -285,7 +285,7 @@ class QIBNotificationService
                 $userPhone = '967' . ltrim($userPhone, '0');
             }
 
-            $customerName = $user->name ?? ($user->f_name . ' ' . $user->l_name);
+            $customerName = $user->name ?? 'Customer';
             $amount = number_format($data['amount'], 2);
             $currency = $data['currency'];
             $newBalance = number_format($data['new_balance'], 2);

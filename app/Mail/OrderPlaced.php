@@ -46,9 +46,9 @@ class OrderPlaced extends Mailable
         $company_name = BusinessSetting::where('key', 'restaurant_name')->first()->value;
         $data=EmailTemplate::with('translations')->where('type','user')->where('email_type', 'new_order')->first();
         $template=$data?$data->email_template:3;
-        $user_name = $order?->customer?->f_name.' '.$order?->customer?->l_name;
+        $user_name = $order?->customer?->name;
         $restaurant_name = $order?->branch->name;
-        $delivery_man_name = $order?->delivery_man?->f_name.' '.$order?->delivery_man?->l_name;
+        $delivery_man_name = $order?->delivery_man?->name;
 
         $local = $order?->customer->language_code ?? 'en';
 

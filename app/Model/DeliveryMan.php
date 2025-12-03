@@ -58,6 +58,6 @@ class DeliveryMan extends Authenticatable
 
     public function getNameAttribute()
     {
-        return trim($this->f_name . ' ' . $this->l_name);
+        return trim($this->name);
     }
 }

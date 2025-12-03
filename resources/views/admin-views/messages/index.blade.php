@@ -28,7 +28,7 @@
                                 <span class="avatar-status status-sm bg-success"></span>
                             </div>
                             <div class="chat_ib media-body">
-                                <h5 class="mb-0">{{auth('admin')->user()->f_name}} {{auth('admin')->user()->l_name}}</h5>
+                                <h5 class="mb-0">{{auth('admin')->user()->name}}</h5>
                                 <span class="fz-12">{{auth('admin')->user()->phone}}</span>
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                                             <img class="img-fit rounded-circle" src="{{$user['imageFullPath']}}" alt="{{ translate('customer') }}">
                                         </div>
                                         <div class="sidebar_name">
-                                            <h5 class="mb-0 li-pointer">{{$user['f_name'].' '.$user['l_name']}}</h5>
+                                            <h5 class="mb-0 li-pointer">{{$user['name']}}</h5>
                                             <div class="fz-12 li-pointer">{{ $user['phone'] }}</div>
 
                                         </div>

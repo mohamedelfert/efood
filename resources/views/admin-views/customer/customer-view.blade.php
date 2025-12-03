@@ -133,7 +133,7 @@
             <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-header-title d-flex gap-2"><span class="tio-user"></span> {{$customer['f_name'].' '.$customer['l_name']}}</h4>
+                        <h4 class="card-header-title d-flex gap-2"><span class="tio-user"></span> {{$customer['name']}}</h4>
                     </div>
 
                     @if($customer)

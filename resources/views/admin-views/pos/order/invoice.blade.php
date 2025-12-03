@@ -22,7 +22,7 @@
         </div>
         @if($order->customer)
             <div class="col-12">
-                <h5>{{translate('Customer Name')}} : {{$order->customer['f_name'].' '.$order->customer['l_name']}}</h5>
+                <h5>{{translate('Customer Name')}} : {{$order->customer['name']}}</h5>
                 <h5>{{translate('Phone')}} : {{$order->customer['phone']}}</h5>
             </div>
         @endif

@@ -237,7 +237,7 @@
                                     @if($order->is_guest == 0)
                                         @if($order->customer)
                                             <a class="text-dark text-capitalize"
-                                               href="{{route('branch.orders.details',['id'=>$order['id']])}}">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</a>
+                                               href="{{route('branch.orders.details',['id'=>$order['id']])}}">{{$order->customer['name']}}</a>
                                         @else
                                             <span class="text-capitalize text-muted">
                                             {{translate('Customer_Unavailable')}}

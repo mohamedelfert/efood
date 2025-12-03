@@ -608,7 +608,7 @@
                                                 <img class="avatar avatar-lg rounded-circle" src="{{$order->delivery_man->imageFullPath}}" alt="Image">
                                             </a>
                                             <div class="media-body d-flex flex-column gap-1">
-                                                <a target="" href="#" class="text-dark"><span>{{$order->delivery_man['f_name'].' '.$order->delivery_man['l_name'] ?? ''}}</span></a>
+                                                <a target="" href="#" class="text-dark"><span>{{$order->delivery_man['name'] ?? ''}}</span></a>
                                                 <span class="text-dark"> <span>{{$order->delivery_man['orders_count']}}</span> {{translate('Orders')}}</span>
                                                 <span class="text-dark break-all">
                                             <i class="tio-call-talking-quiet mr-2"></i>
@@ -772,7 +772,7 @@
                                             <img class="avatar avatar-lg rounded-circle" src="{{$order->customer['imageFullPath']}}" alt="Image">
                                         </a>
                                         <div class="media-body d-flex flex-column gap-1">
-                                            <a><strong>{{$order->customer['f_name'].' '.$order->customer['l_name']}}</strong></a>
+                                            <a><strong>{{$order->customer['name']}}</strong></a>
                                             <span class="text-dark">{{$order->customer['orders_count']}} {{translate('Orders')}}</span>
                                             <span class="text-dark">
                                             <i class="tio-call-talking-quiet mr-2"></i>
@@ -878,7 +878,7 @@
                                         <img class="img-fit rounded-circle" loading="lazy" decoding="async"
                                              src="{{$deliveryMan->imageFullPath}}" alt="{{ translate('deliveryman') }}">
                                     </div>
-                                    <span>{{$deliveryMan['f_name'].' '.$deliveryMan['l_name']}}</span>
+                                    <span>{{$deliveryMan['name']}}</span>
                                 </div>
                                 <a id="{{$deliveryMan->id}}" class="btn btn-primary btn-sm assign-deliveryman" data-id="{{$deliveryMan->id}}">{{translate('Assign')}}</a>
                             </li>
@@ -1044,7 +1044,7 @@
 
                             <div class="card-body">
                                 @if($order->is_guest == 0)
-                                    <p>{{ translate('name') }} : {{ $order->customer ? $order->customer->f_name.' '. $order->customer->l_name: ''}} </p>
+                                    <p>{{ translate('name') }} : {{ $order->customer ? $order->customer->name : ''}} </p>
                                     <p>{{ translate('contact') }} : {{ $order->customer ? $order->customer->phone: ''}}</p>
                                 @else
                                     <p>{{ translate('guest_customer') }} </p>

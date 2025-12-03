@@ -42,26 +42,18 @@
                         <div class="row gy-4">
                             <div class="col-md-12">
                                 <div class="from-group">
-                                    <label for="first-name" class="d-flex align-items-center gap-2 mb-2">
+                                    <label for="name" class="d-flex align-items-center gap-2 mb-2">
                                         {{ translate('Business Name') }}</label>
-                                    <input type="text" id="first-name" class="form-control" name="web_name"
+                                    <input type="text" id="name" class="form-control" name="web_name"
                                            required placeholder="Ex: eFood">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="from-group">
-                                    <label for="first-name" class="d-flex align-items-center gap-2 mb-2">
-                                        {{ translate('First Name') }}</label>
-                                    <input type="text" id="first-name" class="form-control" name="admin_f_name"
+                                    <label for="name" class="d-flex align-items-center gap-2 mb-2">
+                                        {{ translate('Name') }}</label>
+                                    <input type="text" id="name" class="form-control" name="admin_name"
                                            required placeholder="Ex: John">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="from-group">
-                                    <label for="last-name" class="d-flex align-items-center gap-2 mb-2">
-                                        {{ translate('Last Name') }}</label>
-                                    <input type="text" id="last-name" class="form-control" name="admin_l_name"
-                                           required placeholder="Ex: Doe">
                                 </div>
                             </div>
                             <div class="col-md-6">

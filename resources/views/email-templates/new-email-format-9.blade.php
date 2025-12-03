@@ -238,7 +238,7 @@
                                                     <h3 class="subtitle">{{ translate('Delivery_Address') }}</h3>
                                                     @if ($order->delivery_address)
                                                     @php($address = json_decode($order->delivery_address, true))
-                                                    <span class="d-block">{{ $address['contact_person_name']  ?? $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</span>
+                                                    <span class="d-block">{{ $address['contact_person_name']  ?? $order->customer['name'] }}</span>
                                                     <span  class="d-block">
                                                     {{ $address['contact_person_number'] ?? null }}
                                                     </span>

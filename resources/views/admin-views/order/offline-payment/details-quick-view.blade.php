@@ -16,7 +16,7 @@
 
                     <div class="card-body">
                         @if($order->is_guest == 0)
-                            <p>{{ translate('name') }} : {{ $order->customer ? $order->customer->f_name.' '. $order->customer->l_name: ''}} </p>
+                            <p>{{ translate('name') }} : {{ $order->customer ? $order->customer->name : ''}} </p>
                             <p>{{ translate('contact') }} : {{ $order->customer ? $order->customer->phone: ''}}</p>
                         @else
                             <p>{{ translate('guest_customer') }} </p>

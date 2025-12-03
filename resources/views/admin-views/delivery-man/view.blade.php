@@ -8,7 +8,7 @@
             <h2 class="h1 mb-0 d-flex align-items-center gap-2">
                 <img width="20" class="avatar-img" src="{{asset('public/assets/admin/img/icons/employee.png')}}" alt="">
                 <span class="page-header-title">
-                    {{$deliveryman['f_name'].' '.$deliveryman['f_name']}}
+                    {{$deliveryman['name']}}
                 </span>
             </h2>
 
@@ -139,7 +139,7 @@
                                                  alt="{{ translate('customer') }}">
                                         </div>
                                         <div class="ml-3">
-                                        <span class="d-block h5 text-hover-primary mb-0">{{$review->customer['f_name']." ".$review->customer['l_name']}} <i
+                                        <span class="d-block h5 text-hover-primary mb-0">{{$review->customer['name']}} <i
                                                 class="tio-verified text-primary" data-toggle="tooltip" data-placement="top"
                                                 title="{{translate('Verified Customer')}}"></i></span>
                                             <span class="d-block font-size-sm text-body">{{$review->customer->email}}</span>

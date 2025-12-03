@@ -75,7 +75,7 @@
                                             @if($review->customer)
                                                 <div class="d-flex flex-column gap-1">
                                                     <a class="text-dark" href="{{route('admin.customer.view',[$review->user_id])}}">
-                                                        {{$review->customer->f_name." ".$review->customer->l_name}}
+                                                        {{$review->customer->name}}
                                                     </a>
                                                     <a class="text-dark fz-12" href="tel:'{{$review->customer->phone}}'">{{$review->customer->phone}}</a>
                                                 </div>

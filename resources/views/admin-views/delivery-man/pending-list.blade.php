@@ -75,7 +75,7 @@
                                                          src="{{$dm->imageFullPath}}" alt="{{ translate('deliveryman') }}">
                                                 </div>
                                                 <div class="media-body">
-                                                    {{$dm['f_name'].' '.$dm['l_name']}}
+                                                    {{$dm['name']}}
                                                 </div>
                                             </div>
                                         </td>

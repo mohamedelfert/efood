@@ -28,7 +28,7 @@
 
                                 <div class="">
                                     <span>{{translate('admin')}}:</span>
-                                    <a href="#">{{auth('admin')->user()->f_name.' '.auth('admin')->user()->l_name}}</a>
+                                    <a href="#">{{auth('admin')->user()->name}}</a>
                                 </div>
                             </div>
 

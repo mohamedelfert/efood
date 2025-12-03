@@ -79,7 +79,7 @@
                                         <div class="avatar">
                                             <img src="{{$customer->imageFullPath}}" class="rounded-circle img-fit" alt="">
                                         </div>
-                                        <div class="media-body text-truncate">{{$customer['f_name']." ".$customer['l_name']}}</div>
+                                        <div class="media-body text-truncate">{{$customer['name']}}</div>
                                     </a>
                                 </td>
                                 <td>

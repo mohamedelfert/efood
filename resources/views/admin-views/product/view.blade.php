@@ -251,7 +251,7 @@
                                     <div class="ml-3">
                                     <span class="d-block h5 text-hover-primary mb-0">
                                         @if(isset($review->customer))
-                                        {{$review->customer['f_name']." ".$review->customer['l_name']}}
+                                        {{$review->customer['name']}}
                                         <i class="tio-verified text-primary" data-toggle="tooltip" data-placement="top"
                                             title="Verified Customer"></i></span>
                                         <span class="d-block font-size-sm text-body">{{$review->customer->email}}</span>

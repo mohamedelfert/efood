@@ -131,7 +131,7 @@
                                 </td>
                                 <td>
                                     @if($order->customer)
-                                        <h6 class="text-capitalize mb-1">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</h6>
+                                        <h6 class="text-capitalize mb-1">{{$order->customer['name']}}</h6>
                                         <a class="text-dark fz-12" href="tel:{{ $order->customer['phone'] }}">{{ $order->customer['phone'] }}</a>
                                     @elseif($order['user_id'] == null)
                                         <h6 class="text-capitalize text-muted">{{translate('walk_in_customer')}}</h6>

@@ -31,7 +31,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="name">{{translate('Name')}}</label>
-                                    <input type="text" name="name" value="{{$employee['f_name'] . ' ' . $employee['l_name']}}" class="form-control" id="name"
+                                    <input type="text" name="name" value="{{$employee['name']}}" class="form-control" id="name"
                                         placeholder="{{translate('Ex')}} : {{translate('Md. Al Imrun')}}">
                                 </div>
                                 <div class="form-group">

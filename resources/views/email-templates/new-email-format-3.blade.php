@@ -241,7 +241,7 @@
                                         <td>
                                             @if ($order->is_guest == 0 && isset($order->customer))
                                                 <span class="d-block"><strong>{{ translate('Customer Name:') }}</strong>
-                                                    {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
+                                                    {{ $order->customer['name'] }}
                                                 </span>
                                                 <span class="d-block"><strong>{{ translate('Phone:') }}</strong>
                                                     {{ $order->customer['phone'] }}

@@ -28,7 +28,7 @@
                         </div>
 
                         <div class="media-body">
-                            <h3 class="fz-22 text-title mb-0">{{ $deliveryman->f_name }} {{ $deliveryman->l_name }}</h3>
+                            <h3 class="fz-22 text-title mb-0">{{ $deliveryman->name }}</h3>
                             <div class="mb-3">
                                 {{ translate('Joining') }}: <span
                                     class="font-weight-medium">{{ $deliveryman->created_at->format('d M Y') }}</span>
@@ -252,7 +252,7 @@
                                             @if ($order->customer)
                                                 <h6 class="text-capitalize mb-1">
                                                     <a class="text-dark"
-                                                        href="{{ route('admin.customer.view', [$order['user_id']]) }}">{{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</a>
+                                                        href="{{ route('admin.customer.view', [$order['user_id']]) }}">{{ $order->customer['name'] }}</a>
                                                 </h6>
                                                 <a class="text-dark fz-12"
                                                     href="tel:{{ $order->customer->phone }}">{{ $order->customer->phone }}</a>

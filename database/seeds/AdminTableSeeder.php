@@ -17,8 +17,7 @@ class AdminTableSeeder extends Seeder
     {
         DB::table('admins')->insert([
             'id' => 1,
-            'f_name' => 'Admin',
-            'l_name' => 'Admin',
+            'name' => 'Admin',
             'phone' => '0123456789',
             'email' => 'admin@gmail.com',
             'image' => 'def.png',

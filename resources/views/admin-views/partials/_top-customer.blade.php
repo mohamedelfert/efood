@@ -12,7 +12,7 @@
                         <img class="rounded avatar avatar-lg"
                                 src="{{ $item->customer->imageFullPath }}">
                         <div class="media-body d-flex flex-column custom-media-body">
-                            <span class="font-weight-semibold text-capitalize">{{$item->customer['f_name']??'Not exist'}}</span>
+                            <span class="font-weight-semibold text-capitalize">{{$item->customer['name']??'Not exist'}}</span>
                             <span class="text-dark">{{ $item->customer['phone']?? translate('Not exist') }}</span>
                         </div>
                     </div>

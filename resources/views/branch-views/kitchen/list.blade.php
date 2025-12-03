@@ -64,7 +64,7 @@
                             @foreach($chefs as $k=>$chef)
                                 <tr>
                                     <td scope="row">{{$chefs->firstItem()+$k}}</td>
-                                    <td class="text-capitalize">{{$chef['f_name'] . ' ' . $chef['l_name']}}</td>
+                                    <td class="text-capitalize">{{$chef['name']}}</td>
                                     <td>
                                         <div><a class="text-dark" href="mailto:{{$chef['email']}}"><strong>{{$chef['email']}}</strong></a></div>
                                         <div><a href="tel:{{$chef['phone']}}" class="text-dark">{{$chef['phone']}}</a></div>

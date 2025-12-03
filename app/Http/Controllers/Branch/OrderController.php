@@ -282,8 +282,8 @@ class OrderController extends Controller
 
         $message = Helpers::order_status_update_message($request->order_status);
         $restaurantName = Helpers::get_business_settings('restaurant_name');
-        $deliverymanName = $order->delivery_man ? $order->delivery_man->f_name. ' '. $order->delivery_man->l_name : '';
-        $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->f_name. ' '. $order->customer->l_name : '') : 'Guest User';
+        $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
+        $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : 'Guest User';
         $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';
 
         if ($local != 'en'){
@@ -575,7 +575,7 @@ class OrderController extends Controller
             $data[$key]['SL'] = ++$key;
             $data[$key]['Order ID'] = $order->id;
             $data[$key]['Order Date'] = date('d M Y h:m A', strtotime($order['created_at']));
-            $data[$key]['Customer Info'] = $order['user_id'] == null ? 'Walk in Customer' : ($order->customer == null ? 'Customer Unavailable' : $order->customer['f_name'] . ' ' . $order->customer['l_name']);
+            $data[$key]['Customer Info'] = $order['user_id'] == null ? 'Walk in Customer' : ($order->customer == null ? 'Customer Unavailable' : $order->customer['name']);
             $data[$key]['Branch'] = $order->branch ? $order->branch->name : 'Branch Deleted';
             $data[$key]['Total Amount'] = Helpers::set_symbol($order['order_amount']);
             $data[$key]['Payment Status'] = $order->payment_status == 'paid' ? 'Paid' : 'Unpaid';
@@ -690,8 +690,8 @@ class OrderController extends Controller
                 }
             }
             $restaurantName = Helpers::get_business_settings('restaurant_name');
-            $deliverymanName = $order->delivery_man ? $order->delivery_man->f_name. ' '. $order->delivery_man->l_name : '';
-            $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->f_name. ' '. $order->customer->l_name : '') : '';
+            $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
+            $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : '';
 
             $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
 

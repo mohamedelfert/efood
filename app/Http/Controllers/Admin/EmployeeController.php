@@ -75,7 +75,7 @@ class EmployeeController extends Controller
         }
 
         $this->admin->insert([
-            'f_name' => $request->name,
+            'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
@@ -106,7 +106,7 @@ class EmployeeController extends Controller
             ->when($search != null, function ($query) use ($key) {
                 $query->whereNotIn('id', [1])->where(function ($query) use ($key) {
                     foreach ($key as $value) {
-                        $query->where('f_name', 'like', "%{$value}%")
+                        $query->where('name', 'like', "%{$value}%")
                             ->orWhere('phone', 'like', "%{$value}%")
                             ->orWhere('email', 'like', "%{$value}%");
                     }
@@ -183,7 +183,7 @@ class EmployeeController extends Controller
         }
 
         $this->admin->where(['id' => $id])->update([
-            'f_name' => $request->name,
+            'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
@@ -244,7 +244,7 @@ class EmployeeController extends Controller
     {
         $employees = $this->admin
             ->whereNotIn('id', [1])
-            ->get(['id', 'f_name', 'l_name', 'email', 'admin_role_id', 'status']);
+            ->get(['id', 'name', 'email', 'admin_role_id', 'status']);
 
         return (new FastExcel($employees))->download('employees.xlsx');
     }

@@ -4,7 +4,7 @@
             <img class="img-fit rounded-circle" src="{{$user->imageFullPath}}" alt="{{ translate('user') }}">
         </div>
         <div>
-            <h5 class="mb-0 media-body">{{$user['f_name'].' '.$user['l_name']}}</h5>
+            <h5 class="mb-0 media-body">{{$user['name']}}</h5>
             <span class="fz-12">{{$user['phone']}}</span>
         </div>
     </div>

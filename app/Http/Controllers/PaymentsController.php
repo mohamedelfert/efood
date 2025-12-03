@@ -609,7 +609,7 @@ class PaymentsController extends Controller
             $date = now()->format('d/m/Y h:i A');
             // Prepare template data
             $templateData = [
-                'customer_name' => $transaction->user->f_name . ' ' . $transaction->user->l_name,
+                'customer_name' => $transaction->user->name,
                 'amount' => $amount,
                 'currency' => $currency,
                 'new_balance' => $newBalance,

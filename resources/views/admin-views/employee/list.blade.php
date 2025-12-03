@@ -78,7 +78,7 @@
                                             <div class="avatar">
                                                 <img class="img-fit rounded-circle" src="{{$employee->imageFullPath}}" alt="{{ translate('employee') }}">
                                             </div>
-                                            <div class="media-body">{{$employee['f_name'] . ' ' . $employee['l_name']}}</div>
+                                            <div class="media-body">{{$employee['name']}}</div>
                                         </div>
                                     </td>
                                     <td >

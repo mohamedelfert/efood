@@ -99,8 +99,7 @@ class CustomerController extends Controller
             $key = explode(' ', $request['search']);
             $customers = $this->customer->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%")
+                    $q->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('email', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%");
                 }
@@ -187,8 +186,7 @@ class CustomerController extends Controller
                 $q->whereHas('customer', function ($query) use ($search) {
                     $key = explode(' ', $search);
                     foreach ($key as $value) {
-                        $query->where('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%");
+                        $query->where('name', 'like', "%{$value}%");
                     }
                 });
             })
@@ -286,8 +284,7 @@ class CustomerController extends Controller
 
         $output = [
             'id' => $user->id ?? '',
-            'f_name' => $user->f_name ?? '',
-            'l_name' => $user->l_name ?? '',
+            'name' => $user->name ?? '',
             'email' => $user->email ?? '',
             'image' => ($user && $user->image) ? asset('storage/app/public/profile') . '/' . $user->image : asset('/public/assets/admin/img/160x160/img1.jpg'),
             'cm_firebase_token' => $user->cm_firebase_token ?? '',
@@ -386,7 +383,7 @@ class CustomerController extends Controller
      */
     public function excelImport(): StreamedResponse|string
     {
-        $users = $this->customer->select('f_name as First Name', 'l_name as Last Name', 'email as Email', 'is_active as Active', 'phone as Phone', 'point as Point')->get();
+        $users = $this->customer->select('name as Name', 'email as Email', 'is_active as Active', 'phone as Phone', 'point as Point')->get();
         return (new FastExcel($users))->download('customers.xlsx');
     }
 

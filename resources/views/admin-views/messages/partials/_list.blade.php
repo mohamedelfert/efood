@@ -12,7 +12,7 @@
                 <img class="avatar-img custom-avatar-img" src="{{$user->imageFullPath}}" alt="{{ translate('image') }}">
             </div>
             <h5 class="sidebar_name mb-0 mr-3 d-none d-md-block">
-                {{$user['f_name'].' '.$user['l_name']}} <span
+                {{$user['name']}} <span
                     class="{{$unchecked!=0?'badge badge-info':''}}" id="counter-{{$conv->user_id}}">{{$unchecked!=0?$unchecked:''}}</span>
             </h5>
         </div>

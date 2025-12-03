@@ -382,7 +382,7 @@ class CustomerLogic{
                             }
                         }
                     }
-                    $bonus_value = Helpers::text_variable_data_format(value:$bonus_message, user_name: $customer->f_name. ' '. $customer->l_name, restaurant_name: $restaurant_name);
+                    $bonus_value = Helpers::text_variable_data_format(value:$bonus_message, user_name: $customer->name, restaurant_name: $restaurant_name);
                 }
             }
 
@@ -398,7 +398,7 @@ class CustomerLogic{
                     }
                 }
             }
-            $value = Helpers::text_variable_data_format(value:$message, user_name: $customer->f_name. ' '. $customer->l_name, restaurant_name: $restaurant_name);
+            $value = Helpers::text_variable_data_format(value:$message, user_name: $customer->name, restaurant_name: $restaurant_name);
 
             try {
                 if ($value) {

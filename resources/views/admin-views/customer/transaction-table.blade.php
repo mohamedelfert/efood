@@ -65,7 +65,7 @@
                                         {{ $transition->firstitem()+$key }}
                                     </td>
                                     <td>{{$trans->transaction_id}}</td>
-                                    <td><a href="{{route('admin.customer.view',['user_id'=>$trans->user_id])}}">{{Str::limit($trans->customer?$trans->customer->f_name.' '.$trans->customer->l_name:translate('not_found'),20,'...')}}</a></td>
+                                    <td><a href="{{route('admin.customer.view',['user_id'=>$trans->user_id])}}">{{$trans->customer?$trans->customer->name:''}}</a></td>
                                     <td>{{$trans->credit}}</td>
                                     <td>{{$trans->debit}}</td>
                                     <td>{{$trans->amount}}</td>

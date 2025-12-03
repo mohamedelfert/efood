@@ -103,8 +103,7 @@ class InstallController extends Controller
         ])->validate();
 
         DB::table('admins')->insertOrIgnore([
-            'f_name' => $request['admin_f_name'],
-            'l_name' => $request['admin_l_name'],
+            'name' => $request['admin_name'],
             'email' => $request['admin_email'],
             'password' => bcrypt($request['admin_password']),
             'phone' => $request['phone_code'].$request['admin_phone'],

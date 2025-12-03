@@ -144,14 +144,13 @@ class POSController extends Controller
         $data = $this->user
             ->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%")
+                    $q->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%");
                 }
             })
-            ->whereNotNull(['f_name', 'l_name', 'phone'])
+            ->whereNotNull(['name', 'phone'])
             ->limit(8)
-            ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
+            ->get([DB::raw('id, CONCAT(name, " (", phone ,")") as text')]);
 
         $data[] = (object)['id' => false, 'text' => translate('walk_in_customer')];
 
@@ -577,7 +576,7 @@ class POSController extends Controller
                 $customer = $this->user->find($order->user_id);
                 $customerFcmToken = $customer?->cm_firebase_token;
                 $local = $customer?->language_code ?? 'en';
-                $customerName = $customer?->f_name . ' '. $customer?->l_name ?? '';
+                $customerName = $customer?->name ?? '';
 
                 if ($local != 'en'){
                     $statusKey = Helpers::order_status_message_key('confirmed');
@@ -750,8 +749,7 @@ class POSController extends Controller
     public function customerStore(Request $request): RedirectResponse
     {
         $request->validate([
-            'f_name' => 'required',
-            'l_name' => 'required',
+            'name' => 'required',
             'phone' => 'required',
             'email' => 'required|email',
         ]);
@@ -769,8 +767,7 @@ class POSController extends Controller
         }
 
         $this->user->create([
-            'f_name' => $request->f_name,
-            'l_name' => $request->l_name,
+            'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => bcrypt('password'),
@@ -955,7 +952,7 @@ class POSController extends Controller
                 'SL' => $key + 1,
                 'Order ID' => $order->id,
                 'Order Date' => date('d M Y h:i A', strtotime($order->created_at)),
-                'Customer Info' => $order->user_id ? "{$order->customer?->f_name} {$order->customer?->l_name}" : 'Walk-in Customer',
+                'Customer Info' => $order->user_id ? "{$order->customer?->name}" : 'Walk-in Customer',
                 'Total Amount' => Helpers::set_symbol($order->order_amount),
                 'Payment Status' => ucfirst($order->payment_status),
                 'Order Status' => ucfirst(str_replace('_', ' ', $order->order_status)),

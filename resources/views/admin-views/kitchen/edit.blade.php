@@ -34,11 +34,11 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="f_name">
-                                    {{translate('First_Name')}}
+                                <label for="name">
+                                    {{translate('Name')}}
                                     <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="f_name" value="{{$chef['f_name']}}" class="form-control" id="f_name" placeholder="{{translate('Ex')}} : {{translate('John')}}">
+                                <input type="text" name="name" value="{{$chef['name']}}" class="form-control" id="name" placeholder="{{translate('Ex')}} : {{translate('John')}}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="l_name">

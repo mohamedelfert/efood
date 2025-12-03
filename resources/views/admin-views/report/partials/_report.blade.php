@@ -21,7 +21,7 @@
                 <td>{{$row['quantity']}}</td>
                 <td>
                     @if($row['customer'])
-                        <a class="text-body text-capitalize">{{$row['customer']->f_name.' '.$row['customer']->l_name}}</a>
+                        <a class="text-body text-capitalize">{{$row['customer']->name}}</a>
                     @else
                         <label
                             class="badge badge-danger">{{translate('invalid')}} {{translate('customer')}} {{translate('data')}}</label>

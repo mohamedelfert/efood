@@ -63,7 +63,7 @@
                                             @if(isset($review->delivery_man))
                                                 <div>
                                                     <a class="text-dark" href="{{route('admin.delivery-man.preview',[$review['delivery_man_id']])}}">
-                                                        {{$review->delivery_man->f_name.' '.$review->delivery_man->l_name}}
+                                                        {{$review->delivery_man->name}}
                                                     </a>
                                                 </div>
                                             @else
@@ -76,7 +76,7 @@
                                             @if(isset($review->customer))
                                                 <div>
                                                     <a class="text-dark" href="{{route('admin.customer.view',[$review->user_id])}}">
-                                                        {{$review->customer->f_name." ".$review->customer->l_name}}
+                                                        {{$review->customer->name}}
                                                     </a>
                                                 </div>
                                             @else

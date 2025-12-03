@@ -84,8 +84,7 @@ class DeliveryManController extends Controller
                 $key = explode(' ', $search);
                 $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
-                        $q->orWhere('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%")
+                        $q->orWhere('name', 'like', "%{$value}%")
                             ->orWhere('email', 'like', "%{$value}%")
                             ->orWhere('phone', 'like', "%{$value}%");
                     }
@@ -133,8 +132,7 @@ class DeliveryManController extends Controller
             $key = explode(' ', $request['search']);
             $deliverymenIds = $this->deliveryman->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%");
+                    $q->orWhere('name', 'like', "%{$value}%");
                 }
             })->pluck('id')->toArray();
 
@@ -167,12 +165,12 @@ class DeliveryManController extends Controller
     {
         //dd($request->all());
         $request->validate([
-            'f_name' => 'required',
+            'name' => 'required',
             'email' => 'required|regex:/(.+)@(.+)\.(.+)/i|unique:delivery_men',
             'phone' => 'required|unique:delivery_men',
             'confirm_password' => 'same:password'
         ], [
-            'f_name.required' => translate('First name is required!')
+            'name.required' => translate('First name is required!')
         ]);
 
         $identityImageNames = [];
@@ -186,8 +184,7 @@ class DeliveryManController extends Controller
         }
 
         $deliveryman = $this->deliveryman;
-        $deliveryman->f_name = $request->f_name;
-        $deliveryman->l_name = $request->l_name;
+        $deliveryman->name = $request->name;
         $deliveryman->email = $request->email;
         $deliveryman->phone = $request->phone;
         $deliveryman->identity_number = $request->identity_number;
@@ -204,7 +201,7 @@ class DeliveryManController extends Controller
             $emailServices = Helpers::get_business_settings('mail_config');
             $mailStatus = Helpers::get_business_settings('registration_mail_status_dm');
             if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
-                Mail::to($deliveryman->email)->send(new DMSelfRegistration('approved', $deliveryman->f_name.' '.$deliveryman->l_name, $deliveryman->language_code));
+                Mail::to($deliveryman->email)->send(new DMSelfRegistration('approved', $deliveryman->name, $deliveryman->language_code));
             }
 
         }catch(\Exception $ex){
@@ -246,10 +243,10 @@ class DeliveryManController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         $request->validate([
-            'f_name' => 'required',
+            'name' => 'required',
             'email' => 'required|regex:/(.+)@(.+)\.(.+)/i',
         ], [
-            'f_name.required' => translate('First name is required!')
+            'name.required' => translate('Name is required!')
         ]);
 
         if ($request->password) {
@@ -286,8 +283,7 @@ class DeliveryManController extends Controller
         } else {
             $identityImage = $deliveryman['identity_image'];
         }
-        $deliveryman->f_name = $request->f_name;
-        $deliveryman->l_name = $request->l_name;
+        $deliveryman->name = $request->name;
         $deliveryman->email = $request->email;
         $deliveryman->phone = $request->phone;
         $deliveryman->identity_number = $request->identity_number;
@@ -356,8 +352,7 @@ class DeliveryManController extends Controller
                 $key = explode(' ', $search);
                 $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
-                        $q->orWhere('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%")
+                        $q->orWhere('name', 'like', "%{$value}%")
                             ->orWhere('email', 'like', "%{$value}%")
                             ->orWhere('phone', 'like', "%{$value}%");
                     }
@@ -372,7 +367,7 @@ class DeliveryManController extends Controller
             ->when(($request->has('status') && $status == 'inactive'), function ($query) use ($status) {
                 $query->where(['is_active' => 0]);
             })
-            ->select('f_name as First Name', 'l_name as Last Name', 'phone as Phone', 'identity_type', 'identity_number')
+            ->select('name as Name', 'phone as Phone', 'identity_type', 'identity_number')
             ->latest()
             ->get();
 
@@ -393,8 +388,7 @@ class DeliveryManController extends Controller
             $key = explode(' ', $request['search']);
             $deliverymen = $this->deliveryman->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%")
+                    $q->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%")
                         ->orWhere('email', 'like', "%{$value}%");
                 }
@@ -421,8 +415,7 @@ class DeliveryManController extends Controller
             $key = explode(' ', $request['search']);
             $deliverymen = $this->deliveryman->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('f_name', 'like', "%{$value}%")
-                        ->orWhere('l_name', 'like', "%{$value}%")
+                    $q->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%")
                         ->orWhere('email', 'like', "%{$value}%");
                 }
@@ -459,7 +452,7 @@ class DeliveryManController extends Controller
 
             if (isset($emailServices['status']) && $emailServices['status'] == 1) {
                 $mailType = ($request->status == 'approved') ? 'approved' : 'denied';
-                $fullName = $deliveryman->f_name . ' ' . $deliveryman->l_name;
+                $fullName = $deliveryman->name;
                 $languageCode = $deliveryman->language_code;
                 if ($mailType == 'approved' && $approvedMailStatus == 1){
                     Mail::to($deliveryman->email)->send(new DMSelfRegistration($mailType, $fullName, $languageCode));
@@ -600,7 +593,7 @@ class DeliveryManController extends Controller
                 'SL' => ++$key,
                 'Order ID' => $order->id,
                 'Order Date' => date('d M Y h:m A', strtotime($order['created_at'])),
-                'Customer Info' => $order['user_id'] == null ? 'Walk in Customer' : ($order->customer == null ? 'Customer Unavailable' : $order->customer['f_name'] . ' ' . $order->customer['l_name']),
+                'Customer Info' => $order['user_id'] == null ? 'Walk in Customer' : ($order->customer == null ? 'Customer Unavailable' : $order->customer['name']),
                 'Branch' => $order->branch ? $order->branch->name : 'Branch Deleted',
                 'Total Amount' => Helpers::set_symbol($order['order_amount']),
                 'Payment Status' => $order->payment_status == 'paid' ? 'Paid' : 'Unpaid',
