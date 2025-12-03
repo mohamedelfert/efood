@@ -56,8 +56,8 @@ class DeliveryMan extends Authenticatable
         return $imageUrlArray;
     }
 
-    public function getNameAttribute()
+    public function getNameAttribute($value)
     {
-        return trim($this->name);
+        return trim($value);
     }
 }
