@@ -118,7 +118,19 @@ return new class extends Migration
             ['key' => 'add_wallet_bonus_message', 'value' => '{"status":1,"message":"عزيزي العميل لقد تم إضافة مبلغ هدية لك"}'],
             ['key' => 'firebase_otp_verification', 'value' => '{"status":0,"web_api_key":""}'],
             ['key' => 'footer_description_text', 'value' => 'dinehub'],
-            ['key' => 'push_notification_service_file_content', 'value' => json_encode(json_decode('{"type":"service_account","project_id":"fareda-f2dc7",... (your full JSON)'), true)],
+            ['key' => 'push_notification_service_file_content', 'value' => json_encode(json_decode('{
+                        "type": "service_account",
+                        "project_id": "fareda-f2dc7",
+                        "private_key_id": "7bd8d0cae474763e714d3c18f7977c7a78ac60a8",
+                        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCrED4B/utJYPin\nI53JlXrF5KFL5Tg87o5GTN9w7yZL+xMIR2yyBMXM4yYrOdrOoWchrrPgFwki0Sux\n2nJTSkLNHvsE2DqxaezShyHAFPPpUiqwiHmLRSbY+T9LiZuSgqbPTS4rE3IgAVM6\nfjPuFpetIxG4GIDSgs71B9ClgkB0HOf8iCv3ogU3yfLGQNSYdD/1RwOXRbP5WZFR\n5t+eFon29IQF8ktBNxXsqKyk/Gqlkpb8/FkyCTNCiZJZz36GMpxe5BF0XHcVQc4I\ngUeQPell8q+V4vZK+RJK+CsHV0OjOCCSBcJGVfLMZ1l6SXAIFqd+JwS3zra0eUC7\nq70nVq3vAgMBAAECggEAPZVT1XEZ8GlOKxG56Mv9Dogv/zwuolT5eFqNaEFYRqtF\nX0ojWfU45nlyEMa7vH7Du48C564zVkr6UYWEefK2mNTJ5qUXgC5TmTkXz+hbJQi1\nIKeJJjfHc/5LKJ0KGlUZy3CMKerOv7HqbhjoBhMxGJ4S73U2z1JTQkhFd4gsPwBf\nHiC7F8ZnjX+fO7FSVWh2zWzLAPDihr/tzWAy1ENaZVtpsfE2kuTDy3L5JK0alKX8\nXi3WHXuzkTgDhRpw4gA2CVfIrkCRh70o7ldFXA4YjXA2bPLeubSUn1pkLPakKH3q\nTYzv8EG4x/YnC6R0arCJc4oLV36aIIVKRANa9on2FQKBgQC34JNtiOkFKPeLuwLe\n+QHMAU2sTJEnFhH+ObO1OHHfOF4mhgCc/l4eDrk0LxHd0PS6wXdcu/ixUt3HeVbv\n703F9utHxq3PwE8tYJq7dvdW3C7IbgtXvn/ILqZV0/ScZ/TMYOmatEAcrS9uYKWu\nZJX7LvtkwrnCBshjnbfRSutcywKBgQDuKQLBPL7bHPlyAT+IUYFODx2HKrgokYyR\nC8EgDTMDIqb6CQpavRiIlRq1ZSToDYxXkVa/zcEdQt8Ud/4OPBXi9aMfjzCVrMDA\na6gd9pItWhirCXf55zqhSgx4lThsB69Cr1z4RuEN035vcf1LLASc7Cj+sTJXx5pG\ngm//FtKS7QKBgQCgjx7sxGIEuXL+tjuZi4FAK9sxGmKc6K6peKUtFq6IJeZAaT5b\n19lDEcQyhu9o6y7nbEvX0+Mio6M4rQF23VTiCewEbr4S7G+2xeYWz5jGZdkL9ts8\nsQFPQTzJMR0k/blKRU12YvKgl7EVBptlnjtAbBPkNgySGe4c3flGbc765QKBgGqn\nWQF6l6n+dsMURgRhI7v2Tu3qNqCMVdva3Lji0FZ2HTrZ85YhGqyHwXc8fWOiNZg9\nkRDCLtpQySAcgFyVkeOax1tpv4M34vYJADey5VGECIoH6n+yinISfDU/9g2C/3yo\nlcTl0QFlFjkIXjtc0hAIPm+YoQfobnFnFoqxCModAoGANZrErcjwcVPbTAlM13IA\nxacvNzZzp56GNA9LXv/bGSRnFHhuo2sRcjUh/+AMv546Tc7Zuts/ne9Eau0qQUY8\nwKcIxEcvjnGl1e/0R4JnGr6WN3DnKBOROiwA8x/HBNYhaKvhKaWDMNjDhFyXiex2\nO+joJfd5fgwx6sz4I4vKmqI=\n-----END PRIVATE KEY-----\n",
+                        "client_email": "firebase-adminsdk-2co3q@fareda-f2dc7.iam.gserviceaccount.com",
+                        "client_id": "105828530511765091422",
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-2co3q%40fareda-f2dc7.iam.gserviceaccount.com",
+                        "universe_domain": "googleapis.com"
+                        }'), true)],
             ['key' => 'country', 'value' => 'EG'],
             ['key' => 'app_activation', 'value' => '[{"software_id":"40488338","is_active":1},{"software_id":"40488202","is_active":1}]'],
             ['key' => 'google_map_status', 'value' => '1'],
@@ -138,8 +150,8 @@ return new class extends Migration
                 'maintenance_message' => '',
                 'message_body' => ''
             ])],
-            ['key' => 'customer_notify_message', 'value' => '{"status":0,"message":null}'],
-            ['key' => 'customer_notify_message_for_time_change', 'value' => '{"status":0,"message":null}'],
+            ['key' => 'customer_notify_message', 'value' => '{"status":1,"message":null}'],
+            ['key' => 'customer_notify_message_for_time_change', 'value' => '{"status":1,"message":null}'],
             ['key' => 'cutlery_status', 'value' => '0'],
             ['key' => 'add_fund_to_wallet', 'value' => '0'],
             ['key' => 'fcm_credentials', 'value' => json_encode([

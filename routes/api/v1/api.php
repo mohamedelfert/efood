@@ -329,5 +329,9 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::post('/resend-otp', [PaymentsController::class, 'resendOTP']);
         Route::match(['GET','POST'],'/callback', [PaymentsController::class, 'handleCallback']);
         Route::get('/methods', [PaymentsController::class, 'getPaymentMethods']);
+
+        // Payment callback route
+        Route::post('callback', [PaymentsController::class, 'handleCallback']);
+        Route::post('qib/confirm', [PaymentsController::class, 'handleQIBOTPConfirmation']);
     });
 });

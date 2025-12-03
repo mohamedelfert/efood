@@ -22,6 +22,9 @@ class CreateUsersTable extends Migration
             $table->boolean('is_phone_verified')->default(0);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password',100);
+            $table->boolean('wallet_email_notifications')->default(true);
+            $table->boolean('wallet_sms_notifications')->default(false);
+            $table->boolean('wallet_push_notifications')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });

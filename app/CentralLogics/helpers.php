@@ -1049,26 +1049,37 @@ class Helpers
         return true;
     }
 
-    public static function text_variable_data_format($value,$user_name=null,$restaurant_name=null,$delivery_man_name=null,$transaction_id=null,$order_id=null)
+    public static function text_variable_data_format($value, $user_name = null, $restaurant_name = null, $delivery_man_name = null, $transaction_id = null, $order_id = null, $amount = null, $code = null)
     {
-        $data = $value;
-        if ($value) {
-            if($user_name){
-                $data =  str_replace("{userName}", $user_name, $data);
-            }
-
-            if($restaurant_name){
-                $data =  str_replace("{restaurantName}", $restaurant_name, $data);
-            }
-
-            if($delivery_man_name){
-                $data =  str_replace("{deliveryManName}", $delivery_man_name, $data);
-            }
-
-            if($order_id){
-                $data =  str_replace("{orderId}", $order_id, $data);
-            }
+        $data = $value ?? '';
+        if ($user_name) {
+            $data = str_replace("{userName}", $user_name, $data);
         }
+
+        if ($restaurant_name) {
+            $data = str_replace("{restaurantName}", $restaurant_name, $data);
+        }
+
+        if ($delivery_man_name) {
+            $data = str_replace("{deliveryManName}", $delivery_man_name, $data);
+        }
+
+        if ($transaction_id) {
+            $data = str_replace("{transactionId}", $transaction_id, $data);
+        }
+
+        if ($order_id) {
+            $data = str_replace("{orderId}", $order_id, $data);
+        }
+
+        if ($amount) {
+            $data = str_replace("{amount}", $amount, $data);
+        }
+
+        if ($code) {
+            $data = str_replace("{code}", $code, $data);
+        }
+
         return $data;
     }
 

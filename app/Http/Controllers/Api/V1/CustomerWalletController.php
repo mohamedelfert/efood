@@ -19,15 +19,20 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Payment\PaymentGatewayFactory;
+use App\Services\NotificationService;
 
 class CustomerWalletController extends Controller
 {
+    private NotificationService $notificationService;
+
     public function __construct(
         private User              $user,
         private BusinessSetting   $businessSetting,
         private WalletTransaction $walletTransaction,
         private WalletBonus       $walletBonus,
+        NotificationService       $notificationService
     ){
+        $this->notificationService = $notificationService;
     }
 
     public function addFund(Request $request): JsonResponse
@@ -102,6 +107,14 @@ class CustomerWalletController extends Controller
             $user->increment('wallet_balance', $loyaltyAmount);
             
             DB::commit();
+
+            // ✅ Send notification
+            $this->notificationService->sendLoyaltyConversionNotification($user->fresh(), [
+                'transaction_id' => $transactionId,
+                'points_used' => $request->point,
+                'converted_amount' => $loyaltyAmount,
+                'currency' => 'SAR',
+            ]);
 
             return response()->json([
                 'message' => translate('Transfer successful'),
@@ -402,21 +415,18 @@ class CustomerWalletController extends Controller
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
                 
-                // Prepare metadata based on gateway
                 $metadata = [
                     'gateway' => $gateway,
                     'currency' => $currency,
                 ];
 
                 if ($gateway === 'qib') {
-                    // Store QIB-specific data for confirmation step
                     $metadata = array_merge($metadata, [
                         'payment_CustomerNo' => $request->payment_CustomerNo,
                         'payment_DestNation' => $request->payment_DestNation,
                         'payment_Code' => $request->payment_Code,
                     ]);
                 } else {
-                    // Paymob metadata
                     $metadata = array_merge($metadata, [
                         'order_id' => $response['order_id'] ?? null,
                         'payment_key' => $response['payment_key'] ?? null,
@@ -440,16 +450,7 @@ class CustomerWalletController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                Log::info('WalletTransaction Created', [
-                    'transaction_id' => $transactionId,
-                    'user_id' => $user->id,
-                    'amount' => $amount,
-                    'gateway' => $gateway
-                ]);
-
-                // ========================================
-                // 🆕 SEND OTP NOTIFICATIONS (EMAIL + WHATSAPP)
-                // ========================================
+                // ✅ Send OTP notifications for QIB
                 if ($gateway === 'qib') {
                     try {
                         $notificationService = app(\App\Services\QIBNotificationService::class);
@@ -459,21 +460,13 @@ class CustomerWalletController extends Controller
                             'currency' => $currency,
                             'gateway' => 'QIB Bank',
                         ]);
-                        
-                        Log::info('QIB OTP notifications initiated', [
-                            'transaction_id' => $transactionId,
-                            'user_id' => $user->id
-                        ]);
                     } catch (\Exception $e) {
-                        // Don't fail the payment if notifications fail
                         Log::warning('QIB OTP notification failed', [
                             'error' => $e->getMessage(),
                             'transaction_id' => $transactionId,
-                            'user_id' => $user->id
                         ]);
                     }
                 }
-                // ========================================
 
                 $responseData = [
                     'success' => true,
@@ -484,11 +477,9 @@ class CustomerWalletController extends Controller
                     'currency' => $currency,
                 ];
 
-                // Gateway-specific response fields
                 if ($gateway === 'qib') {
                     $responseData['requires_otp'] = true;
                     $responseData['otp_sent'] = true;
-                    $responseData['message_en'] = $response['message_en'] ?? 'OTP sent successfully';
                 } else {
                     $responseData['payment_url'] = $response['iframe_url'] ?? null;
                     $responseData['requires_otp'] = false;
@@ -509,7 +500,6 @@ class CustomerWalletController extends Controller
                 'amount' => $amount,
                 'gateway' => $gateway,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
                 'success' => false,
@@ -666,7 +656,6 @@ class CustomerWalletController extends Controller
 
         $sender = $request->user();
 
-        // Check OTP validity
         if (!$sender->transfer_otp || !$sender->transfer_otp_expires_at || now()->isAfter($sender->transfer_otp_expires_at)) {
             return response()->json([
                 'errors' => [['code' => 'otp_expired', 'message' => translate('OTP has expired')]]
@@ -689,7 +678,6 @@ class CustomerWalletController extends Controller
         $receiver = $this->user->find($transferData['receiver_id']);
         $amount = $transferData['amount'];
 
-        // Final balance check
         if ($sender->wallet_balance < $amount) {
             return response()->json([
                 'errors' => [['code' => 'insufficient_balance', 'message' => translate('Insufficient wallet balance')]]
@@ -743,8 +731,17 @@ class CustomerWalletController extends Controller
 
             DB::commit();
 
-            // Send success notification
-            $this->sendTransferSuccessNotification($sender, $receiver, $amount, $transactionId);
+            // ✅ Send transfer notifications
+            $this->notificationService->sendMoneyTransferNotification(
+                $sender->fresh(), 
+                $receiver->fresh(), 
+                [
+                    'transaction_id' => $transactionId,
+                    'amount' => $amount,
+                    'currency' => 'SAR',
+                    'note' => $transferData['note'],
+                ]
+            );
 
             return response()->json([
                 'success' => true,
