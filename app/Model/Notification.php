@@ -7,8 +7,12 @@ use Illuminate\Support\Facades\Storage;
 
 class Notification extends Model
 {
+    protected $guarded = [];
+
     protected $casts = [
         'status' => 'integer',
+        'is_read' => 'boolean',
+        'data' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];

@@ -66,6 +66,9 @@ class NotificationController extends Controller
         $notification->description = $request->description;
         $notification->image = Helpers::upload('notification/', 'png', $request->file('image'));
         $notification->status = 1;
+        $notification->user_id = 0;
+        $notification->notification_type = 'admin_notification';
+        $notification->is_read = false;
         $notification->save();
 
         $notification->image = asset('storage/app/public/notification') . '/' . $notification->image;

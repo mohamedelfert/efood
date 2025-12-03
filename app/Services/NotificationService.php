@@ -431,7 +431,7 @@ class NotificationService
     private function storeInAppNotification(int $userId, array $data): void
     {
         try {
-            Notification::create([
+            $notificationData = [
                 'user_id' => $userId,
                 'title' => $data['title'],
                 'description' => $data['description'],
@@ -439,14 +439,24 @@ class NotificationService
                 'reference_id' => $data['reference_id'] ?? null,
                 'status' => 1,
                 'is_read' => false,
-                'data' => json_encode([
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            
+            // Check if data column exists
+            $notification = new Notification();
+            $columns = $notification->getConnection()->getSchemaBuilder()->getColumnListing($notification->getTable());
+            
+            if (in_array('data', $columns)) {
+                $notificationData['data'] = json_encode([
                     'amount' => $data['amount'] ?? null,
                     'currency' => $data['currency'] ?? null,
                     'extra' => $data['extra'] ?? null,
-                ]),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                ]);
+            }
+            
+            Notification::create($notificationData);
+            
         } catch (\Exception $e) {
             Log::error('Failed to store in-app notification', [
                 'user_id' => $userId,
