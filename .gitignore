@@ -14,3 +14,9 @@ yarn-error.log
 /Modules/Gateways
 /storage/install.zip
 /storage/update.zip
+# Google Cloud / Firebase
+*.json
+!package.json
+!composer.json
+service-account-key.json
+firebase-adminsdk-*.json
