@@ -103,22 +103,11 @@ class NotificationService
             ];
 
             if ($sender->email) {
-                $this->sendEmail($sender->email, new MoneyTransferNotification($sender, $receiver, $data));
-            }
-
-            if ($sender->cm_firebase_token) {
-                $this->sendPushNotification($sender->cm_firebase_token, [
-                    'title' => translate('Money Transfer Successful'),
-                    'description' => translate('You sent :amount :currency to :name', [
-                        'amount' => number_format($data['amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR',
-                        'name' => $receiver->name
-                    ]),
-                    'type' => 'money_transfer_sent',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
+                $this->sendEmail($sender->email, new MoneyTransferNotification(
+                    $sender,
+                    $receiver,    
+                    $data,        
+                ));
             }
 
             // Notification for receiver
@@ -135,7 +124,11 @@ class NotificationService
             ];
 
             if ($receiver->email) {
-                $this->sendEmail($receiver->email, new MoneyTransferNotification($receiverData));
+                $this->sendEmail($receiver->email, new MoneyTransferNotification(
+                    $sender,      
+                    $receiver,    
+                    $data,        
+                ));
             }
 
             if ($receiver->cm_firebase_token) {

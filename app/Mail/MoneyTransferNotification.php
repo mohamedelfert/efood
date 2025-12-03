@@ -14,17 +14,15 @@ class MoneyTransferNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
-    protected $sender;
-    protected $receiver;
-    protected $transferData;
+    protected $notificationData;
     protected $language_code;
+    protected $notificationType;
 
-    public function __construct($sender, $receiver, $transferData, $language_code = 'en')
+    public function __construct($notificationData, $language_code = 'en', $notificationType = 'received')
     {
-        $this->sender = $sender;
-        $this->receiver = $receiver;
-        $this->transferData = $transferData;
+        $this->notificationData = $notificationData;
         $this->language_code = $language_code;
+        $this->notificationType = $notificationType;
     }
 
     public function build()
@@ -54,28 +52,43 @@ class MoneyTransferNotification extends Mailable
             }
         }
 
-        // Prepare variables for replacement
-        $variables = [
-            'sender_name' => $this->sender->name ?? 'Sender',
-            'receiver_name' => $this->receiver->name ?? 'Receiver',
-            'amount' => number_format($this->transferData['amount'] ?? 0, 2),
-            'currency' => $this->transferData['currency'] ?? 'SAR',
-            'transaction_id' => $this->transferData['transaction_id'] ?? 'N/A',
-            'note' => $this->transferData['note'] ?? 'No note provided',
-            'balance' => number_format($this->receiver->wallet_balance ?? 0, 2),
-            'year' => date('Y'),
-        ];
+        // Prepare variables for replacement based on notification type
+        if ($this->notificationType === 'sent') {
+            $variables = [
+                'sender_name' => $this->notificationData['user_name'] ?? 'You',
+                'receiver_name' => $this->notificationData['recipient_name'] ?? 'Recipient',
+                'amount' => number_format($this->notificationData['amount'] ?? 0, 2),
+                'currency' => $this->notificationData['currency'] ?? 'SAR',
+                'transaction_id' => $this->notificationData['transaction_id'] ?? 'N/A',
+                'note' => $this->notificationData['note'] ?? 'No note provided',
+                'balance' => number_format($this->notificationData['new_balance'] ?? 0, 2),
+                'year' => date('Y'),
+            ];
+            // Adjust subject for sender
+            $subject = translate('Money_Transfer_Sent');
+        } else {
+            $variables = [
+                'sender_name' => $this->notificationData['sender_name'] ?? 'Sender',
+                'receiver_name' => $this->notificationData['user_name'] ?? 'You',
+                'amount' => number_format($this->notificationData['amount'] ?? 0, 2),
+                'currency' => $this->notificationData['currency'] ?? 'SAR',
+                'transaction_id' => $this->notificationData['transaction_id'] ?? 'N/A',
+                'note' => $this->notificationData['note'] ?? 'No note provided',
+                'balance' => number_format($this->notificationData['new_balance'] ?? 0, 2),
+                'year' => date('Y'),
+            ];
+            $subject = translate('Money_Transfer_Notification');
+        }
 
         foreach ($content as $key => $text) {
             $content[$key] = $this->replaceVariables($text, $variables);
         }
 
-        // Determine template number (default to 4 based on your file structure)
         $template = $data ? $data->email_template : 4;
         $url = '';
         $company_name = BusinessSetting::where('key', 'restaurant_name')->first()->value ?? config('app.name');
 
-        return $this->subject(translate('Money_Transfer_Notification'))
+        return $this->subject($subject)
             ->view('email-templates.new-email-format-' . $template, [
                 'company_name' => $company_name,
                 'data' => $data,
