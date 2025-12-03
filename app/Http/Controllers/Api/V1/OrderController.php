@@ -1441,7 +1441,16 @@ class OrderController extends Controller
 
         $details = $this->order_detail->with(['order',
             'order.delivery_man' => function ($query) {
-                $query->select('id', 'name', 'phone', 'email', 'image', 'branch_id', 'is_active');
+                $query->select(
+                    'id',
+                    'f_name',
+                    'l_name',
+                    'phone',
+                    'email',
+                    'image',
+                    'branch_id',
+                    'is_active'
+                );
             },
             'order.delivery_man.rating', 'order.delivery_address', 'order.order_partial_payments' , 'order.offline_payment', 'order.deliveryman_review'])
             ->withCount(['reviews'])
