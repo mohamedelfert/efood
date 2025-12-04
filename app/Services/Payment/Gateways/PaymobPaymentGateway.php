@@ -180,6 +180,7 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
         ) {
             return [
                 'status' => 'success',
+                'order_id' => $data['order_id'] ?? null,
                 'message' => 'Payment processed',
                 'paymob_transaction_id' => $data['id'] ?? null,
             ];
