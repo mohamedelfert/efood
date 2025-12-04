@@ -169,28 +169,53 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
 
     public function handleCallback(array $data): array
     {
-        Log::info('Paymob Callback', $data);
+        Log::info('Paymob Raw Callback Received', $data);
 
-        // Check if the callback indicates a successful payment
-        if (
-            isset($data['success']) 
-            && $data['success'] === "true" 
-            && isset($data['data_message']) 
-            && $data['data_message'] === "Approved"
-        ) {
+        $success = false;
+        $paymobTransactionId = null;
+        $paymobOrderId = null;
+
+        // Case 1: Full JSON callback (type: TRANSACTION) - Most common
+        if (isset($data['type']) && $data['type'] === 'TRANSACTION' && isset($data['obj'])) {
+            $obj = $data['obj'];
+            $success = (bool) ($obj['success'] ?? false);
+            $paymobTransactionId = $obj['id'] ?? null;
+            $paymobOrderId = $obj['order']['id'] ?? null;
+        }
+
+        // Case 2: Query string callback (flat key-value)
+        elseif (isset($data['success']) && $data['success'] === 'true') {
+            $success = true;
+            $paymobTransactionId = $data['id'] ?? null;
+            $paymobOrderId = $data['order'] ?? null;
+        }
+
+        // Case 3: Some integrations send success in nested obj even without type
+        elseif (isset($data['obj']['success']) && $data['obj']['success'] === true) {
+            $obj = $data['obj'];
+            $success = true;
+            $paymobTransactionId = $obj['id'] ?? null;
+            $paymobOrderId = $obj['order']['id'] ?? null;
+        }
+
+        if ($success) {
             return [
                 'status' => 'success',
-                'order_id' => $data['order_id'] ?? null,
-                'message' => 'Payment processed',
-                'paymob_transaction_id' => $data['id'] ?? null,
+                'message' => 'Payment processed successfully',
+                'paymob_transaction_id' => $paymobTransactionId,
+                'paymob_order_id' => $paymobOrderId,
             ];
         }
 
+        // Failed payment
+        $error = $data['data_message'] ?? $data['error_occured'] ?? 'Payment failed';
+        Log::warning('Paymob Payment Failed in Callback', ['data' => $data, 'error' => $error]);
+
         return [
             'status' => 'failed',
-            'error' => $data['data_message'] ?? $data['error'] ?? 'Unknown error',
+            'error' => $error,
         ];
-}
+    }
 
     public function getPaymentMethods(): array
     {

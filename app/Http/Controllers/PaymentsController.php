@@ -42,202 +42,157 @@ class PaymentsController extends Controller
     {
         try {
             $data = $request->all();
-            $transactionId = $data['transaction_id'] ?? $request->query('transaction_id');
-            $orderId = $data['order'] ?? $request->query('order'); // Paymob order ID
-            $paymobTransactionId = $data['id'] ?? $request->query('id'); // Paymob transaction ID
-            $hmac = $data['hmac'] ?? $request->query('hmac');
 
-            // Log incoming callback data
             Log::info('Callback Data Received', [
-                'transaction_id' => $transactionId,
-                'order_id' => $orderId,
-                'paymob_transaction_id' => $paymobTransactionId,
-                'hmac' => $hmac,
                 'query' => $request->query(),
-                'data' => $data
+                'body' => $data,
+                'ip' => $request->ip()
             ]);
 
-            // Find transaction
-            $query = WalletTransaction::where('status', 'pending');
-            if ($transactionId) {
-                $query->where('transaction_id', $transactionId);
+            // Extract Paymob identifiers
+            $paymobOrderId = $data['order'] ?? $request->query('order');
+            $paymobTransactionId = $data['id'] ?? $request->query('id');
+            $internalTransactionId = $data['transaction_id'] ?? $request->query('transaction_id');
+
+            // Find pending transaction
+            $transaction = WalletTransaction::where('status', 'pending');
+
+            if ($internalTransactionId) {
+                $transaction->where('transaction_id', $internalTransactionId);
             } elseif ($paymobTransactionId) {
-                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_transaction_id")) = ?', [$paymobTransactionId]);
-            } elseif ($orderId) {
-                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_order_id")) = ?', [$orderId]);
+                $transaction->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_transaction_id")) = ?', [$paymobTransactionId]);
+            } elseif ($paymobOrderId) {
+                $transaction->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_order_id")) = ?', [$paymobOrderId]);
+            } else {
+                Log::error('Callback: No identifier found');
+                return response()->json(['success' => false, 'message' => 'Invalid callback'], 400);
             }
-            $transaction = $query->first();
+
+            $transaction = $transaction->first();
 
             if (!$transaction) {
-                // Debug: Log all pending transactions to check metadata
-                $pendingTransactions = WalletTransaction::where('status', 'pending')->get(['transaction_id', 'metadata'])->toArray();
-                Log::error('Callback: Transaction not found', [
-                    'transaction_id' => $transactionId,
-                    'order_id' => $orderId,
-                    'paymob_transaction_id' => $paymobTransactionId,
-                    'pending_transactions' => $pendingTransactions
+                Log::warning('Callback: No pending transaction found', [
+                    'internal_id' => $internalTransactionId,
+                    'paymob_txn_id' => $paymobTransactionId,
+                    'paymob_order_id' => $paymobOrderId
                 ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => translate('Invalid or completed transaction')
-                ], 400);
+                return response()->json(['success' => false, 'message' => 'Transaction not found or already processed'], 200); // 200 to avoid retries
             }
 
             // Decode metadata
-            $metadata = is_string($transaction->metadata) ? json_decode($transaction->metadata, true) : $transaction->metadata;
-            if (!is_array($metadata)) {
-                Log::error('Callback: Invalid metadata format', [
-                    'transaction_id' => $transaction->transaction_id,
-                    'metadata' => $transaction->metadata
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => translate('Invalid transaction metadata')
-                ], 400);
-            }
+            $metadata = is_string($transaction->metadata)
+                ? json_decode($transaction->metadata, true)
+                : ($transaction->metadata ?? []);
 
-            // Use the gateway stored in the transaction
-            $gateway = $transaction->gateway;
-            if (!$gateway) {
-                Log::error('Callback: Gateway not specified', [
-                    'transaction_id' => $transaction->transaction_id,
-                    'paymob_order_id' => $orderId
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => translate('Gateway not specified for this transaction')
-                ], 400);
-            }
+            if (!is_array($metadata)) $metadata = [];
 
-            $this->gateway = PaymentGatewayFactory::create($gateway);
-            if (!$this->gateway) {
-                Log::error('Callback: Invalid gateway', ['gateway' => $gateway]);
-                return response()->json([
-                    'success' => false,
-                    'message' => translate('Invalid payment gateway')
-                ], 400);
+            // Save Paymob IDs if missing
+            $updated = false;
+            if ($paymobOrderId && empty($metadata['paymob_order_id'])) {
+                $metadata['paymob_order_id'] = $paymobOrderId;
+                $updated = true;
             }
-
-            // Update transaction with Paymob transaction ID if missing
             if ($paymobTransactionId && empty($metadata['paymob_transaction_id'])) {
                 $metadata['paymob_transaction_id'] = $paymobTransactionId;
+                $updated = true;
+            }
+            if ($updated) {
                 $transaction->update(['metadata' => json_encode($metadata)]);
             }
 
-            $response = $this->gateway->handleCallback($data);
+            // Re-instantiate correct gateway
+            $gatewayInstance = PaymentGatewayFactory::create($transaction->gateway);
+            if (!$gatewayInstance) {
+                Log::error('Invalid gateway from DB', ['gateway' => $transaction->gateway]);
+                return response()->json(['success' => false], 400);
+            }
 
-            if (
-                isset($response['status']) && 
-                $response['status'] === 'success' && 
-                isset($response['paymob_transaction_id']) && 
-                $response['paymob_transaction_id'] === 
-                ($metadata['paymob_transaction_id'])
-            ) {
+            $response = $gatewayInstance->handleCallback($data);
+
+            // SUCCESS PATH
+            if ($response['status'] === 'success') {
                 DB::beginTransaction();
-                try {
-                    if ($transaction->transaction_type === 'order_payment'){
-                        // Update WalletTransaction
-                        $transaction->update([
-                            'status' => 'completed',
-                            'balance' => $transaction->user->wallet_balance,
-                            'updated_at' => now(),
-                        ]);
-                    }else{
-                        $transaction->update([
-                            'status' => 'completed',
-                            'balance' => $transaction->user->wallet_balance + $transaction->credit,
-                            'updated_at' => now(),
-                        ]);
 
-                        // Increment user wallet balance
+                try {
+                    // Update wallet balance
+                    if ($transaction->transaction_type === 'order_payment') {
+                        $newBalance = $transaction->user->wallet_balance; // No change
+                    } else {
                         $transaction->user->increment('wallet_balance', $transaction->credit);
+                        $newBalance = $transaction->user->fresh()->wallet_balance;
                     }
 
-                    // Update order status if this is an order payment
-                    if (isset($metadata['order_id'])) {
+                    // Mark transaction as completed
+                    $transaction->update([
+                        'status' => 'completed',
+                        'balance' => $newBalance,
+                        'updated_at' => now(),
+                    ]);
+
+                    // Handle order payment
+                    if (!empty($metadata['order_id'])) {
                         Order::where('id', $metadata['order_id'])->update([
                             'payment_status' => 'paid',
                             'order_status' => 'confirmed',
                             'updated_at' => now(),
                         ]);
 
-                        // Update OrderPartialPayment if applicable
                         OrderPartialPayment::where('order_id', $metadata['order_id'])
-                            ->where('paid_with', $gateway)
+                            ->where('paid_with', $transaction->gateway)
                             ->update([
                                 'paid_amount' => $transaction->credit,
                                 'due_amount' => 0,
                                 'updated_at' => now(),
                             ]);
 
-                        // Update existing OrderTransaction
                         OrderTransaction::where('order_id', $metadata['order_id'])
                             ->where('status', 'pending')
                             ->update([
                                 'status' => 'completed',
-                                'balance' => $transaction->user->wallet_balance,
-                                'updated_at' => now(),
+                                'balance' => $newBalance,
                             ]);
                     }
 
                     DB::commit();
 
-                    Log::info('Callback: Payment processed successfully', [
+                    Log::info('Payment SUCCESS via Callback', [
                         'transaction_id' => $transaction->transaction_id,
                         'user_id' => $transaction->user_id,
-                        'order_id' => $metadata['order_id'] ?? null,
-                        'paymob_order_id' => $orderId,
-                        'paymob_transaction_id' => $paymobTransactionId,
-                        'new_balance' => $transaction->user->wallet_balance
+                        'amount' => $transaction->credit,
+                        'paymob_txn_id' => $paymobTransactionId,
+                        'order_id' => $metadata['order_id'] ?? null
                     ]);
 
-                    $previousBalance = $transaction->balance - $transaction->credit;
-
-                    // Send WhatsApp notification with receipt for successful wallet top-up
+                    // Send WhatsApp receipt for wallet top-up
                     if ($transaction->transaction_type !== 'order_payment' && $transaction->user->phone) {
+                        $previousBalance = $newBalance - $transaction->credit;
                         $this->sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance);
                     }
 
                     return response()->json([
                         'success' => true,
-                        'message' => translate('Payment processed successfully'),
-                        'transaction_id' => $transaction->transaction_id,
-                        'order_id' => $metadata['order_id'] ?? null
+                        'message' => 'Payment processed successfully'
                     ], 200);
-                } catch (Exception $e) {
+
+                } catch (\Exception $e) {
                     DB::rollBack();
-                    Log::error('Callback: Database update failed', [
-                        'error' => $e->getMessage(),
-                        'transaction_id' => $transaction->transaction_id,
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => translate('Failed to update transaction')
-                    ], 500);
+                    Log::error('DB Update Failed in Callback', ['error' => $e->getMessage()]);
+                    return response()->json(['success' => false], 500);
                 }
-            } else {
-                Log::error('Callback: Payment failed', [
-                    'transaction_id' => $transaction->transaction_id,
-                    'response' => $response
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => $response['error'] ?? translate('Payment failed')
-                ], 400);
             }
-        } catch (Exception $e) {
-            Log::error('Callback handling failed', [
-                'error' => $e->getMessage(),
-                'transaction_id' => $transactionId,
-                'order_id' => $orderId,
-                'paymob_transaction_id' => $paymobTransactionId,
-                'trace' => $e->getTraceAsString()
+
+            // FAILURE PATH
+            $transaction->update(['status' => 'failed']);
+            Log::warning('Payment FAILED via Callback', [
+                'transaction_id' => $transaction->transaction_id,
+                'reason' => $response['error'] ?? 'unknown'
             ]);
-            return response()->json([
-                'success' => false,
-                'errors' => [['code' => 'server_error', 'message' => translate('Callback processing failed')]]
-            ], 500);
+
+            return response()->json(['success' => false, 'message' => 'Payment failed'], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Callback Exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false], 500);
         }
     }
 
