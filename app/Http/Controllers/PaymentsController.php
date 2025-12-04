@@ -201,7 +201,8 @@ class PaymentsController extends Controller
                     return response()->json([
                         'success' => true,
                         'message' => translate('Payment processed successfully'),
-                        'transaction_id' => $transaction->transaction_id
+                        'transaction_id' => $transaction->transaction_id,
+                        'order_id' => $metadata['order_id'] ?? null
                     ], 200);
                 } catch (Exception $e) {
                     DB::rollBack();
