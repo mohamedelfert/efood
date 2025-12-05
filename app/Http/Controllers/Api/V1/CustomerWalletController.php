@@ -17,9 +17,10 @@ use App\CentralLogics\CustomerLogic;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use App\Services\NotificationService;
+use App\Services\PaymentGatewayHelper;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Payment\PaymentGatewayFactory;
-use App\Services\NotificationService;
 
 class CustomerWalletController extends Controller
 {
@@ -450,7 +451,7 @@ class CustomerWalletController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                // ✅ Send OTP notifications for QIB
+                // Send OTP notifications for QIB
                 if ($gateway === 'qib') {
                     try {
                         $notificationService = app(\App\Services\QIBNotificationService::class);
@@ -468,6 +469,9 @@ class CustomerWalletController extends Controller
                     }
                 }
 
+                // Get gateway type information
+                $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($gateway);
+
                 $responseData = [
                     'success' => true,
                     'message' => translate($gateway === 'qib' ? 'OTP sent to your WhatsApp' : 'Payment initiated successfully'),
@@ -475,6 +479,8 @@ class CustomerWalletController extends Controller
                     'gateway' => $gateway,
                     'amount' => $amount,
                     'currency' => $currency,
+                    'requires_online_url' => $gatewayInfo['requires_online_url'],
+                    'payment_type' => $gatewayInfo['payment_type'],
                 ];
 
                 if ($gateway === 'qib') {
@@ -483,7 +489,7 @@ class CustomerWalletController extends Controller
                 } else {
                     $responseData['payment_url'] = $response['iframe_url'] ?? null;
                     $responseData['requires_otp'] = false;
-                    $responseData['redirect_required'] = true;
+                    $responseData['redirect_required'] = $gatewayInfo['requires_online_url']; // Use flag instead of hardcoded true
                 }
 
                 return response()->json($responseData, 200);

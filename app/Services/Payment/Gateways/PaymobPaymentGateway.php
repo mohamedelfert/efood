@@ -203,7 +203,7 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
                 'status' => 'success',
                 'message' => 'Payment processed successfully',
                 'paymob_transaction_id' => $paymobTransactionId,
-                'paymob_order_id' => $paymobOrderId,
+                'order_id' => $paymobOrderId,
             ];
         }
 

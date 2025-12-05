@@ -74,7 +74,7 @@ class PaymentsController extends Controller
                 Log::warning('Callback: No pending transaction found', [
                     'internal_id' => $internalTransactionId,
                     'paymob_txn_id' => $paymobTransactionId,
-                    'paymob_order_id' => $paymobOrderId
+                    'order_id' => $paymobOrderId
                 ]);
                 return response()->json(['success' => false, 'message' => 'Transaction not found or already processed'], 200); // 200 to avoid retries
             }
@@ -88,8 +88,8 @@ class PaymentsController extends Controller
 
             // Save Paymob IDs if missing
             $updated = false;
-            if ($paymobOrderId && empty($metadata['paymob_order_id'])) {
-                $metadata['paymob_order_id'] = $paymobOrderId;
+            if ($paymobOrderId && empty($metadata['order_id'])) {
+                $metadata['order_id'] = $paymobOrderId;
                 $updated = true;
             }
             if ($paymobTransactionId && empty($metadata['paymob_transaction_id'])) {
