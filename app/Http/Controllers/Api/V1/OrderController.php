@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Log;
 use App\CentralLogics\CustomerLogic;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
+use App\Services\PaymentGatewayHelper;
 use function App\CentralLogics\translate;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\PaymentsController;
@@ -497,9 +498,15 @@ class OrderController extends Controller
                             'transaction_id' => $walletTransaction->transaction_id
                         ]);
 
+                        // Get gateway type information
+                        $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($request->payment_method);
+
                         return response()->json([
                             'message' => translate('order_pending_payment'),
                             'order_id' => $order_id,
+                            'gateway' => $request->payment_method,
+                            'requires_online_url' => $gatewayInfo['requires_online_url'], // ✅ NEW
+                            'payment_type' => $gatewayInfo['payment_type'], // ✅ NEW
                             'payment_details' => $paymentResponse
                         ], 200);
                     } catch (\Exception $e) {
@@ -647,9 +654,15 @@ class OrderController extends Controller
                         'transaction_id' => $transactionId
                     ]);
 
+                    // Get gateway type information
+                    $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($request->payment_method);
+
                     return response()->json([
                         'message' => translate('order_pending_payment'),
                         'order_id' => $order_id,
+                        'gateway' => $request->payment_method,
+                        'requires_online_url' => $gatewayInfo['requires_online_url'],
+                        'payment_type' => $gatewayInfo['payment_type'],
                         'payment_details' => $paymentResponse
                     ], 200);
                 } catch (\Exception $e) {
@@ -686,11 +699,22 @@ class OrderController extends Controller
                 'calculated_order_amount' => $calculated_order_amount
             ]);
 
-            return response()->json([
+            // Return response with gateway info for all payment methods
+            $response = [
                 'message' => translate('order_success'),
                 'order_id' => $order_id,
-                'order_amount' => Helpers::set_price($calculated_order_amount)
-            ], 200);
+                'order_amount' => Helpers::set_price($calculated_order_amount),
+                'payment_method' => $request->payment_method,
+            ];
+
+            // Add gateway info for electronic payments
+            if (in_array($request->payment_method, ['wallet_payment', 'paymob', 'qib', 'offline_payment'])) {
+                $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($request->payment_method);
+                $response['requires_online_url'] = $gatewayInfo['requires_online_url'];
+                $response['payment_type'] = $gatewayInfo['payment_type'];
+            }
+
+            return response()->json($response, 200);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Order placement failed', [

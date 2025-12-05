@@ -60,53 +60,19 @@ class CustomerAuthController extends Controller
             $refer_user = $this->user->where(['refer_code' => $request->referral_code])->first();
         }
 
-        $temporaryToken = Str::random(40);
-
         $user = $this->user->create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => bcrypt($request->password),
-            'temporary_token' => $temporaryToken,
             'refer_code' => Helpers::generate_referer_code(),
             'refer_by' => $refer_user->id ?? null,
             'language_code' => $request->header('X-localization') ?? 'en',
         ]);
 
-        $emailVerification = (int) $this->loginSetup->where(['key' => 'email_verification'])?->first()->value ?? 0;
-        $phoneVerification = (int) $this->loginSetup->where(['key' => 'phone_verification'])?->first()->value ?? 0;
-
-        // Send OTP email if email verification is enabled
-        if ($emailVerification && $user->email_verified_at == null) {
-            $token = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
-
-            DB::table('email_verifications')->updateOrInsert(['email' => $request->email], [
-                'email' => $request->email,
-                'token' => $token,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            try {
-                $languageCode = $request->header('X-localization') ?? 'en';
-                $emailServices = Helpers::get_business_settings('mail_config');
-                $mailStatus = Helpers::get_business_settings('registration_otp_mail_status_user');
-
-                if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
-                    Mail::to($request->email)->send(new EmailVerification($token, $languageCode));
-                }
-
-            } catch (\Exception $exception) {
-                // Log the error but don't fail the registration
-                Log::error('Email OTP sending failed: ' . $exception->getMessage());
-            }
-
-            return response()->json(['temporary_token' => $temporaryToken], 200);
-        }
-
-        if ($phoneVerification && !$user->is_phone_verified) {
-            return response()->json(['temporary_token' => $temporaryToken], 200);
-        }
+        $user->email_verified_at = Carbon::now();
+        $user->is_phone_verified = 1;
+        $user->save();
 
         $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
         return response()->json(['token' => $token], 200);
