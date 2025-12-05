@@ -446,7 +446,9 @@ class BusinessSettingsController extends Controller
                 'public_key' => 'required',
                 'secret_key' => 'required',
                 'integration_id' => 'required',
-                'hmac' => 'required'
+                'hmac' => 'required',
+                'callback_url' => 'required|url',
+                'payment_gateway_title' => 'nullable|string',
             ];
         } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [
