@@ -429,7 +429,6 @@ class BusinessSettingsController extends Controller
      */
     public function paymentConfigUpdate(Request $request): RedirectResponse
     {
-
         $validation = [
             'gateway' => 'required|in:qib,paymob',
             'mode' => 'required|in:live,test'
@@ -442,13 +441,12 @@ class BusinessSettingsController extends Controller
         if ($request['gateway'] == 'qib') {
             $additionalData = [
                 'status' => 'required|in:1,0',
-                'supported_country' => 'required',
-                'public_key' => 'required',
-                'secret_key' => 'required',
+                'api_key' => 'required',
+                'iframe_id' => 'required',
                 'integration_id' => 'required',
                 'hmac' => 'required',
                 'callback_url' => 'required|url',
-                'payment_gateway_title' => 'nullable|string',
+                'gateway_title' => 'required|string',
             ];
         } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [
@@ -461,43 +459,47 @@ class BusinessSettingsController extends Controller
             ];
         }
 
-        $request->validate(array_merge($validation, $additionalData));
+        // Perform validation once and get validated data
+        $validated = $request->validate(array_merge($validation, $additionalData));
 
         $settings = Setting::where('key_name', $request['gateway'])->where('settings_type', 'payment_config')->first();
 
-        $additionalDataImage = $settings['additional_data'] != null ? json_decode($settings['additional_data']) : null;
+        // Update only the values for the selected mode
+        $live_values = $settings ? $settings->live_values : null;
+        $test_values = $settings ? $settings->test_values : null;
+
+        if ($request['mode'] == 'live') {
+            $live_values = $validated;
+        } else {
+            $test_values = $validated;
+        }
+
+        $additionalDataImage = $settings && $settings['additional_data'] ? json_decode($settings['additional_data']) : null;
 
         if ($request->has('gateway_image')) {
-            $gatewayImage = Helpers::upload('payment_modules/gateway_image/', 'png', $request['gateway_image']);
+            $gatewayImage = Helpers::upload('payment_modules/gateway_image/', 'png', $request->file('gateway_image'));
         } else {
-            $gatewayImage = $additionalDataImage != null ? $additionalDataImage->gateway_image : '';
+            $gatewayImage = $additionalDataImage ? $additionalDataImage->gateway_image : '';
         }
 
-        if ($request['gateway_title'] == null) {
-            Toastr::error(translate('payment_gateway_title_is_required!'));
-            return back();
-        }
 
         $paymentAdditionalData = [
             'gateway_title' => $request['gateway_title'],
             'gateway_image' => $gatewayImage,
         ];
 
-        $validator = Validator::make($request->all(), array_merge($validation, $additionalData));
-
         Setting::updateOrCreate(['key_name' => $request['gateway'], 'settings_type' => 'payment_config'], [
             'key_name' => $request['gateway'],
-            'live_values' => $validator->validate(),
-            'test_values' => $validator->validate(),
+            'live_values' => $live_values,
+            'test_values' => $test_values,
             'settings_type' => 'payment_config',
             'mode' => $request['mode'],
-            'is_active' => $request->status,
+            'is_active' => $request['status'],
             'additional_data' => json_encode($paymentAdditionalData),
         ]);
 
         Toastr::success(GATEWAYS_DEFAULT_UPDATE_200['message']);
         return back();
-
     }
 
     /**
