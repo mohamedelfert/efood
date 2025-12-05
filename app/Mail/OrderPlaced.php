@@ -37,58 +37,87 @@ class OrderPlaced extends Mailable
      */
     public function build()
     {
-        $order_id = $this->order_id;
-        $order=Order::where('id', $order_id)->first();
+        $order = Order::with(['customer', 'branch', 'delivery_man'])->findOrFail($this->order_id);
 
-        $address = $order->delivery_address ?? CustomerAddress::find($order->delivery_address_id);
+        $address = $order->delivery_address ?? ($order->delivery_address_id ? CustomerAddress::find($order->delivery_address_id) : null);
         $order->address = $address;
 
-        $company_name = BusinessSetting::where('key', 'restaurant_name')->first()->value;
-        $data=EmailTemplate::with('translations')->where('type','user')->where('email_type', 'new_order')->first();
-        $template=$data?$data->email_template:3;
-        $user_name = $order?->customer?->name;
-        $restaurant_name = $order?->branch->name;
-        $delivery_man_name = $order?->delivery_man?->name;
+        $company_name = BusinessSetting::where('key', 'restaurant_name')->first()?->value ?? 'Your Restaurant';
 
-        $local = $order?->customer->language_code ?? 'en';
+        // Safely get email template
+        $template = EmailTemplate::with('translations')
+            ->where('type', 'user')
+            ->where('email_type', 'new_order')
+            ->first();
 
-        $content = [
-            'title' => $data->title,
-            'body' => $data->body,
-            'footer_text' => $data->footer_text,
-            'copyright_text' => $data->copyright_text
+        $template_id = $template?->email_template ?? 3;
+        $local = $order->customer?->language_code ?? 'en';
+
+        // Default content in case no template
+        $default = [
+            'title' => 'Your order has been placed successfully!',
+            'body' => "Hello {user_name},\n\nYour order #{order_id} has been placed at {restaurant_name}.\n\nThank you for choosing us!",
+            'footer_text' => 'If you have any questions, feel free to contact us.',
+            'copyright_text' => '© ' . date('Y') . ' ' . $company_name . '. All rights reserved.',
         ];
 
-        if ($local != 'en'){
-            if (isset($data->translations)){
-                foreach ($data->translations as $translation){
-                    if ($local == $translation->locale){
-                        $content[$translation->key] = $translation->value;
+        // Extract translated content safely
+        $title = $default['title'];
+        $body = $default['body'];
+        $footer_text = $default['footer_text'];
+        $copyright_text = $default['copyright_text'];
+
+        if ($template) {
+            $title = $template->title ?? $default['title'];
+            $body = $template->body ?? $default['body'];
+            $footer_text = $template->footer_text ?? $default['footer_text'];
+            $copyright_text = $template->copyright_text ?? $default['copyright_text'];
+
+            if ($local !== 'en' && $template->translations->isNotEmpty()) {
+                foreach ($template->translations as $t) {
+                    if ($t->locale === $local && $t->value) {
+                        switch ($t->key) {
+                            case 'title': $title = $t->value; break;
+                            case 'body': $body = $t->value; break;
+                            case 'footer_text': $footer_text = $t->value; break;
+                            case 'copyright_text': $copyright_text = $t->value; break;
+                        }
                     }
                 }
             }
         }
 
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',user_name:$user_name??'',restaurant_name:$restaurant_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',user_name:$user_name??'',restaurant_name:$restaurant_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',user_name:$user_name??'',restaurant_name:$restaurant_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',user_name:$user_name??'',restaurant_name:$restaurant_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
+        // Replace variables
+        $title = Helpers::text_variable_data_format(
+            value: $title,
+            user_name: $order->customer?->name ?? 'Customer',
+            restaurant_name: $order->branch?->name ?? $company_name,
+            order_id: $order->id
+        );
 
-        // **🔹 Generate Invoice PDF**
+        $body = Helpers::text_variable_data_format(
+            value: $body,
+            user_name: $order->customer?->name ?? 'Customer',
+            restaurant_name: $order->branch?->name ?? $company_name,
+            order_id: $order->id
+        );
+
+        $footer_text = Helpers::text_variable_data_format(value: $footer_text);
+        $copyright_text = Helpers::text_variable_data_format(value: $copyright_text);
+
+        // Generate PDF Invoice
         $pdf = Facade\Pdf::loadView('email-templates.invoice', compact('order'));
-        $pdfContent = $pdf->output(); // Get PDF as raw content
 
-        return $this->subject(translate('Order_Place_Mail'))
-            ->view('email-templates.new-email-format-'.$template,
-                ['company_name' => $company_name,
-                    'data' => $data,
-                    'title' => $title,
-                    'body' => $body,
-                    'footer_text' => $footer_text,
-                    'copyright_text' => $copyright_text,
-                    'order' => $order
-                ])
-            ->attachData($pdfContent, 'Invoice_Order_' . $order->id . '.pdf', [
+        return $this->subject(translate('Order Placed - #') . $order->id)
+            ->view('email-templates.new-email-format-' . $template_id, [
+                'company_name' => $company_name,
+                'title' => $title,
+                'body' => $body,
+                'footer_text' => $footer_text,
+                'copyright_text' => $copyright_text,
+                'order' => $order,
+            ])
+            ->attachData($pdf->output(), 'Invoice_Order_' . $order->id . '.pdf', [
                 'mime' => 'application/pdf',
             ]);
     }
