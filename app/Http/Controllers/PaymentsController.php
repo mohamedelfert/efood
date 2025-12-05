@@ -49,10 +49,17 @@ class PaymentsController extends Controller
                 'ip' => $request->ip()
             ]);
 
-            // Extract Paymob identifiers
+            // Extract Paymob identifiers (handle both flat and nested formats)
             $paymobOrderId = $data['order'] ?? $request->query('order');
             $paymobTransactionId = $data['id'] ?? $request->query('id');
             $internalTransactionId = $data['transaction_id'] ?? $request->query('transaction_id');
+
+            // Handle nested TRANSACTION callback
+            if (isset($data['type']) && $data['type'] === 'TRANSACTION' && isset($data['obj'])) {
+                $obj = $data['obj'];
+                $paymobTransactionId = $obj['id'] ?? $paymobTransactionId;
+                $paymobOrderId = $obj['order']['id'] ?? $paymobOrderId;
+            }
 
             // Find pending transaction
             $transaction = WalletTransaction::where('status', 'pending');
@@ -88,8 +95,8 @@ class PaymentsController extends Controller
 
             // Save Paymob IDs if missing
             $updated = false;
-            if ($paymobOrderId && empty($metadata['order_id'])) {
-                $metadata['order_id'] = $paymobOrderId;
+            if ($paymobOrderId && empty($metadata['paymob_order_id'])) {
+                $metadata['paymob_order_id'] = $paymobOrderId;
                 $updated = true;
             }
             if ($paymobTransactionId && empty($metadata['paymob_transaction_id'])) {

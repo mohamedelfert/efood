@@ -429,7 +429,7 @@ class CustomerWalletController extends Controller
                     ]);
                 } else {
                     $metadata = array_merge($metadata, [
-                        'order_id' => $response['order_id'] ?? null,
+                        'paymob_order_id' => $response['order_id'] ?? null,
                         'payment_key' => $response['payment_key'] ?? null,
                         'paymob_transaction_id' => $response['id'] ?? null,
                     ]);
