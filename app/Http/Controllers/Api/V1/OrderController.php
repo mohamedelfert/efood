@@ -2044,17 +2044,142 @@ class OrderController extends Controller
         }
     }
 
+    // private function orderEmailAndNotification($request, $or, $order_id)
+    // {
+    //     if ((bool)auth('api')->user()) {
+    //         $fcmToken = auth('api')->user()?->cm_firebase_token;
+    //         $local = auth('api')->user()?->language_code;
+    //         $customerName = auth('api')->user()?->name;
+    //     } else {
+    //         $guest = GuestUser::find($request['guest_id']);
+    //         $fcmToken = $guest ? $guest->fcm_token : '';
+    //         $local = 'en';
+    //         $customerName = 'Guest User';
+    //     }
+
+    //     $message = Helpers::order_status_update_message($or['order_status']);
+
+    //     if ($local != 'en') {
+    //         $statusKey = Helpers::order_status_message_key($or['order_status']);
+    //         $translatedMessage = \App\Model\BusinessSetting::with('translations')->where(['key' => $statusKey])->first();
+    //         if (isset($translatedMessage->translations)) {
+    //             foreach ($translatedMessage->translations as $translation) {
+    //                 if ($local == $translation->locale) {
+    //                     $message = $translation->value;
+    //                 }
+    //             }
+    //         }
+    //     }
+        
+    //     $restaurantName = Helpers::get_business_settings('restaurant_name');
+    //     $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $order_id);
+
+    //     try {
+    //         if ($value && isset($fcmToken)) {
+    //             $data = [
+    //                 'title' => translate('Order'),
+    //                 'description' => $value,
+    //                 'order_id' => (bool)auth('api')->user() ? $order_id : null,
+    //                 'image' => '',
+    //                 'type' => 'order_status',
+    //             ];
+    //             Helpers::send_push_notif_to_device($fcmToken, $data);
+                
+    //             Log::info('Push notification sent to customer', [
+    //                 'order_id' => $order_id,
+    //                 'customer_name' => $customerName,
+    //                 'fcm_token_exists' => !empty($fcmToken)
+    //             ]);
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error('Failed to send push notification to customer', [
+    //             'order_id' => $order_id,
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+
+    //     try {
+    //         $emailServices = Helpers::get_business_settings('mail_config');
+    //         $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
+    //         if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
+    //             Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
+    //             Mail::to(auth('api')->user()->email)->send(new \App\Mail\PaymentSuccessNotification($order_id));
+                
+    //             Log::info('Order email sent', [
+    //                 'order_id' => $order_id,
+    //                 'email' => auth('api')->user()->email
+    //             ]);
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error('Failed to send order email', [
+    //             'order_id' => $order_id,
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+
+    //     // Notify kitchen if order is confirmed
+    //     if ($or['order_status'] == 'confirmed') {
+    //         $data = [
+    //             'title' => translate('You have a new order - (Order Confirmed).'),
+    //             'description' => $order_id,
+    //             'order_id' => $order_id,
+    //             'image' => '',
+    //             'order_status' => $or['order_status'],
+    //         ];
+
+    //         try {
+    //             Helpers::send_push_notif_to_topic(data: $data, topic: "kitchen-{$or['branch_id']}", type: 'general', isNotificationPayloadRemove: true);
+                
+    //             Log::info('Kitchen notification sent', [
+    //                 'order_id' => $order_id,
+    //                 'branch_id' => $or['branch_id']
+    //             ]);
+    //         } catch (\Exception $e) {
+    //             Log::error('Failed to send kitchen notification', [
+    //                 'order_id' => $order_id,
+    //                 'error' => $e->getMessage()
+    //             ]);
+    //         }
+    //     }
+
+    //     // Notify admin and branch
+    //     try {
+    //         $data = [
+    //             'title' => translate('New Order Notification'),
+    //             'description' => translate('You have new order, Check Please'),
+    //             'order_id' => $order_id,
+    //             'image' => '',
+    //             'type' => 'new_order_admin',
+    //         ];
+
+    //         Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'all']));
+    //         Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-'. $or['branch_id'] .'-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'all']));
+            
+    //         Log::info('Admin and branch notifications sent', [
+    //             'order_id' => $order_id,
+    //             'branch_id' => $or['branch_id']
+    //         ]);
+    //     } catch (\Exception $exception) {
+    //         Log::error('Failed to send admin/branch notifications', [
+    //             'order_id' => $order_id,
+    //             'error' => $exception->getMessage()
+    //         ]);
+    //     }
+    // }
+
     private function orderEmailAndNotification($request, $or, $order_id)
     {
         if ((bool)auth('api')->user()) {
             $fcmToken = auth('api')->user()?->cm_firebase_token;
             $local = auth('api')->user()?->language_code;
             $customerName = auth('api')->user()?->name;
+            $customerEmail = auth('api')->user()?->email;
         } else {
             $guest = GuestUser::find($request['guest_id']);
             $fcmToken = $guest ? $guest->fcm_token : '';
             $local = 'en';
             $customerName = 'Guest User';
+            $customerEmail = null;
         }
 
         $message = Helpers::order_status_update_message($or['order_status']);
@@ -2074,8 +2199,9 @@ class OrderController extends Controller
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $order_id);
 
+        // ✅ 1. Push Notification (only if Firebase is configured)
         try {
-            if ($value && isset($fcmToken)) {
+            if ($value && isset($fcmToken) && !empty($fcmToken)) {
                 $data = [
                     'title' => translate('Order'),
                     'description' => $value,
@@ -2083,13 +2209,19 @@ class OrderController extends Controller
                     'image' => '',
                     'type' => 'order_status',
                 ];
-                Helpers::send_push_notif_to_device($fcmToken, $data);
                 
-                Log::info('Push notification sent to customer', [
-                    'order_id' => $order_id,
-                    'customer_name' => $customerName,
-                    'fcm_token_exists' => !empty($fcmToken)
-                ]);
+                // Check if Firebase is enabled before attempting push
+                if (env('FIREBASE_PUSH_ENABLED', true)) {
+                    Helpers::send_push_notif_to_device($fcmToken, $data);
+                    
+                    Log::info('Push notification sent to customer', [
+                        'order_id' => $order_id,
+                        'customer_name' => $customerName,
+                        'fcm_token_exists' => !empty($fcmToken)
+                    ]);
+                } else {
+                    Log::info('Push notifications disabled', ['order_id' => $order_id]);
+                }
             }
         } catch (\Exception $e) {
             Log::error('Failed to send push notification to customer', [
@@ -2098,17 +2230,27 @@ class OrderController extends Controller
             ]);
         }
 
+        // ✅ 2. Email Notification (only for registered users)
         try {
             $emailServices = Helpers::get_business_settings('mail_config');
             $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
-            if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
-                Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
-                Mail::to(auth('api')->user()->email)->send(new \App\Mail\PaymentSuccessNotification($order_id));
+            
+            if (isset($emailServices['status']) && $emailServices['status'] == 1 && 
+                $orderMailStatus == 1 && 
+                (bool)auth('api')->user() && 
+                $customerEmail) {
+                
+                // Send order placed email
+                Mail::to($customerEmail)->send(new \App\Mail\OrderPlaced($order_id));
                 
                 Log::info('Order email sent', [
                     'order_id' => $order_id,
-                    'email' => auth('api')->user()->email
+                    'email' => $customerEmail
                 ]);
+                
+                // ✅ REMOVED: Don't send PaymentSuccessNotification here
+                // It should only be sent after successful payment callback
+                // NOT during order placement
             }
         } catch (\Exception $e) {
             Log::error('Failed to send order email', [
@@ -2117,7 +2259,7 @@ class OrderController extends Controller
             ]);
         }
 
-        // Notify kitchen if order is confirmed
+        // ✅ 3. Kitchen Notification (if order is confirmed)
         if ($or['order_status'] == 'confirmed') {
             $data = [
                 'title' => translate('You have a new order - (Order Confirmed).'),
@@ -2128,7 +2270,12 @@ class OrderController extends Controller
             ];
 
             try {
-                Helpers::send_push_notif_to_topic(data: $data, topic: "kitchen-{$or['branch_id']}", type: 'general', isNotificationPayloadRemove: true);
+                Helpers::send_push_notif_to_topic(
+                    data: $data, 
+                    topic: "kitchen-{$or['branch_id']}", 
+                    type: 'general', 
+                    isNotificationPayloadRemove: true
+                );
                 
                 Log::info('Kitchen notification sent', [
                     'order_id' => $order_id,
@@ -2142,7 +2289,7 @@ class OrderController extends Controller
             }
         }
 
-        // Notify admin and branch
+        // ✅ 4. Admin and Branch Notifications
         try {
             $data = [
                 'title' => translate('New Order Notification'),
@@ -2152,13 +2299,26 @@ class OrderController extends Controller
                 'type' => 'new_order_admin',
             ];
 
-            Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'all']));
-            Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-'. $or['branch_id'] .'-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'all']));
-            
-            Log::info('Admin and branch notifications sent', [
-                'order_id' => $order_id,
-                'branch_id' => $or['branch_id']
-            ]);
+            if (env('FIREBASE_PUSH_ENABLED', true)) {
+                Helpers::send_push_notif_to_topic(
+                    data: $data, 
+                    topic: 'admin_message', 
+                    type: 'order_request', 
+                    web_push_link: route('admin.orders.list', ['status' => 'all'])
+                );
+                
+                Helpers::send_push_notif_to_topic(
+                    data: $data, 
+                    topic: 'branch-order-'. $or['branch_id'] .'-message', 
+                    type: 'order_request', 
+                    web_push_link: route('branch.orders.list', ['status' => 'all'])
+                );
+                
+                Log::info('Admin and branch notifications sent', [
+                    'order_id' => $order_id,
+                    'branch_id' => $or['branch_id']
+                ]);
+            }
         } catch (\Exception $exception) {
             Log::error('Failed to send admin/branch notifications', [
                 'order_id' => $order_id,
