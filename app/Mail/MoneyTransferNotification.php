@@ -27,8 +27,31 @@ class MoneyTransferNotification extends Mailable
 
     public function build()
     {
+        // Ensure notificationData has required fields
+        $data = $this->notificationData;
+        
+        // Add defaults if missing
+        if (!isset($data['transaction_id'])) {
+            $data['transaction_id'] = 'N/A';
+        }
+        if (!isset($data['amount'])) {
+            $data['amount'] = 0;
+        }
+        if (!isset($data['currency'])) {
+            $data['currency'] = 'SAR';
+        }
+        if (!isset($data['user_name'])) {
+            $data['user_name'] = 'User';
+        }
+        if (!isset($data['sender_name'])) {
+            $data['sender_name'] = 'Sender';
+        }
+        if (!isset($data['recipient_name'])) {
+            $data['recipient_name'] = 'Recipient';
+        }
+
         // Fetch email template from database
-        $data = EmailTemplate::with('translations')
+        $emailTemplate = EmailTemplate::with('translations')
             ->where('type', 'user')
             ->where('email_type', 'money_transfer')
             ->first();
@@ -37,75 +60,69 @@ class MoneyTransferNotification extends Mailable
 
         // Initialize content array with defaults
         $content = [
-            'title' => $data->title ?? 'Money Transfer Notification',
-            'body' => $data->body ?? 'Hello {receiver_name},<br><br>You have received a money transfer of {amount} {currency} from {sender_name}.',
-            'footer_text' => $data->footer_text ?? 'Thank you for choosing us',
-            'copyright_text' => $data->copyright_text ?? '© {year} All rights reserved',
+            'title' => $emailTemplate->title ?? 'Money Transfer Notification',
+            'body' => $emailTemplate->body ?? 'Hello {receiver_name},<br><br>You have received a money transfer of {amount} {currency} from {sender_name}.',
+            'footer_text' => $emailTemplate->footer_text ?? 'Thank you for choosing us',
+            'copyright_text' => $emailTemplate->copyright_text ?? '© {year} All rights reserved',
         ];
 
         // Apply translations if available
-        if ($local != 'en' && isset($data->translations)) {
-            foreach ($data->translations as $translation) {
+        if ($local != 'en' && isset($emailTemplate->translations)) {
+            foreach ($emailTemplate->translations as $translation) {
                 if ($local == $translation->locale) {
                     $content[$translation->key] = $translation->value;
                 }
             }
         }
 
-        // Prepare variables for replacement based on notification type
+        // Prepare variables based on notification type
         if ($this->notificationType === 'sent') {
             $variables = [
-                'sender_name' => $this->notificationData['user_name'] ?? 'You',
-                'receiver_name' => $this->notificationData['recipient_name'] ?? 'Recipient',
-                'amount' => number_format($this->notificationData['amount'] ?? 0, 2),
-                'currency' => $this->notificationData['currency'] ?? 'SAR',
-                'transaction_id' => $this->notificationData['transaction_id'] ?? 'N/A',
-                'note' => $this->notificationData['note'] ?? 'No note provided',
-                'balance' => number_format($this->notificationData['new_balance'] ?? 0, 2),
+                'sender_name' => $data['user_name'] ?? 'You',
+                'receiver_name' => $data['recipient_name'] ?? 'Recipient',
+                'amount' => number_format($data['amount'] ?? 0, 2),
+                'currency' => $data['currency'] ?? 'SAR',
+                'transaction_id' => $data['transaction_id'] ?? 'N/A',
+                'note' => $data['note'] ?? 'No note provided',
+                'balance' => number_format($data['new_balance'] ?? 0, 2),
                 'year' => date('Y'),
             ];
-            // Adjust subject for sender
-            $subject = translate('Money_Transfer_Sent');
+            $subject = translate('Money Transfer Sent');
         } else {
             $variables = [
-                'sender_name' => $this->notificationData['sender_name'] ?? 'Sender',
-                'receiver_name' => $this->notificationData['user_name'] ?? 'You',
-                'amount' => number_format($this->notificationData['amount'] ?? 0, 2),
-                'currency' => $this->notificationData['currency'] ?? 'SAR',
-                'transaction_id' => $this->notificationData['transaction_id'] ?? 'N/A',
-                'note' => $this->notificationData['note'] ?? 'No note provided',
-                'balance' => number_format($this->notificationData['new_balance'] ?? 0, 2),
+                'sender_name' => $data['sender_name'] ?? 'Sender',
+                'receiver_name' => $data['user_name'] ?? 'You',
+                'amount' => number_format($data['amount'] ?? 0, 2),
+                'currency' => $data['currency'] ?? 'SAR',
+                'transaction_id' => $data['transaction_id'] ?? 'N/A',
+                'note' => $data['note'] ?? 'No note provided',
+                'balance' => number_format($data['new_balance'] ?? 0, 2),
                 'year' => date('Y'),
             ];
-            $subject = translate('Money_Transfer_Notification');
+            $subject = translate('Money Transfer Notification');
         }
 
+        // Replace variables in content
         foreach ($content as $key => $text) {
-            $content[$key] = $this->replaceVariables($text, $variables);
+            foreach ($variables as $varKey => $value) {
+                $text = str_replace('{' . $varKey . '}', $value, $text);
+            }
+            $content[$key] = $text;
         }
 
-        $template = $data ? $data->email_template : 4;
-        $url = '';
+        $template = $emailTemplate ? $emailTemplate->email_template : 4;
         $company_name = BusinessSetting::where('key', 'restaurant_name')->first()->value ?? config('app.name');
 
         return $this->subject($subject)
             ->view('email-templates.new-email-format-' . $template, [
                 'company_name' => $company_name,
-                'data' => $data,
+                'data' => $emailTemplate,
                 'title' => $content['title'],
                 'body' => $content['body'],
                 'footer_text' => $content['footer_text'],
                 'copyright_text' => $content['copyright_text'],
-                'url' => $url,
+                'url' => '',
                 'code' => null,
             ]);
-    }
-
-    private function replaceVariables($text, $variables)
-    {
-        foreach ($variables as $key => $value) {
-            $text = str_replace('{' . $key . '}', $value, $text);
-        }
-        return $text;
     }
 }

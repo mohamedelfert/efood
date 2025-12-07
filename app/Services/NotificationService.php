@@ -6,61 +6,186 @@ use App\User;
 use App\Model\Order;
 use App\Model\Notification;
 use App\CentralLogics\Helpers;
+use App\Mail\EmailVerification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WalletTopUpNotification;
 use App\Mail\MoneyTransferNotification;
-use App\Mail\OrderPlacedNotification;
-use App\Mail\PaymentSuccessNotification;
+use App\Mail\LoyaltyConversionNotification;
 
 class NotificationService
 {
+    protected $whatsapp;
+
+    public function __construct(WhatsAppService $whatsapp)
+    {
+        $this->whatsapp = $whatsapp;
+    }
+
+    /**
+     * Send login OTP via Email and WhatsApp
+     * ✅ FIXED: Removed transaction_id (doesn't exist for login)
+     */
+    public function sendLoginOTP(User $user, string $otp): array
+    {
+        $results = ['email' => false, 'whatsapp' => false, 'sms' => false];
+        
+        // Email OTP
+        if ($user->email) {
+            try {
+                Mail::to($user->email)->send(new EmailVerification($otp, $user->language_code ?? 'en'));
+                $results['email'] = true;
+                
+                Log::info('Login OTP email sent', [
+                    'user_id' => $user->id,
+                    'email' => $user->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Login OTP email failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // WhatsApp OTP - WITHOUT transaction_id
+        if ($user->phone) {
+            try {
+                $whatsappData = [
+                    'user_name' => $user->name,
+                    'otp' => $otp,
+                    'expiry_minutes' => '5',
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                    // ❌ NO transaction_id here - it doesn't exist for login!
+                ];
+                
+                $message = $this->whatsapp->sendTemplateMessage('login_otp', $whatsappData);
+                
+                if ($message) {
+                    $response = $this->whatsapp->sendMessage($user->phone, $message);
+                    $results['whatsapp'] = $response['success'] ?? false;
+                    
+                    Log::info('Login OTP WhatsApp sent', [
+                        'user_id' => $user->id,
+                        'phone' => $user->phone,
+                        'success' => $results['whatsapp']
+                    ]);
+                }
+                
+            } catch (\Exception $e) {
+                Log::error('Login OTP WhatsApp failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        return $results;
+    }
+
     /**
      * Send wallet top-up notifications
+     * ✅ Email + WhatsApp + Push + In-App
      */
     public function sendWalletTopUpNotification(User $user, array $data): void
     {
         try {
             $notificationData = [
                 'user_name' => $user->name,
-                'amount' => $data['amount'],
+                'amount' => number_format($data['amount'], 2),
                 'currency' => $data['currency'] ?? 'SAR',
                 'transaction_id' => $data['transaction_id'],
                 'gateway' => $data['gateway'] ?? 'N/A',
-                'new_balance' => $user->wallet_balance,
+                'previous_balance' => number_format($data['previous_balance'] ?? 0, 2),
+                'new_balance' => number_format($user->wallet_balance, 2),
                 'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
             ];
 
-            // Email notification
-            if ($user->email && ($user->wallet_email_notifications ?? true)) {
-                $this->sendEmail($user->email, new WalletTopUpNotification($notificationData));
+            // 1️⃣ Email Notification
+            if ($user->email) {
+                try {
+                    $emailServices = Helpers::get_business_settings('mail_config');
+                    $mailStatus = Helpers::get_business_settings('wallet_topup_mail_status_user');
+                    
+                    if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1) {
+                        Mail::to($user->email)->send(new WalletTopUpNotification($notificationData, $user->language_code ?? 'en'));
+                        
+                        Log::info('Wallet top-up email sent', [
+                            'user_id' => $user->id,
+                            'transaction_id' => $data['transaction_id']
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Wallet top-up email failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
-            // Push notification
-            if ($user->cm_firebase_token && ($user->wallet_push_notifications ?? true)) {
-                $this->sendPushNotification($user->cm_firebase_token, [
-                    'title' => translate('Wallet Top-Up Successful'),
-                    'description' => translate('Your wallet has been topped up with :amount :currency', [
-                        'amount' => number_format($data['amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR'
-                    ]),
-                    'type' => 'wallet_topup',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
+            // 2️⃣ WhatsApp Notification with Receipt
+            if ($user->phone) {
+                try {
+                    // Generate receipt image
+                    $receiptGenerator = app(\App\Services\ReceiptGeneratorService::class);
+                    $receiptData = [
+                        'transaction_id' => $data['transaction_id'],
+                        'customer_name' => $user->name,
+                        'account_number' => str_pad($user->id, 8, '0', STR_PAD_LEFT),
+                        'amount' => $data['amount'],
+                        'currency' => $data['currency'] ?? 'SAR',
+                        'previous_balance' => $data['previous_balance'] ?? 0,
+                        'new_balance' => $user->wallet_balance,
+                        'date' => now()->format('d/m/Y'),
+                        'time' => now()->format('h:i A'),
+                        'tax' => $data['tax'] ?? 0,
+                    ];
+                    
+                    $receiptPath = $receiptGenerator->generateReceiptImage($receiptData);
+
+                    // Send WhatsApp with receipt
+                    $message = $this->whatsapp->sendTemplateMessage('wallet_topup', $notificationData);
+                    $response = $this->whatsapp->sendMessage($user->phone, $message, $receiptPath);
+                    
+                    Log::info('Wallet top-up WhatsApp sent', [
+                        'user_id' => $user->id,
+                        'transaction_id' => $data['transaction_id'],
+                        'has_receipt' => !empty($receiptPath),
+                        'response' => $response
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Wallet top-up WhatsApp failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
-            // SMS notification (if enabled)
-            if ($user->phone && ($user->wallet_sms_notifications ?? false)) {
-                $this->sendSMS($user->phone, translate('Your wallet has been topped up with :amount :currency. New balance: :balance', [
-                    'amount' => number_format($data['amount'], 2),
-                    'currency' => $data['currency'] ?? 'SAR',
-                    'balance' => number_format($user->wallet_balance, 2)
-                ]));
+            // 3️⃣ Push Notification
+            if ($user->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($user->cm_firebase_token, [
+                        'title' => translate('Wallet Top-Up Successful'),
+                        'description' => translate('Your wallet has been topped up with :amount :currency', [
+                            'amount' => number_format($data['amount'], 2),
+                            'currency' => $data['currency'] ?? 'SAR'
+                        ]),
+                        'type' => 'wallet_topup',
+                        'transaction_id' => $data['transaction_id'],
+                        'image' => '',
+                        'order_id' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Wallet top-up push failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
-            // Store in-app notification
+            // 4️⃣ In-App Notification
             $this->storeInAppNotification($user->id, [
                 'title' => 'Wallet Top-Up Successful',
                 'description' => "Your wallet has been topped up with {$data['amount']} {$data['currency']}",
@@ -70,112 +195,182 @@ class NotificationService
                 'currency' => $data['currency'],
             ]);
 
-            Log::info('Wallet top-up notification sent', [
+            Log::info('All wallet top-up notifications processed', [
                 'user_id' => $user->id,
                 'transaction_id' => $data['transaction_id']
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to send wallet top-up notification', [
+            Log::error('Wallet top-up notification failed', [
+                'user_id' => $user->id,
                 'error' => $e->getMessage(),
-                'user_id' => $user->id
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
     /**
-     * Send money transfer notifications
+     * Send money transfer notifications (sender + receiver)
+     * ✅ Email + WhatsApp + Push + In-App
      */
     public function sendMoneyTransferNotification(User $sender, User $receiver, array $data): void
     {
         try {
-            // Notification for sender
+            // === SENDER NOTIFICATIONS ===
             $senderData = [
                 'user_name' => $sender->name,
                 'recipient_name' => $receiver->name,
-                'amount' => $data['amount'],
+                'sender_name' => $sender->name,
+                'receiver_name' => $receiver->name,
+                'amount' => number_format($data['amount'], 2),
                 'currency' => $data['currency'] ?? 'SAR',
                 'transaction_id' => $data['transaction_id'],
-                'new_balance' => $sender->wallet_balance,
+                'new_balance' => number_format($sender->wallet_balance, 2),
+                'balance' => number_format($sender->wallet_balance, 2),
                 'note' => $data['note'] ?? '',
                 'type' => 'sent',
                 'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
             ];
 
+            // Sender Email
             if ($sender->email) {
-                $this->sendEmail($sender->email, new MoneyTransferNotification(
-                    $sender,
-                    $receiver,    
-                    $data,        
-                ));
+                try {
+                    Mail::to($sender->email)->send(new MoneyTransferNotification($senderData, $sender->language_code ?? 'en', 'sent'));
+                    Log::info('Transfer email sent to sender', ['sender_id' => $sender->id]);
+                } catch (\Exception $e) {
+                    Log::error('Transfer email to sender failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            // Notification for receiver
-            $receiverData = [
-                'user_name' => $receiver->name,
-                'sender_name' => $sender->name,
-                'amount' => $data['amount'],
-                'currency' => $data['currency'] ?? 'SAR',
-                'transaction_id' => $data['transaction_id'],
-                'new_balance' => $receiver->wallet_balance,
-                'note' => $data['note'] ?? '',
-                'type' => 'received',
-                'timestamp' => now()->format('Y-m-d H:i:s'),
-            ];
-
-            if ($receiver->email) {
-                $this->sendEmail($receiver->email, new MoneyTransferNotification(
-                    $sender,      
-                    $receiver,    
-                    $data,        
-                ));
+            // Sender WhatsApp
+            if ($sender->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('transfer_sent', $senderData);
+                    $this->whatsapp->sendMessage($sender->phone, $message);
+                    Log::info('Transfer WhatsApp sent to sender');
+                } catch (\Exception $e) {
+                    Log::error('Transfer WhatsApp to sender failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            if ($receiver->cm_firebase_token) {
-                $this->sendPushNotification($receiver->cm_firebase_token, [
-                    'title' => translate('Money Received'),
-                    'description' => translate('You received :amount :currency from :name', [
-                        'amount' => number_format($data['amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR',
-                        'name' => $sender->name
-                    ]),
-                    'type' => 'money_transfer_received',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
+            // Sender Push
+            if ($sender->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($sender->cm_firebase_token, [
+                        'title' => translate('Money Sent'),
+                        'description' => translate('You sent :amount :currency to :name', [
+                            'amount' => number_format($data['amount'], 2),
+                            'currency' => $data['currency'] ?? 'SAR',
+                            'name' => $receiver->name
+                        ]),
+                        'type' => 'money_transfer_sent',
+                        'transaction_id' => $data['transaction_id'],
+                        'image' => '',
+                        'order_id' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Transfer push to sender failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            // Store in-app notifications
+            // Sender In-App
             $this->storeInAppNotification($sender->id, [
-                'title' => 'Money Transfer Sent',
-                'description' => "You sent {$data['amount']} to {$receiver->name}",
+                'title' => 'Money Sent',
+                'description' => "You sent {$data['amount']} {$data['currency']} to {$receiver->name}",
                 'type' => 'money_transfer_sent',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
                 'currency' => $data['currency'],
             ]);
 
+            // === RECEIVER NOTIFICATIONS ===
+            $receiverData = [
+                'user_name' => $receiver->name,
+                'sender_name' => $sender->name,
+                'recipient_name' => $receiver->name,
+                'receiver_name' => $receiver->name,
+                'amount' => number_format($data['amount'], 2),
+                'currency' => $data['currency'] ?? 'SAR',
+                'transaction_id' => $data['transaction_id'],
+                'new_balance' => number_format($receiver->wallet_balance, 2),
+                'balance' => number_format($receiver->wallet_balance, 2),
+                'note' => $data['note'] ?? '',
+                'type' => 'received',
+                'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
+            ];
+
+            // Receiver Email
+            if ($receiver->email) {
+                try {
+                    Mail::to($receiver->email)->send(new MoneyTransferNotification($receiverData, $receiver->language_code ?? 'en', 'received'));
+                    Log::info('Transfer email sent to receiver', ['receiver_id' => $receiver->id]);
+                } catch (\Exception $e) {
+                    Log::error('Transfer email to receiver failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Receiver WhatsApp
+            if ($receiver->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('transfer_received', $receiverData);
+                    $this->whatsapp->sendMessage($receiver->phone, $message);
+                    Log::info('Transfer WhatsApp sent to receiver');
+                } catch (\Exception $e) {
+                    Log::error('Transfer WhatsApp to receiver failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Receiver Push
+            if ($receiver->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($receiver->cm_firebase_token, [
+                        'title' => translate('Money Received'),
+                        'description' => translate('You received :amount :currency from :name', [
+                            'amount' => number_format($data['amount'], 2),
+                            'currency' => $data['currency'] ?? 'SAR',
+                            'name' => $sender->name
+                        ]),
+                        'type' => 'money_transfer_received',
+                        'transaction_id' => $data['transaction_id'],
+                        'image' => '',
+                        'order_id' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Transfer push to receiver failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Receiver In-App
             $this->storeInAppNotification($receiver->id, [
                 'title' => 'Money Received',
-                'description' => "You received {$data['amount']} from {$sender->name}",
+                'description' => "You received {$data['amount']} {$data['currency']} from {$sender->name}",
                 'type' => 'money_transfer_received',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
                 'currency' => $data['currency'],
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Failed to send money transfer notification', [
-                'error' => $e->getMessage(),
+            Log::info('All transfer notifications processed', [
                 'sender_id' => $sender->id,
-                'receiver_id' => $receiver->id
+                'receiver_id' => $receiver->id,
+                'transaction_id' => $data['transaction_id']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Transfer notification failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
     /**
      * Send order placed notifications
+     * ✅ Email + WhatsApp + Push + In-App
      */
     public function sendOrderPlacedNotification(User $user, Order $order, array $data): void
     {
@@ -183,7 +378,7 @@ class NotificationService
             $notificationData = [
                 'user_name' => $user->name,
                 'order_id' => $order->id,
-                'order_amount' => $order->order_amount,
+                'order_amount' => number_format($order->order_amount, 2),
                 'currency' => $data['currency'] ?? 'SAR',
                 'payment_method' => $order->payment_method,
                 'order_type' => $order->order_type,
@@ -192,36 +387,54 @@ class NotificationService
                 'branch_name' => $order->branch->name ?? 'N/A',
                 'items_count' => $order->details->count(),
                 'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
             ];
 
-            // Email notification
-            if ($user->email && ($user->order_email_notifications ?? true)) {
-                $this->sendEmail($user->email, new OrderPlacedNotification($notificationData));
+            // 1️⃣ Email Notification (uses OrderPlaced mail which is already working)
+            if ($user->email) {
+                try {
+                    $emailServices = Helpers::get_business_settings('mail_config');
+                    $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
+                    
+                    if(isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1) {
+                        Mail::to($user->email)->send(new \App\Mail\OrderPlaced($order->id));
+                        Log::info('Order email sent', ['order_id' => $order->id]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Order email failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            // Push notification
-            if ($user->cm_firebase_token && ($user->order_push_notifications ?? true)) {
-                $this->sendPushNotification($user->cm_firebase_token, [
-                    'title' => translate('Order Placed Successfully'),
-                    'description' => translate('Your order #:order_id has been placed successfully', [
-                        'order_id' => $order->id
-                    ]),
-                    'type' => 'order_placed',
-                    'order_id' => $order->id,
-                    'image' => '',
-                ]);
+            // 2️⃣ WhatsApp Notification
+            if ($user->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('order_placed', $notificationData);
+                    $this->whatsapp->sendMessage($user->phone, $message);
+                    Log::info('Order WhatsApp sent', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Order WhatsApp failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            // SMS notification
-            if ($user->phone && ($user->order_sms_notifications ?? true)) {
-                $this->sendSMS($user->phone, translate('Your order #:order_id worth :amount :currency has been placed successfully', [
-                    'order_id' => $order->id,
-                    'amount' => number_format($order->order_amount, 2),
-                    'currency' => $data['currency'] ?? 'SAR'
-                ]));
+            // 3️⃣ Push Notification
+            if ($user->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($user->cm_firebase_token, [
+                        'title' => translate('Order Placed Successfully'),
+                        'description' => translate('Your order #:order_id has been placed', [
+                            'order_id' => $order->id
+                        ]),
+                        'type' => 'order_placed',
+                        'order_id' => $order->id,
+                        'image' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Order push failed', ['error' => $e->getMessage()]);
+                }
             }
 
-            // Store in-app notification
+            // 4️⃣ In-App Notification
             $this->storeInAppNotification($user->id, [
                 'title' => 'Order Placed Successfully',
                 'description' => "Your order #{$order->id} has been placed",
@@ -231,197 +444,89 @@ class NotificationService
                 'currency' => $data['currency'],
             ]);
 
+            Log::info('All order notifications processed', ['order_id' => $order->id]);
+
         } catch (\Exception $e) {
-            Log::error('Failed to send order placed notification', [
+            Log::error('Order notification failed', [
                 'error' => $e->getMessage(),
-                'user_id' => $user->id,
-                'order_id' => $order->id
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
     /**
-     * Send payment success notifications
-     */
-    public function sendPaymentSuccessNotification(User $user, array $data): void
-    {
-        try {
-            $notificationData = [
-                'user_name' => $user->name,
-                'transaction_id' => $data['transaction_id'],
-                'amount' => $data['amount'],
-                'currency' => $data['currency'] ?? 'SAR',
-                'payment_method' => $data['gateway'] ?? 'N/A',
-                'purpose' => $data['purpose'] ?? 'payment',
-                'reference_id' => $data['reference_id'] ?? null,
-                'timestamp' => now()->format('Y-m-d H:i:s'),
-            ];
-
-            // Email notification
-            if ($user->email) {
-                $this->sendEmail($user->email, new PaymentSuccessNotification($notificationData));
-            }
-
-            // Push notification
-            if ($user->cm_firebase_token) {
-                $this->sendPushNotification($user->cm_firebase_token, [
-                    'title' => translate('Payment Successful'),
-                    'description' => translate('Your payment of :amount :currency was successful', [
-                        'amount' => number_format($data['amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR'
-                    ]),
-                    'type' => 'payment_success',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
-            }
-
-            // Store in-app notification
-            $this->storeInAppNotification($user->id, [
-                'title' => 'Payment Successful',
-                'description' => "Your payment of {$data['amount']} was successful",
-                'type' => 'payment_success',
-                'reference_id' => $data['transaction_id'],
-                'amount' => $data['amount'],
-                'currency' => $data['currency'],
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send payment success notification', [
-                'error' => $e->getMessage(),
-                'user_id' => $user->id
-            ]);
-        }
-    }
-
-    /**
-     * Send wallet payment used notification
-     */
-    public function sendWalletPaymentNotification(User $user, array $data): void
-    {
-        try {
-            // Push notification
-            if ($user->cm_firebase_token) {
-                $this->sendPushNotification($user->cm_firebase_token, [
-                    'title' => translate('Wallet Payment'),
-                    'description' => translate(':amount :currency deducted from your wallet for :purpose', [
-                        'amount' => number_format($data['amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR',
-                        'purpose' => $data['purpose'] ?? 'payment'
-                    ]),
-                    'type' => 'wallet_payment',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
-            }
-
-            // Store in-app notification
-            $this->storeInAppNotification($user->id, [
-                'title' => 'Wallet Payment',
-                'description' => "{$data['amount']} deducted from your wallet",
-                'type' => 'wallet_payment',
-                'reference_id' => $data['transaction_id'],
-                'amount' => $data['amount'],
-                'currency' => $data['currency'],
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send wallet payment notification', [
-                'error' => $e->getMessage(),
-                'user_id' => $user->id
-            ]);
-        }
-    }
-
-    /**
-     * Send loyalty points conversion notification
+     * Send loyalty conversion notification
+     * ✅ Email + WhatsApp + Push + In-App
      */
     public function sendLoyaltyConversionNotification(User $user, array $data): void
     {
         try {
-            if ($user->cm_firebase_token) {
-                $this->sendPushNotification($user->cm_firebase_token, [
-                    'title' => translate('Loyalty Points Converted'),
-                    'description' => translate(':points points converted to :amount :currency', [
-                        'points' => $data['points_used'],
-                        'amount' => number_format($data['converted_amount'], 2),
-                        'currency' => $data['currency'] ?? 'SAR'
-                    ]),
-                    'type' => 'loyalty_conversion',
-                    'transaction_id' => $data['transaction_id'],
-                    'image' => '',
-                    'order_id' => '',
-                ]);
+            $notificationData = [
+                'user_name' => $user->name,
+                'points_used' => $data['points_used'],
+                'converted_amount' => number_format($data['converted_amount'], 2),
+                'currency' => $data['currency'] ?? 'SAR',
+                'transaction_id' => $data['transaction_id'],
+                'new_balance' => number_format($user->wallet_balance, 2),
+                'remaining_points' => $user->point,
+                'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
+            ];
+
+            // Email
+            if ($user->email) {
+                try {
+                    Mail::to($user->email)->send(new LoyaltyConversionNotification($notificationData, $user->language_code ?? 'en'));
+                    Log::info('Loyalty conversion email sent');
+                } catch (\Exception $e) {
+                    Log::error('Loyalty email failed', ['error' => $e->getMessage()]);
+                }
             }
 
+            // WhatsApp
+            if ($user->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('loyalty_conversion', $notificationData);
+                    $this->whatsapp->sendMessage($user->phone, $message);
+                    Log::info('Loyalty WhatsApp sent');
+                } catch (\Exception $e) {
+                    Log::error('Loyalty WhatsApp failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Push
+            if ($user->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($user->cm_firebase_token, [
+                        'title' => translate('Loyalty Points Converted'),
+                        'description' => translate('Converted :points points to :amount :currency', [
+                            'points' => $data['points_used'],
+                            'amount' => number_format($data['converted_amount'], 2),
+                            'currency' => $data['currency']
+                        ]),
+                        'type' => 'loyalty_conversion',
+                        'transaction_id' => $data['transaction_id'],
+                        'image' => '',
+                        'order_id' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Loyalty push failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // In-App
             $this->storeInAppNotification($user->id, [
                 'title' => 'Loyalty Points Converted',
-                'description' => "{$data['points_used']} points converted to {$data['converted_amount']}",
+                'description' => "Converted {$data['points_used']} points to {$data['converted_amount']} {$data['currency']}",
                 'type' => 'loyalty_conversion',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['converted_amount'],
                 'currency' => $data['currency'],
-                'extra' => ['points' => $data['points_used']],
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to send loyalty conversion notification', [
-                'error' => $e->getMessage(),
-                'user_id' => $user->id
-            ]);
-        }
-    }
-
-    /**
-     * Send email helper
-     */
-    private function sendEmail(string $email, $mailable): void
-    {
-        try {
-            $emailServices = Helpers::get_business_settings('mail_config');
-            if (isset($emailServices['status']) && $emailServices['status'] == 1) {
-                Mail::to($email)->send($mailable);
-                Log::info('Email sent successfully', ['to' => $email]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Email sending failed', [
-                'to' => $email,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Send push notification helper
-     */
-    private function sendPushNotification(string $fcmToken, array $data): void
-    {
-        try {
-            Helpers::send_push_notif_to_device($fcmToken, $data);
-            Log::info('Push notification sent', ['fcm_token' => substr($fcmToken, 0, 20) . '...']);
-        } catch (\Exception $e) {
-            Log::error('Push notification failed', [
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Send SMS helper
-     */
-    private function sendSMS(string $phone, string $message): void
-    {
-        try {
-            // Implement your SMS gateway integration here
-            // Example: Twilio, Nexmo, etc.
-            Log::info('SMS sent', ['phone' => $phone, 'message' => $message]);
-        } catch (\Exception $e) {
-            Log::error('SMS sending failed', [
-                'phone' => $phone,
-                'error' => $e->getMessage()
-            ]);
+            Log::error('Loyalty notification failed', ['error' => $e->getMessage()]);
         }
     }
 
@@ -431,7 +536,7 @@ class NotificationService
     private function storeInAppNotification(int $userId, array $data): void
     {
         try {
-            $notificationData = [
+            Notification::create([
                 'user_id' => $userId,
                 'title' => $data['title'],
                 'description' => $data['description'],
@@ -441,27 +546,9 @@ class NotificationService
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
-            
-            // Check if data column exists
-            $notification = new Notification();
-            $columns = $notification->getConnection()->getSchemaBuilder()->getColumnListing($notification->getTable());
-            
-            if (in_array('data', $columns)) {
-                $notificationData['data'] = json_encode([
-                    'amount' => $data['amount'] ?? null,
-                    'currency' => $data['currency'] ?? null,
-                    'extra' => $data['extra'] ?? null,
-                ]);
-            }
-            
-            Notification::create($notificationData);
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to store in-app notification', [
-                'user_id' => $userId,
-                'error' => $e->getMessage()
             ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to store in-app notification', ['error' => $e->getMessage()]);
         }
     }
 }

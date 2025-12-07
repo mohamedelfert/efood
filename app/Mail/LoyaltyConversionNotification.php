@@ -9,7 +9,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class WalletTopUpNotification extends Mailable
+class LoyaltyConversionNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -28,15 +28,15 @@ class WalletTopUpNotification extends Mailable
         
         $emailTemplate = EmailTemplate::with('translations')
             ->where('type', 'user')
-            ->where('email_type', 'wallet_topup')
+            ->where('email_type', 'loyalty_conversion')
             ->first();
             
         $local = $this->language_code ?? 'en';
 
         $content = [
-            'title' => $emailTemplate->title ?? 'Wallet Top-Up Successful',
-            'body' => $emailTemplate->body ?? 'Hello {user_name},<br><br>Your wallet has been topped up with {amount} {currency}.<br><br>Transaction ID: {transaction_id}<br>Previous Balance: {previous_balance} {currency}<br>New Balance: {new_balance} {currency}',
-            'footer_text' => $emailTemplate->footer_text ?? 'Thank you for using our service',
+            'title' => $emailTemplate->title ?? 'Loyalty Points Converted',
+            'body' => $emailTemplate->body ?? 'Hello {user_name},<br><br>You converted {points_used} points to {converted_amount} {currency}.<br><br>Transaction ID: {transaction_id}<br>New Balance: {new_balance} {currency}<br>Remaining Points: {remaining_points}',
+            'footer_text' => $emailTemplate->footer_text ?? 'Thank you for being loyal',
             'copyright_text' => $emailTemplate->copyright_text ?? '© {year} All rights reserved',
         ];
 
@@ -53,14 +53,12 @@ class WalletTopUpNotification extends Mailable
 
         $variables = [
             'user_name' => $data['user_name'] ?? 'User',
-            'amount' => $data['amount'] ?? '0.00',
+            'points_used' => $data['points_used'] ?? '0',
+            'converted_amount' => $data['converted_amount'] ?? '0.00',
             'currency' => $data['currency'] ?? 'SAR',
             'transaction_id' => $data['transaction_id'] ?? 'N/A',
-            'gateway' => $data['gateway'] ?? 'N/A',
-            'previous_balance' => $data['previous_balance'] ?? '0.00',
             'new_balance' => $data['new_balance'] ?? '0.00',
-            'date' => $data['date'] ?? now()->format('d/m/Y'),
-            'time' => $data['time'] ?? now()->format('h:i A'),
+            'remaining_points' => $data['remaining_points'] ?? '0',
             'year' => date('Y'),
         ];
 
@@ -71,7 +69,7 @@ class WalletTopUpNotification extends Mailable
             $content[$key] = $text;
         }
 
-        return $this->subject(translate('Wallet Top-Up Successful'))
+        return $this->subject(translate('Loyalty Points Converted'))
             ->view('email-templates.new-email-format-' . $template, [
                 'company_name' => $company_name,
                 'data' => $emailTemplate,

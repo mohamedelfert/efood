@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Log;
 use App\CentralLogics\CustomerLogic;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
+use App\Services\NotificationService;
 use App\Services\PaymentGatewayHelper;
 use function App\CentralLogics\translate;
 use Illuminate\Support\Facades\Validator;
@@ -45,6 +46,7 @@ class OrderController extends Controller
     protected $product_by_branch;
     protected $offlinePayment;
     protected $orderArea;
+    protected $notificationService;
 
     public function __construct(
         Order $order,
@@ -53,7 +55,8 @@ class OrderController extends Controller
         Product $product,
         ProductByBranch $product_by_branch,
         OfflinePayment $offlinePayment,
-        OrderArea $orderArea
+        OrderArea $orderArea,
+        NotificationService $notificationService
     ) {
         $this->order = $order;
         $this->order_detail = $order_detail;
@@ -62,6 +65,7 @@ class OrderController extends Controller
         $this->product_by_branch = $product_by_branch;
         $this->offlinePayment = $offlinePayment;
         $this->orderArea = $orderArea;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -488,6 +492,22 @@ class OrderController extends Controller
                         DB::commit();
 
                         try {
+                            $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
+                            
+                            // Define $currency before using it
+                            $currency = Currency::where('is_primary', true)->first()->code ?? 'SAR';
+                            
+                            if ($customer) {
+                                $this->notificationService->sendOrderPlacedNotification(
+                                    $customer,
+                                    $this->order->find($o_id),
+                                    [
+                                        'currency' => $currency,
+                                        'order_type' => $request['order_type'],
+                                    ]
+                                );
+                            }
+                            
                             $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
                         } catch (\Exception $e) {
                             Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -644,6 +664,22 @@ class OrderController extends Controller
                     DB::commit();
 
                     try {
+                        $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
+                        
+                        // Define $currency before using it
+                        $currency = Currency::where('is_primary', true)->first()->code ?? 'SAR';
+                        
+                        if ($customer) {
+                            $this->notificationService->sendOrderPlacedNotification(
+                                $customer,
+                                $this->order->find($o_id),
+                                [
+                                    'currency' => $currency,
+                                    'order_type' => $request['order_type'],
+                                ]
+                            );
+                        }
+                        
                         $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
                     } catch (\Exception $e) {
                         Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -689,6 +725,22 @@ class OrderController extends Controller
             DB::commit();
 
             try {
+                $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
+                
+                // Define $currency before using it
+                $currency = Currency::where('is_primary', true)->first()->code ?? 'SAR';
+                
+                if ($customer) {
+                    $this->notificationService->sendOrderPlacedNotification(
+                        $customer,
+                        $this->order->find($o_id),
+                        [
+                            'currency' => $currency,
+                            'order_type' => $request['order_type'],
+                        ]
+                    );
+                }
+                
                 $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
             } catch (\Exception $e) {
                 Log::error('Email/Notification failed', ['error' => $e->getMessage()]);

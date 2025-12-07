@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Model\BusinessSetting;
 use App\Model\WalletTransaction;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,9 +32,11 @@ class CustomerWalletController extends Controller
         private BusinessSetting   $businessSetting,
         private WalletTransaction $walletTransaction,
         private WalletBonus       $walletBonus,
-        NotificationService       $notificationService
+        NotificationService       $notificationService,
+        private WhatsAppService   $whatsapp
     ){
         $this->notificationService = $notificationService;
+        $this->whatsapp = $whatsapp;
     }
 
     public function addFund(Request $request): JsonResponse
@@ -429,27 +432,48 @@ class CustomerWalletController extends Controller
                     ]);
                 } else {
                     $metadata = array_merge($metadata, [
-                        'paymob_order_id' => $response['order_id'] ?? null,
+                        'paymob_order_id' => (string) ($response['order_id'] ?? null),
                         'payment_key' => $response['payment_key'] ?? null,
-                        'paymob_transaction_id' => $response['id'] ?? null,
+                        'paymob_transaction_id' => (string) ($response['id'] ?? null),
                     ]);
                 }
 
-                $this->walletTransaction->create([
-                    'user_id' => $user->id,
-                    'transaction_id' => $transactionId,
-                    'credit' => $amount,
-                    'debit' => 0,
-                    'transaction_type' => 'add_fund',
-                    'reference' => 'Top-up via ' . $gateway,
-                    'status' => 'pending',
-                    'gateway' => $gateway,
-                    'balance' => $currentBalance,
-                    'admin_bonus' => $request->admin_bonus ? json_encode($request->admin_bonus) : null,
-                    'metadata' => json_encode($metadata),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                try {
+                    $this->walletTransaction->create([
+                        'user_id' => $user->id,
+                        'transaction_id' => $transactionId,
+                        'credit' => $amount,
+                        'debit' => 0,
+                        'transaction_type' => 'add_fund',
+                        'reference' => 'Top-up via ' . $gateway,
+                        'status' => 'pending',
+                        'gateway' => $gateway,
+                        'balance' => $currentBalance,
+                        'admin_bonus' => $request->admin_bonus ? json_encode($request->admin_bonus) : null,
+                        'metadata' => json_encode($metadata),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    Log::info('WalletTransaction created successfully', [
+                        'transaction_id' => $transactionId,
+                        'user_id' => $user->id,
+                        'metadata' => $metadata
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create WalletTransaction', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'data' => [
+                            'transaction_id' => $transactionId,
+                            'user_id' => $user->id,
+                            'metadata' => $metadata
+                        ]
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to create transaction record'
+                    ], 500);
+                }
 
                 // Send OTP notifications for QIB
                 if ($gateway === 'qib') {
@@ -737,14 +761,14 @@ class CustomerWalletController extends Controller
 
             DB::commit();
 
-            // ✅ Send transfer notifications
+            // Send transfer notifications
             $this->notificationService->sendMoneyTransferNotification(
                 $sender->fresh(), 
                 $receiver->fresh(), 
                 [
                     'transaction_id' => $transactionId,
                     'amount' => $amount,
-                    'currency' => 'SAR',
+                    'currency' => 'YER',
                     'note' => $transferData['note'],
                 ]
             );
@@ -1219,11 +1243,55 @@ class CustomerWalletController extends Controller
                 'timestamp' => now()->toDateTimeString()
             ]);
             
+            // Email notification
             if ($sender->email) {
-                $localization = app()->getLocale();
-                Mail::to($sender->email)->send(new TransferOtp($otp, $localization));
-                Log::info("Transfer OTP email sent to {$sender->email}");
+                try {
+                    $localization = app()->getLocale();
+                    Mail::to($sender->email)->send(new TransferOtp($otp, $localization));
+                    Log::info("Transfer OTP email sent to {$sender->email}");
+                } catch (\Exception $e) {
+                    Log::error("Transfer OTP email failed", [
+                        'user_id' => $sender->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
+            
+            // WhatsApp notification
+            if ($sender->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('transfer_otp', [
+                        'user_name' => $sender->name,
+                        'otp' => $otp,
+                        'amount' => $amount,
+                        'currency' => 'YER',
+                        'receiver_name' => $receiver->name,
+                        'expiry_minutes' => '5',
+                        'timestamp' => now()->format('Y-m-d H:i:s')
+                    ]);
+                    
+                    $response = $this->whatsapp->sendMessage($sender->phone, $message);
+                    
+                    Log::info("Transfer OTP WhatsApp sent", [
+                        'user_id' => $sender->id,
+                        'phone' => $sender->phone,
+                        'response' => $response
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error("Transfer OTP WhatsApp failed", [
+                        'user_id' => $sender->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
+            // In-app notification
+            $this->storeInAppNotification($sender->id, [
+                'title' => 'Transfer OTP',
+                'description' => "Your transfer OTP is: {$otp}. Valid for 5 minutes.",
+                'type' => 'transfer_otp',
+                'reference_id' => 'TRANSFER_OTP_' . time(),
+            ]);
             
         } catch (Exception $e) {
             Log::error("Failed to send transfer OTP", [
@@ -1231,6 +1299,33 @@ class CustomerWalletController extends Controller
                 'error' => $e->getMessage()
             ]);
             throw $e;
+        }
+    }
+
+    private function storeInAppNotification(int $userId, array $data): void
+    {
+        try {
+            \App\Model\Notification::create([
+                'user_id' => $userId,
+                'title' => $data['title'],
+                'description' => $data['description'],
+                'notification_type' => $data['type'],
+                'reference_id' => $data['reference_id'] ?? null,
+                'status' => 1,
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            Log::info('In-app notification stored', [
+                'user_id' => $userId,
+                'type' => $data['type']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to store in-app notification', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

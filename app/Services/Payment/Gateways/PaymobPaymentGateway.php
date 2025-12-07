@@ -2,7 +2,6 @@
 
 namespace App\Services\Payment\Gateways;
 
-use App\Model\WalletTransaction;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Services\Payment\PaymentGatewayInterface;
@@ -12,59 +11,59 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
     protected $baseUrl = 'https://accept.paymob.com/api';
     protected $apiKey;
     protected $iframeId;
-    protected $integrationId;
+    protected $integrationIds;
     protected $hmacSecret;
-    protected $mode;
 
     public function __construct()
     {
         $this->apiKey = env('PAYMOB_API_KEY');
         $this->iframeId = env('PAYMOB_IFRAME_ID');
-        $this->integrationId = env('PAYMOB_INTEGRATION_ID');
         $this->hmacSecret = env('PAYMOB_HMAC_SECRET');
-        $this->mode = env('PAYMOB_MODE', 'test');
+        
+        $this->integrationIds = [
+            'card' => env('PAYMOB_INTEGRATION_ID_CARD'),
+        ];
     }
 
     private function authenticate(): ?array
     {
-        $response = Http::post("{$this->baseUrl}/auth/tokens", [
+        $response = Http::timeout(30)->post("{$this->baseUrl}/auth/tokens", [
             'api_key' => $this->apiKey,
         ]);
 
         if ($response->successful()) {
             return $response->json();
         }
+        
         Log::error('Paymob Auth Failed', ['status' => $response->status(), 'body' => $response->body()]);
         return null;
     }
 
     private function createOrder(string $token, array $data): ?array
     {
-        $amountCents = $data['amount'] * 100;
-        if ($amountCents > env('PAYMOB_MAX_AMOUNT', 1000000000) || $amountCents < env('PAYMOB_MIN_AMOUNT', 1)) {
-            return ['status' => false, 'error' => 'Amount out of range'];
-        }
+        $amountCents = (int) ($data['amount'] * 100);
+        $integrationId = $this->integrationIds['card'];
 
-        $response = Http::withHeaders(['Authorization' => 'Bearer ' . $token])
+        $response = Http::timeout(30)
+            ->withHeaders(['Authorization' => 'Bearer ' . $token])
             ->post("{$this->baseUrl}/ecommerce/orders", [
-                'delivery_needed' => 'no',
+                'delivery_needed' => false,
                 'amount_cents' => $amountCents,
-                'currency' => $data['currency'],
+                'currency' => $data['currency'] ?? 'EGP',
                 'items' => [[
-                    'name' => 'Wallet Top-Up',
+                    'name' => 'Payment via Paymob',
                     'amount_cents' => $amountCents,
-                    'description' => 'Top-up via Paymob',
+                    'description' => 'Payment via Paymob',
                     'quantity' => 1,
                 ]],
-                'api_source' => $data['api_source'] ?? 'INVOICE',
-                'integration_id' => $this->integrationId,
+                'integration_id' => $integrationId,
             ]);
 
-        Log::debug('Paymob Order Response', ['status' => $response->status(), 'body' => $response->body(), 'data' => $data]);
         if ($response->successful()) {
             return $response->json();
         }
-        Log::error('Paymob Order Creation Failed', ['status' => $response->status(), 'body' => $response->body()]);
+        
+        Log::error('Paymob Order Failed', ['status' => $response->status(), 'body' => $response->body()]);
         return null;
     }
 
@@ -72,158 +71,137 @@ class PaymobPaymentGateway implements PaymentGatewayInterface
     {
         $customerData = $data['customer_data'] ?? [];
         $billingData = [
-            'first_name' => $customerData['name'] ?? 'Customer',
-            'last_name' => $customerData['name'] ?? 'User',
+            'first_name' => $customerData['f_name'] ?? $customerData['name'] ?? 'Customer',
+            'last_name' => $customerData['l_name'] ?? 'User',
             'email' => $customerData['email'] ?? 'customer@example.com',
-            'phone_number' => $customerData['phone'] ?? '01234567890',
-            'street' => $customerData['address_street'] ?? 'Unknown Street',
-            'building' => $customerData['address_building'] ?? '1',
-            'floor' => $customerData['address_floor'] ?? '1',
-            'apartment' => $customerData['address_apartment'] ?? '1',
-            'city' => $customerData['address_city'] ?? 'Cairo',
+            'phone_number' => $customerData['phone'] ?? '+201234567890',
+            'street' => $customerData['address_street'] ?? 'NA',
+            'building' => $customerData['address_building'] ?? 'NA',
+            'floor' => $customerData['address_floor'] ?? 'NA',
+            'apartment' => $customerData['address_apartment'] ?? 'NA',
+            'city' => $customerData['address_city'] ?? 'NA',
+            'state' => $customerData['address_state'] ?? 'NA',
             'country' => $customerData['address_country'] ?? 'EG',
+            'postal_code' => $customerData['address_postal_code'] ?? 'NA',
+            'shipping_method' => 'NA',
         ];
 
-        $response = Http::withHeaders(['Authorization' => 'Bearer ' . $token])
+        $integrationId = $this->integrationIds['card'];
+
+        $response = Http::timeout(30)
+            ->withHeaders(['Authorization' => 'Bearer ' . $token])
             ->post("{$this->baseUrl}/acceptance/payment_keys", [
                 'order_id' => $orderData['id'],
                 'billing_data' => $billingData,
                 'amount_cents' => $orderData['amount_cents'],
                 'currency' => $orderData['currency'],
-                'integration_id' => $this->integrationId,
+                'integration_id' => $integrationId,
                 'expiration' => 3600,
             ]);
 
-        Log::debug('Paymob Payment Key Response', ['status' => $response->status(), 'body' => $response->body(), 'billing_data' => $billingData]);
         if ($response->successful()) {
             return $response->json();
         }
-        Log::error('Paymob Payment Key Failed', ['status' => $response->status(), 'body' => $response->body(), 'billing_data' => $billingData]);
+        
+        Log::error('Paymob Payment Key Failed', ['status' => $response->status(), 'body' => $response->body()]);
         return null;
     }
 
     public function requestPayment(array $data): array
     {
-        $auth = $this->authenticate();
-
-        if (!$auth) {
-            return ['status' => false, 'error' => 'Authentication failed'];
-        }
-
-        $order = $this->createOrder($auth['token'], $data);
-        if (!$order) {
-            return ['status' => false, 'error' => 'Order creation failed'];
-        }
-
-        $paymentKey = $this->getPaymentKey($auth['token'], $order, $data);
-        if (!$paymentKey) {
-            return ['status' => false, 'error' => 'Payment key generation failed'];
-        }
-
-        $iframeUrl = "{$this->baseUrl}/acceptance/iframes/{$this->iframeId}?payment_token={$paymentKey['token']}";
-
-        $response = [
-            'status' => true,
-            'description' => 'Payment iframe ready',
-            'iframe_url' => $iframeUrl,
-            'order_id' => $order['id'],
-            'payment_key' => $paymentKey['token'],
-            'id' => $paymentKey['id'] ?? null,
-            'transaction_id' => 'PAY_' . time() . '_' . ($data['customer_data']['user_id'] ?? 'guest'),
-        ];
-
-        Log::info('Paymob Payment Request Response', ['response' => $response, 'order' => $order, 'payment_key' => $paymentKey]);
-
-        return $response;
-    }
-
-    public function confirmPayment(array $data): array
-    {
-        $transactionId = $data['transaction_id'] ?? null;
-        if (!$transactionId) {
-            return ['status' => false, 'error' => 'Transaction ID required'];
-        }
-
-        $auth = $this->authenticate();
-        $response = Http::withHeaders(['Authorization' => 'Bearer ' . $auth['token']])
-            ->get("{$this->baseUrl}/ecommerce/transactions/{$transactionId}");
-
-        if ($response->successful() && $response->json()['success'] === true) {
-            $walletTransaction = WalletTransaction::where('transaction_id', $transactionId)->first();
-            if ($walletTransaction) {
-                $metadata = $walletTransaction->metadata;
-                $metadata['paymob_transaction_id'] = $response->json()['id'] ?? null;
-                $walletTransaction->update(['metadata' => json_encode($metadata)]);
+        try {
+            $auth = $this->authenticate();
+            if (!$auth || !isset($auth['token'])) {
+                return ['status' => false, 'error' => 'Authentication failed'];
             }
 
-            return ['status' => true, 'description' => 'Payment confirmed', 'transaction' => $response->json()];
+            $order = $this->createOrder($auth['token'], $data);
+            if (!$order || !isset($order['id'])) {
+                return ['status' => false, 'error' => 'Order creation failed'];
+            }
+
+            $paymentKey = $this->getPaymentKey($auth['token'], $order, $data);
+            if (!$paymentKey || !isset($paymentKey['token'])) {
+                return ['status' => false, 'error' => 'Payment key generation failed'];
+            }
+
+            $iframeUrl = "https://accept.paymob.com/api/acceptance/iframes/{$this->iframeId}?payment_token={$paymentKey['token']}";
+
+            return [
+                'status' => true,
+                'description' => 'Payment iframe ready',
+                'payment_url' => $iframeUrl,
+                'iframe_url' => $iframeUrl,
+                'order_id' => $order['id'],
+                'payment_key' => $paymentKey['token'],
+                'id' => null, // Transaction ID not available until payment completion
+            ];
+        } catch (\Exception $e) {
+            Log::error('Paymob Request Exception', ['error' => $e->getMessage()]);
+            return ['status' => false, 'error' => 'Payment request failed: ' . $e->getMessage()];
         }
-
-        return ['status' => false, 'error' => 'Confirmation failed'];
-    }
-
-    public function resendOTP(array $data): array
-    {
-        return ['status' => false, 'error' => 'Resend OTP not supported in Paymob'];
     }
 
     public function handleCallback(array $data): array
     {
-        Log::info('Paymob Raw Callback Received', $data);
+        Log::info('Paymob Callback Received', $data);
+        
+        // Parse boolean values properly
+        $success = filter_var($data['success'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $errorOccured = filter_var($data['error_occured'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        
+        // Get message from multiple possible fields
+        $message = $data['data_message'] ?? $data['data.message'] ?? $data['message'] ?? null;
+        
+        Log::info('Paymob Callback Parsed', [
+            'success' => $success,
+            'error_occured' => $errorOccured,
+            'message' => $message,
+            'message_upper' => strtoupper($message ?? '')
+        ]);
 
-        $success = false;
-        $paymobTransactionId = null;
-        $paymobOrderId = null;
+        // Use case-insensitive comparison for the message
+        $isApproved = $success && 
+                      !$errorOccured && 
+                      (strtoupper($message ?? '') === 'APPROVED');
 
-        // Case 1: Full JSON callback (type: TRANSACTION) - Most common
-        if (isset($data['type']) && $data['type'] === 'TRANSACTION' && isset($data['obj'])) {
-            $obj = $data['obj'];
-            $success = (bool) ($obj['success'] ?? false);
-            $paymobTransactionId = $obj['id'] ?? null;
-            $paymobOrderId = $obj['order']['id'] ?? null;
-        }
-
-        // Case 2: Query string callback (flat key-value)
-        elseif (isset($data['success']) && $data['success'] === 'true') {
-            $success = true;
-            $paymobTransactionId = $data['id'] ?? null;
-            $paymobOrderId = $data['order'] ?? null;
-        }
-
-        // Case 3: Some integrations send success in nested obj even without type
-        elseif (isset($data['obj']['success']) && $data['obj']['success'] === true) {
-            $obj = $data['obj'];
-            $success = true;
-            $paymobTransactionId = $obj['id'] ?? null;
-            $paymobOrderId = $obj['order']['id'] ?? null;
-        }
-
-        if ($success) {
+        if ($isApproved) {
             return [
                 'status' => 'success',
-                'message' => 'Payment processed successfully',
-                'paymob_transaction_id' => $paymobTransactionId,
-                'order_id' => $paymobOrderId,
+                'paymob_transaction_id' => $data['id'] ?? null,
+                'paymob_order_id' => $data['order'] ?? null,
             ];
         }
 
-        // Failed payment
-        $error = $data['data_message'] ?? $data['error_occured'] ?? 'Payment failed';
-        Log::warning('Paymob Payment Failed in Callback', ['data' => $data, 'error' => $error]);
+        // If success is true but message is not approved, log the details
+        if ($success && !$errorOccured) {
+            Log::warning('Paymob: Success but unexpected message', [
+                'message' => $message,
+                'expected' => 'APPROVED',
+                'data' => $data
+            ]);
+        }
 
         return [
             'status' => 'failed',
-            'error' => $error,
+            'error' => $message ?? 'Payment failed',
         ];
     }
 
     public function getPaymentMethods(): array
     {
         return [
-            ['id' => 1, 'name' => 'Card', 'description' => 'Credit/Debit Card'],
-            ['id' => 2, 'name' => 'Mobile Wallet', 'description' => 'Fawry/Etisalat'],
-            ['id' => 3, 'name' => 'valU', 'description' => 'Installments'],
-            ['id' => 4, 'name' => 'Meeza', 'description' => 'QR Code'],
+            ['id' => 'card', 'name' => 'Card', 'description' => 'Pay with Credit/Debit Card'],
         ];
+    }
+
+    public function confirmPayment(array $data): array 
+    { 
+        return ['status' => false, 'error' => 'Not implemented for Paymob']; 
+    }
+    
+    public function resendOTP(array $data): array 
+    { 
+        return ['status' => false, 'error' => 'Not implemented for Paymob']; 
     }
 }
