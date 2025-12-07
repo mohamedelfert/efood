@@ -2,17 +2,16 @@
 
 namespace App\Mail;
 
-use App\Model\Order;
-use Barryvdh\DomPDF\Facade;
-use App\Models\EmailTemplate;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
 use App\CentralLogics\Helpers;
 use App\Model\BusinessSetting;
 use App\Model\CustomerAddress;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
+use App\Models\EmailTemplate;
+use App\Model\Order;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use Barryvdh\DomPDF\Facade;
 
 class OrderPlaced extends Mailable
 {
@@ -50,7 +49,7 @@ class OrderPlaced extends Mailable
             'footer_text' => 'If you have any questions, feel free to contact us.',
             'copyright_text' => '© ' . date('Y') . ' ' . $company_name . '. All rights reserved.',
             'button_name' => 'Track Order',
-            // 'button_url' => route('track-order', ['id' => $order->id]),
+            'button_url' => '',
         ];
 
         // Extract content from template
@@ -59,7 +58,7 @@ class OrderPlaced extends Mailable
         $footer_text = $template?->footer_text ?? $default['footer_text'];
         $copyright_text = $template?->copyright_text ?? $default['copyright_text'];
         $button_name = $template?->button_name ?? $default['button_name'];
-        // $button_url = $template?->button_url ?? $default['button_url'];
+        $button_url = $template?->button_url ?? $default['button_url'];
 
         // Apply translations if needed
         if ($template && $local !== 'en' && $template->translations->isNotEmpty()) {
@@ -101,7 +100,7 @@ class OrderPlaced extends Mailable
             'footer_text' => $footer_text,
             'copyright_text' => $copyright_text,
             'button_name' => $button_name,
-            // 'button_url' => $button_url,
+            'button_url' => $button_url,
             'order' => $order,
             'company_name' => $company_name,
             
@@ -130,7 +129,7 @@ class OrderPlaced extends Mailable
                     'mime' => 'application/pdf',
                 ]);
         } catch (\Exception $e) {
-            Log::error('Failed to generate PDF invoice', [
+            \Log::error('Failed to generate PDF invoice', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage()
             ]);
