@@ -49,7 +49,7 @@ class OrderPlaced extends Mailable
             'footer_text' => 'If you have any questions, feel free to contact us.',
             'copyright_text' => '© ' . date('Y') . ' ' . $company_name . '. All rights reserved.',
             'button_name' => 'Track Order',
-            'button_url' => route('track-order', ['id' => $order->id]),
+            // 'button_url' => route('track-order', ['id' => $order->id]),
         ];
 
         // Extract content from template
