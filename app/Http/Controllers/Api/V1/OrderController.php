@@ -2103,6 +2103,7 @@ class OrderController extends Controller
             $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
             if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
                 Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
+                Mail::to(auth('api')->user()->email)->send(new \App\Mail\PaymentSuccessNotification($order_id));
                 
                 Log::info('Order email sent', [
                     'order_id' => $order_id,
