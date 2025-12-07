@@ -210,11 +210,6 @@
                 <td class="main-table-td">
                     <h2 class="mb-3" id="mail-title">{{ $title?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
                     <div class="mb-1" id="mail-body">{!! $body?? translate('Hi_Sabrina,') !!}</div>
-                    <--<span class="d-block text-center mb-3">
-                        @if ($data?->button_url)
-                        <a href="{{ $data['button_url']??'#' }}" class="cmn-btn" id="mail-button">{{ $data['button_name']??'Submit' }}</a>
-                        @endif                    </span>-->
-
 
                     <table class="bg-section p-10 w-100">
                         <tbody>
