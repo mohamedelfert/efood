@@ -108,14 +108,37 @@ class OrderPlaced extends Mailable
         // Generate PDF Invoice
         $pdf = Facade\Pdf::loadView('email-templates.invoice', compact('order'));
 
+        // return $this->subject(translate('Order Placed - #') . $order->id)
+        //     ->view('email-templates.new-email-format-' . $template_id, [
+        //         'company_name' => $company_name,
+        //         'title' => $title,
+        //         'body' => $body,
+        //         'footer_text' => $footer_text,
+        //         'copyright_text' => $copyright_text,
+        //         'order' => $order,
+        //     ])
+        //     ->attachData($pdf->output(), 'Invoice_Order_' . $order->id . '.pdf', [
+        //         'mime' => 'application/pdf',
+        //     ]);
+
         return $this->subject(translate('Order Placed - #') . $order->id)
             ->view('email-templates.new-email-format-' . $template_id, [
-                'company_name' => $company_name,
-                'title' => $title,
-                'body' => $body,
-                'footer_text' => $footer_text,
+                'company_name'   => $company_name,
+                'title'          => $title,
+                'body'           => $body,
+                'footer_text'    => $footer_text,
                 'copyright_text' => $copyright_text,
-                'order' => $order,
+                'order'          => $order,
+
+                // This fixes the error immediately
+                'data'           => (object)[
+                    'title'          => $title,
+                    'body'           => $body,
+                    'footer_text'    => $footer_text,
+                    'copyright_text' => $copyright_text,
+                    'order'          => $order,
+                    'company_name'   => $company_name,
+                ],
             ])
             ->attachData($pdf->output(), 'Invoice_Order_' . $order->id . '.pdf', [
                 'mime' => 'application/pdf',
