@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Services\NotificationService;
 use App\Services\PaymentGatewayHelper;
+use App\Mail\MoneyTransferNotification;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Payment\PaymentGatewayFactory;
 
@@ -1248,6 +1249,7 @@ class CustomerWalletController extends Controller
                 try {
                     $localization = app()->getLocale();
                     Mail::to($sender->email)->send(new TransferOtp($otp, $localization));
+                    Mail::to($sender->email)->send(new MoneyTransferNotification($otp, $localization));
                     Log::info("Transfer OTP email sent to {$sender->email}");
                 } catch (\Exception $e) {
                     Log::error("Transfer OTP email failed", [
