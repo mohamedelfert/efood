@@ -24,7 +24,7 @@ class NotificationService
 
     /**
      * Send login OTP via Email and WhatsApp
-     * ✅ FIXED: Removed transaction_id (doesn't exist for login)
+     * Removed transaction_id (doesn't exist for login)
      */
     public function sendLoginOTP(User $user, string $otp): array
     {
@@ -56,7 +56,7 @@ class NotificationService
                     'otp' => $otp,
                     'expiry_minutes' => '5',
                     'timestamp' => now()->format('Y-m-d H:i:s')
-                    // ❌ NO transaction_id here - it doesn't exist for login!
+                    // NO transaction_id here - it doesn't exist for login!
                 ];
                 
                 $message = $this->whatsapp->sendTemplateMessage('login_otp', $whatsappData);
@@ -85,7 +85,7 @@ class NotificationService
 
     /**
      * Send wallet top-up notifications
-     * ✅ Email + WhatsApp + Push + In-App
+     * Email + WhatsApp + Push + In-App
      */
     public function sendWalletTopUpNotification(User $user, array $data): void
     {
@@ -103,7 +103,7 @@ class NotificationService
                 'time' => now()->format('h:i A'),
             ];
 
-            // 1️⃣ Email Notification
+            //  Email Notification
             if ($user->email) {
                 try {
                     $emailServices = Helpers::get_business_settings('mail_config');
@@ -125,7 +125,7 @@ class NotificationService
                 }
             }
 
-            // 2️⃣ WhatsApp Notification with Receipt
+            //  WhatsApp Notification with Receipt
             if ($user->phone) {
                 try {
                     // Generate receipt image
@@ -163,7 +163,7 @@ class NotificationService
                 }
             }
 
-            // 3️⃣ Push Notification
+            //  Push Notification
             if ($user->cm_firebase_token) {
                 try {
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
@@ -185,7 +185,7 @@ class NotificationService
                 }
             }
 
-            // 4️⃣ In-App Notification
+            //  In-App Notification
             $this->storeInAppNotification($user->id, [
                 'title' => 'Wallet Top-Up Successful',
                 'description' => "Your wallet has been topped up with {$data['amount']} {$data['currency']}",
@@ -211,7 +211,7 @@ class NotificationService
 
     /**
      * Send money transfer notifications (sender + receiver)
-     * ✅ Email + WhatsApp + Push + In-App
+     * Email + WhatsApp + Push + In-App
      */
     public function sendMoneyTransferNotification(User $sender, User $receiver, array $data): void
     {
@@ -370,7 +370,7 @@ class NotificationService
 
     /**
      * Send order placed notifications
-     * ✅ Email + WhatsApp + Push + In-App
+     * Email + WhatsApp + Push + In-App
      */
     public function sendOrderPlacedNotification(User $user, Order $order, array $data): void
     {
@@ -391,7 +391,7 @@ class NotificationService
                 'time' => now()->format('h:i A'),
             ];
 
-            // 1️⃣ Email Notification (uses OrderPlaced mail which is already working)
+            //  Email Notification (uses OrderPlaced mail which is already working)
             if ($user->email) {
                 try {
                     $emailServices = Helpers::get_business_settings('mail_config');
@@ -406,7 +406,7 @@ class NotificationService
                 }
             }
 
-            // 2️⃣ WhatsApp Notification
+            //  WhatsApp Notification
             if ($user->phone) {
                 try {
                     $message = $this->whatsapp->sendTemplateMessage('order_placed', $notificationData);
@@ -417,7 +417,7 @@ class NotificationService
                 }
             }
 
-            // 3️⃣ Push Notification
+            //  Push Notification
             if ($user->cm_firebase_token) {
                 try {
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
@@ -434,7 +434,7 @@ class NotificationService
                 }
             }
 
-            // 4️⃣ In-App Notification
+            //  In-App Notification
             $this->storeInAppNotification($user->id, [
                 'title' => 'Order Placed Successfully',
                 'description' => "Your order #{$order->id} has been placed",
@@ -456,7 +456,7 @@ class NotificationService
 
     /**
      * Send loyalty conversion notification
-     * ✅ Email + WhatsApp + Push + In-App
+     * Email + WhatsApp + Push + In-App
      */
     public function sendLoyaltyConversionNotification(User $user, array $data): void
     {

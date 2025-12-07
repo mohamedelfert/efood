@@ -337,6 +337,208 @@ class CustomerWalletController extends Controller
     /**
      * Process wallet top-up 
      */
+    // public function topUpWallet(Request $request): JsonResponse
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'amount' => 'required|numeric|min:1|max:50000',
+    //         'gateway' => 'required|in:paymob,qib,loyalty_points',
+    //         'currency' => 'sometimes|string|in:SAR,USD,EUR,EGP,YER',
+    //         'callback_url' => 'sometimes|url',
+            
+    //         // QIB specific fields
+    //         'payment_CustomerNo' => 'required_if:gateway,qib|string',
+    //         'payment_DestNation' => 'required_if:gateway,qib|integer',
+    //         'payment_Code' => 'required_if:gateway,qib|integer',
+            
+    //         // Loyalty points field
+    //         'points' => 'required_if:gateway,loyalty_points|integer|min:1',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+    //     }
+
+    //     $user = $request->user();
+    //     $amount = $request->amount;
+    //     $gateway = $request->gateway;
+    //     $currency = $request->currency ?? 'EGP';
+
+    //     // Check daily limits
+    //     $dailyLimit = $this->businessSetting->where('key', 'wallet_daily_top_up_limit')->first()->value ?? 50000;
+    //     $todayTopUps = $this->walletTransaction
+    //         ->where('user_id', $user->id)
+    //         ->where('transaction_type', 'add_fund')
+    //         ->whereDate('created_at', today())
+    //         ->sum('credit');
+
+    //     if (($todayTopUps + $amount) > $dailyLimit) {
+    //         return response()->json([
+    //             'errors' => [['code' => 'limit_exceeded', 'message' => translate('Daily top-up limit exceeded')]]
+    //         ], 400);
+    //     }
+
+    //     // Handle loyalty points top-up
+    //     if ($gateway === 'loyalty_points') {
+    //         return $this->handleLoyaltyTopUp($request, $user);
+    //     }
+
+    //     try {
+    //         $gatewayInstance = PaymentGatewayFactory::create($gateway);
+    //         if (!$gatewayInstance) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'errors' => [['code' => 'invalid_gateway', 'message' => 'Unsupported gateway']]
+    //             ], 400);
+    //         }
+
+    //         $transactionId = 'PAY_' . time() . '_' . $user->id;
+    //         $callbackUrl = $gateway === 'qib' ? null : (env('APP_URL') . config('payment.callback_url') ?? null);
+
+    //         $data = [
+    //             'gateway' => $gateway,
+    //             'amount' => $amount,
+    //             'currency' => $currency,
+    //             'purpose' => 'wallet_topup',
+    //             'customer_data' => [
+    //                 'user_id' => $user->id,
+    //                 'name' => $user->name,
+    //                 'email' => $user->email,
+    //                 'phone' => $user->phone,
+    //             ],
+    //             'callback_url' => $callbackUrl,
+    //         ];
+
+    //         // Add QIB-specific fields
+    //         if ($gateway === 'qib') {
+    //             $data['payment_CustomerNo'] = $request->payment_CustomerNo;
+    //             $data['payment_DestNation'] = $request->payment_DestNation;
+    //             $data['payment_Code'] = $request->payment_Code;
+    //         }
+
+    //         $response = $gatewayInstance->requestPayment($data);
+
+    //         if (isset($response['status']) && $response['status']) {
+    //             $currentBalance = $user->wallet_balance;
+                
+    //             $metadata = [
+    //                 'gateway' => $gateway,
+    //                 'currency' => $currency,
+    //             ];
+
+    //             if ($gateway === 'qib') {
+    //                 $metadata = array_merge($metadata, [
+    //                     'payment_CustomerNo' => $request->payment_CustomerNo,
+    //                     'payment_DestNation' => $request->payment_DestNation,
+    //                     'payment_Code' => $request->payment_Code,
+    //                 ]);
+    //             } else {
+    //                 $metadata = array_merge($metadata, [
+    //                     'paymob_order_id' => (string) ($response['order_id'] ?? null),
+    //                     'payment_key' => $response['payment_key'] ?? null,
+    //                     'paymob_transaction_id' => (string) ($response['id'] ?? null),
+    //                 ]);
+    //             }
+
+    //             try {
+    //                 $this->walletTransaction->create([
+    //                     'user_id' => $user->id,
+    //                     'transaction_id' => $transactionId,
+    //                     'credit' => $amount,
+    //                     'debit' => 0,
+    //                     'transaction_type' => 'add_fund',
+    //                     'reference' => 'Top-up via ' . $gateway,
+    //                     'status' => 'pending',
+    //                     'gateway' => $gateway,
+    //                     'balance' => $currentBalance,
+    //                     'admin_bonus' => $request->admin_bonus ? json_encode($request->admin_bonus) : null,
+    //                     'metadata' => json_encode($metadata),
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                 ]);
+    //                 Log::info('WalletTransaction created successfully', [
+    //                     'transaction_id' => $transactionId,
+    //                     'user_id' => $user->id,
+    //                     'metadata' => $metadata
+    //                 ]);
+    //             } catch (\Exception $e) {
+    //                 Log::error('Failed to create WalletTransaction', [
+    //                     'error' => $e->getMessage(),
+    //                     'trace' => $e->getTraceAsString(),
+    //                     'data' => [
+    //                         'transaction_id' => $transactionId,
+    //                         'user_id' => $user->id,
+    //                         'metadata' => $metadata
+    //                     ]
+    //                 ]);
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Failed to create transaction record'
+    //                 ], 500);
+    //             }
+
+    //             // Send OTP notifications for QIB
+    //             if ($gateway === 'qib') {
+    //                 try {
+    //                     $notificationService = app(\App\Services\QIBNotificationService::class);
+    //                     $notificationService->sendOTPNotification($user, [
+    //                         'transaction_id' => $transactionId,
+    //                         'amount' => $amount,
+    //                         'currency' => $currency,
+    //                         'gateway' => 'QIB Bank',
+    //                     ]);
+    //                 } catch (\Exception $e) {
+    //                     Log::warning('QIB OTP notification failed', [
+    //                         'error' => $e->getMessage(),
+    //                         'transaction_id' => $transactionId,
+    //                     ]);
+    //                 }
+    //             }
+
+    //             // Get gateway type information
+    //             $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($gateway);
+
+    //             $responseData = [
+    //                 'success' => true,
+    //                 'message' => translate($gateway === 'qib' ? 'OTP sent to your WhatsApp' : 'Payment initiated successfully'),
+    //                 'transaction_id' => $transactionId,
+    //                 'gateway' => $gateway,
+    //                 'amount' => $amount,
+    //                 'currency' => $currency,
+    //                 'requires_online_url' => $gatewayInfo['requires_online_url'],
+    //                 'payment_type' => $gatewayInfo['payment_type'],
+    //             ];
+
+    //             if ($gateway === 'qib') {
+    //                 $responseData['requires_otp'] = true;
+    //                 $responseData['otp_sent'] = true;
+    //             } else {
+    //                 $responseData['payment_url'] = $response['iframe_url'] ?? null;
+    //                 $responseData['requires_otp'] = false;
+    //                 $responseData['redirect_required'] = $gatewayInfo['requires_online_url']; // Use flag instead of hardcoded true
+    //             }
+
+    //             return response()->json($responseData, 200);
+    //         }
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors' => $response['errors'] ?? [['code' => 'payment_failed', 'message' => 'Payment initiation failed']]
+    //         ], 400);
+
+    //     } catch (Exception $e) {
+    //         Log::error('Wallet top-up failed', [
+    //             'user_id' => $user->id,
+    //             'amount' => $amount,
+    //             'gateway' => $gateway,
+    //             'error' => $e->getMessage(),
+    //         ]);
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors' => [['code' => 'server_error', 'message' => translate('Top-up failed. Please try again.')]]
+    //         ], 500);
+    //     }
+    // }
+
     public function topUpWallet(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -420,6 +622,7 @@ class CustomerWalletController extends Controller
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
                 
+                // ✅ BUILD METADATA WITH STRING CASTING
                 $metadata = [
                     'gateway' => $gateway,
                     'currency' => $currency,
@@ -432,10 +635,11 @@ class CustomerWalletController extends Controller
                         'payment_Code' => $request->payment_Code,
                     ]);
                 } else {
+                    // ✅ For Paymob - Cast IDs to strings
                     $metadata = array_merge($metadata, [
-                        'paymob_order_id' => (string) ($response['order_id'] ?? null),
+                        'paymob_order_id' => (string)($response['order_id'] ?? ''),
                         'payment_key' => $response['payment_key'] ?? null,
-                        'paymob_transaction_id' => (string) ($response['id'] ?? null),
+                        'paymob_transaction_id' => (string)($response['id'] ?? ''),
                     ]);
                 }
 
@@ -455,6 +659,7 @@ class CustomerWalletController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    
                     Log::info('WalletTransaction created successfully', [
                         'transaction_id' => $transactionId,
                         'user_id' => $user->id,
@@ -514,7 +719,7 @@ class CustomerWalletController extends Controller
                 } else {
                     $responseData['payment_url'] = $response['iframe_url'] ?? null;
                     $responseData['requires_otp'] = false;
-                    $responseData['redirect_required'] = $gatewayInfo['requires_online_url']; // Use flag instead of hardcoded true
+                    $responseData['redirect_required'] = $gatewayInfo['requires_online_url'];
                 }
 
                 return response()->json($responseData, 200);
@@ -1249,7 +1454,7 @@ class CustomerWalletController extends Controller
                 try {
                     $localization = app()->getLocale();
                     Mail::to($sender->email)->send(new TransferOtp($otp, $localization));
-                    Mail::to($sender->email)->send(new MoneyTransferNotification($otp, $localization));
+                    // Mail::to($sender->email)->send(new MoneyTransferNotification($otp, $localization));
                     Log::info("Transfer OTP email sent to {$sender->email}");
                 } catch (\Exception $e) {
                     Log::error("Transfer OTP email failed", [
