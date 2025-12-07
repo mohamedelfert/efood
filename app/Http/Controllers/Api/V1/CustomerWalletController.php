@@ -824,7 +824,7 @@ class CustomerWalletController extends Controller
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
                 
-                // ✅ BUILD METADATA WITH STRING CASTING
+                // BUILD METADATA WITH STRING CASTING
                 $metadata = [
                     'gateway' => $gateway,
                     'currency' => $currency,
@@ -837,7 +837,7 @@ class CustomerWalletController extends Controller
                         'payment_Code' => $request->payment_Code,
                     ]);
                 } else {
-                    // ✅ For Paymob - Cast IDs to strings
+                    // For Paymob - Cast IDs to strings
                     // Note: paymob_transaction_id comes later in callback
                     $metadata = array_merge($metadata, [
                         'paymob_order_id' => (string)($response['order_id'] ?? ''),

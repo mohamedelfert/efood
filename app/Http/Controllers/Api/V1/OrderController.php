@@ -11,6 +11,7 @@ use App\Model\Branch;
 use App\Model\Product;
 use App\Model\Currency;
 use App\Model\DMReview;
+use App\Mail\OrderPlaced;
 use App\Models\GuestUser;
 use App\Models\OrderArea;
 use App\Model\OrderDetail;
@@ -32,6 +33,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Services\NotificationService;
 use App\Services\PaymentGatewayHelper;
+use App\Mail\PaymentSuccessNotification;
 use function App\CentralLogics\translate;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\PaymentsController;
@@ -462,7 +464,7 @@ class OrderController extends Controller
                             ], 400);
                         }
 
-                        // ✅ FIX #1: BUILD METADATA WITH STRING CASTING
+                        // #1: BUILD METADATA WITH STRING CASTING
                         $metadata = [
                             'gateway' => $request->payment_method,
                             'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
@@ -484,7 +486,7 @@ class OrderController extends Controller
                             ]);
                         }
 
-                        // ✅ CREATE WALLET TRANSACTION WITH FIXED METADATA
+                        // #2: CREATE WALLET TRANSACTION WITH FIXED METADATA
                         $walletTransaction = WalletTransaction::create([
                             'user_id' => $userId,
                             'transaction_id' => $transactionId,
@@ -641,7 +643,7 @@ class OrderController extends Controller
                         ], 400);
                     }
 
-                    // ✅ FIX #2: BUILD METADATA WITH STRING CASTING FOR NON-PARTIAL
+                    // #2: BUILD METADATA WITH STRING CASTING FOR NON-PARTIAL
                     $metadata = [
                         'order_id' => $o_id,
                         'gateway' => $request->payment_method,
@@ -2102,7 +2104,8 @@ class OrderController extends Controller
             $emailServices = Helpers::get_business_settings('mail_config');
             $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
             if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
-                Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
+                Mail::to(auth('api')->user()->email)->send(new OrderPlaced($order_id));
+                Mail::to(auth('api')->user()->email)->send(new PaymentSuccessNotification($order_id));
                 
                 Log::info('Order email sent', [
                     'order_id' => $order_id,
