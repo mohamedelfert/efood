@@ -622,7 +622,6 @@ class CustomerWalletController extends Controller
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
                 
-                // ✅ BUILD METADATA WITH STRING CASTING
                 $metadata = [
                     'gateway' => $gateway,
                     'currency' => $currency,
@@ -635,11 +634,10 @@ class CustomerWalletController extends Controller
                         'payment_Code' => $request->payment_Code,
                     ]);
                 } else {
-                    // ✅ For Paymob - Cast IDs to strings
                     $metadata = array_merge($metadata, [
-                        'paymob_order_id' => (string)($response['order_id'] ?? ''),
+                        'paymob_order_id' => (string) ($response['order_id'] ?? null),
                         'payment_key' => $response['payment_key'] ?? null,
-                        'paymob_transaction_id' => (string)($response['id'] ?? ''),
+                        'paymob_transaction_id' => (string) ($response['id'] ?? null),
                     ]);
                 }
 
@@ -659,7 +657,6 @@ class CustomerWalletController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    
                     Log::info('WalletTransaction created successfully', [
                         'transaction_id' => $transactionId,
                         'user_id' => $user->id,
@@ -719,7 +716,7 @@ class CustomerWalletController extends Controller
                 } else {
                     $responseData['payment_url'] = $response['iframe_url'] ?? null;
                     $responseData['requires_otp'] = false;
-                    $responseData['redirect_required'] = $gatewayInfo['requires_online_url'];
+                    $responseData['redirect_required'] = $gatewayInfo['requires_online_url']; // Use flag instead of hardcoded true
                 }
 
                 return response()->json($responseData, 200);
