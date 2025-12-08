@@ -128,24 +128,32 @@ class NotificationService
             //  WhatsApp Notification with Receipt
             if ($user->phone) {
                 try {
-                    // Generate receipt image
-                    $receiptGenerator = app(\App\Services\ReceiptGeneratorService::class);
-                    $receiptData = [
-                        'transaction_id' => $data['transaction_id'],
-                        'customer_name' => $user->name,
-                        'account_number' => str_pad($user->id, 8, '0', STR_PAD_LEFT),
-                        'amount' => $data['amount'],
-                        'currency' => $data['currency'] ?? 'SAR',
-                        'previous_balance' => $data['previous_balance'] ?? 0,
-                        'new_balance' => $user->wallet_balance,
-                        'date' => now()->format('d/m/Y'),
-                        'time' => now()->format('h:i A'),
-                        'tax' => $data['tax'] ?? 0,
-                    ];
+                    $receiptPath = null;
                     
-                    $receiptPath = $receiptGenerator->generateReceiptImage($receiptData);
+                    // Try to generate receipt (might fail if view missing)
+                    try {
+                        $receiptGenerator = app(\App\Services\ReceiptGeneratorService::class);
+                        $receiptData = [
+                            'transaction_id' => $data['transaction_id'],
+                            'customer_name' => $user->name,
+                            'account_number' => str_pad($user->id, 8, '0', STR_PAD_LEFT),
+                            'amount' => $data['amount'],
+                            'currency' => $data['currency'] ?? 'SAR',
+                            'previous_balance' => $data['previous_balance'] ?? 0,
+                            'new_balance' => $user->wallet_balance,
+                            'date' => now()->format('d/m/Y'),
+                            'time' => now()->format('h:i A'),
+                            'tax' => $data['tax'] ?? 0,
+                        ];
+                        
+                        $receiptPath = $receiptGenerator->generateReceiptImage($receiptData);
+                    } catch (\Exception $receiptError) {
+                        Log::warning('Receipt generation failed, sending WhatsApp without image', [
+                            'error' => $receiptError->getMessage()
+                        ]);
+                    }
 
-                    // Send WhatsApp with receipt
+                    // Send WhatsApp (with or without receipt)
                     $message = $this->whatsapp->sendTemplateMessage('wallet_topup', $notificationData);
                     $response = $this->whatsapp->sendMessage($user->phone, $message, $receiptPath);
                     

@@ -40,13 +40,13 @@ class WhatsAppService
         $to = ltrim($to, '0');
         
         // Remove country code if present
-        if (strlen($to) > 10 && substr($to, 0, 2) === '20') {
-            $to = substr($to, 2);
+        if (strlen($to) === 10 && substr($to, 0, 2) !== '20') {
+            $to = '20' . $to;
         }
         
-        Log::info('WhatsApp: Cleaned phone number', [
-            'original' => $to,
-            'cleaned' => $to
+        Log::info('WhatsApp: Phone number formatted', [
+            'final_number' => $to,
+            'length' => strlen($to)
         ]);
 
         $data = [

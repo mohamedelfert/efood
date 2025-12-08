@@ -17,6 +17,15 @@ class ReceiptGeneratorService
      */
     public function generateReceiptPDF(array $data): string
     {
+        $viewPath = 'admin-views.business-settings.whatsapp-format-setting.receipts.wallet-topup-receipt';
+
+        // Check if view exists
+        if (!view()->exists($viewPath)) {
+            Log::error('Receipt view not found', [
+                'view_path' => $viewPath
+            ]);
+        }
+
         $template = WhatsAppTemplate::where('whatsapp_type', 'wallet_topup')
             ->where('type', 'user')
             ->first();
@@ -24,7 +33,7 @@ class ReceiptGeneratorService
         $receiptData = $this->prepareReceiptData($data, $template);
         
         // Load the receipt view
-        $html = View::make('receipts.wallet-topup-receipt', $receiptData)->render();
+        $html = view($viewPath, $receiptData)->render();
         
         // Generate PDF
         $pdf = Pdf::loadHTML($html)
