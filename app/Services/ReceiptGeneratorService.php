@@ -2,410 +2,238 @@
 
 namespace App\Services;
 
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\View;
-use App\Models\WhatsAppTemplate;
-use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class ReceiptGeneratorService
 {
     /**
-     * Generate receipt as PDF
+     * Generate receipt image from Blade template
+     * Uses simple GD library (built into PHP, no external dependencies)
      */
-    public function generateReceiptPDF(array $data): string
-    {
-        $viewPath = 'admin-views.business-settings.whatsapp-format-setting.receipts.wallet-topup-receipt';
-
-        // Check if view exists
-        if (!view()->exists($viewPath)) {
-            Log::error('Receipt view not found', [
-                'view_path' => $viewPath
-            ]);
-        }
-
-        $template = WhatsAppTemplate::where('whatsapp_type', 'wallet_topup')
-            ->where('type', 'user')
-            ->first();
-
-        $receiptData = $this->prepareReceiptData($data, $template);
-        
-        // Load the receipt view
-        $html = view($viewPath, $receiptData)->render();
-        
-        // Generate PDF
-        $pdf = Pdf::loadHTML($html)
-            ->setPaper('a5', 'portrait')
-            ->setOptions([
-                'isRemoteEnabled' => true,
-                'isHtml5ParserEnabled' => true,
-                'isFontSubsettingEnabled' => true,
-                'defaultFont' => 'DejaVu Sans'
-            ]);
-        
-        // Save to storage
-        $fileName = 'receipt_' . $data['transaction_id'] . '_' . time() . '.pdf';
-        $filePath = 'receipts/pdf/' . $fileName;
-        Storage::disk('public')->makeDirectory('receipts/pdf');
-        Storage::disk('public')->put($filePath, $pdf->output());
-        
-        return storage_path('app/public/' . $filePath);
-    }
-
-    /**
-     * Generate receipt as Image
-     */
-    public function generateReceiptImage(array $data): string
-    {
-        $template = WhatsAppTemplate::where('whatsapp_type', 'wallet_topup')
-            ->where('type', 'user')
-            ->first();
-
-        $receiptData = $this->prepareReceiptData($data, $template);
-
-        // Always try Imagick first for better Arabic support via PDF
-        if (extension_loaded('imagick')) {
-            $pdfPath = $this->generateReceiptPDF($data);
-            return $this->convertPDFToImageWithImagick($pdfPath, $data['transaction_id']);
-        }
-        
-        // Fallback: Direct GD with bilingual support
-        return $this->generateReceiptImageDirect($receiptData);
-    }
-
-    /**
-     * Convert PDF to Image using Imagick
-     */
-    private function convertPDFToImageWithImagick(string $pdfPath, string $transactionId): string
+    public function generateReceiptImage(array $receiptData): ?string
     {
         try {
-            $imagick = new Imagick();
-            $imagick->setResolution(150, 150);
-            $imagick->readImage($pdfPath . '[0]');
-            $imagick->setImageFormat('png');
-            $imagick->setImageCompressionQuality(90);
+            // Generate filename and path
+            $filename = 'receipt_' . $receiptData['transaction_id'] . '_' . time() . '.png';
+            $outputPath = storage_path('app/public/receipts/images/' . $filename);
             
-            // Save image
-            $fileName = 'receipt_' . $transactionId . '_' . time() . '.png';
-            $filePath = 'receipts/images/' . $fileName;
-            $fullPath = storage_path('app/public/' . $filePath);
+            // Ensure directory exists
+            if (!file_exists(dirname($outputPath))) {
+                mkdir(dirname($outputPath), 0755, true);
+            }
             
-            Storage::disk('public')->makeDirectory('receipts/images');
-            $imagick->writeImage($fullPath);
-            $imagick->clear();
+            // Generate receipt using GD library
+            $this->generateSimpleReceipt($receiptData, $outputPath);
             
-            return $fullPath;
+            Log::info('Receipt generated successfully', [
+                'transaction_id' => $receiptData['transaction_id'],
+                'path' => $outputPath
+            ]);
+            
+            return $outputPath;
+            
         } catch (\Exception $e) {
-            Log::error('Imagick conversion failed', ['error' => $e->getMessage()]);
-            return $this->generateReceiptImageDirect($this->extractDataFromPath($pdfPath));
+            Log::error('Receipt generation failed', [
+                'error' => $e->getMessage(),
+                'transaction_id' => $receiptData['transaction_id'] ?? 'unknown'
+            ]);
+            return null;
         }
     }
 
     /**
-     * Generate receipt image directly using GD with TTF fonts (enhanced bilingual support)
+     * Generate professional receipt using GD library
+     * No external dependencies required
      */
-    private function generateReceiptImageDirect(array $receiptData): string
+    private function generateSimpleReceipt(array $data, string $outputPath): void
     {
-        $fontPath = $this->getReadableFontPath();
-        if (!$fontPath) {
-            Log::warning('No readable TTF font found. Using bitmap fallback for entire image.', [
-                'paths_tried' => [
-                    public_path('fonts/Amiri-Regular.ttf'),
-                    public_path('fonts/DejaVuSans.ttf')
-                ]
-            ]);
-        }
-
         $width = 800;
-        $height = 1400; // Increased for bilingual lines
+        $height = 1200;
+        $image = imagecreatetruecolor($width, $height);
         
-        $img = imagecreatetruecolor($width, $height);
+        // Colors
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        $gray = imagecolorallocate($image, 100, 100, 100);
+        $blue = imagecolorallocate($image, 0, 102, 204);
+        $green = imagecolorallocate($image, 0, 150, 0);
+        $lightGray = imagecolorallocate($image, 240, 240, 240);
+        $darkBlue = imagecolorallocate($image, 0, 51, 102);
         
-        $white = imagecolorallocate($img, 255, 255, 255);
-        $black = imagecolorallocate($img, 0, 0, 0);
-        $green = imagecolorallocate($img, 40, 167, 69);
-        $gray = imagecolorallocate($img, 102, 102, 102);
-        $lightGray = imagecolorallocate($img, 248, 249, 250);
-        $borderColor = imagecolorallocate($img, 0, 0, 0);
-        
-        imagefill($img, 0, 0, $white);
-        
-        imagesetthickness($img, 3);
-        imagerectangle($img, 10, 10, $width - 10, $height - 10, $borderColor);
+        // Fill background
+        imagefill($image, 0, 0, $white);
         
         $y = 40;
+        $leftMargin = 60;
+        $lineHeight = 40;
         
-        // Header
-        imagefilledrectangle($img, 20, 20, $width - 20, 180, $lightGray);
-        imagerectangle($img, 20, 20, $width - 20, 180, $borderColor);
+        // ===== HEADER =====
+        imagefilledrectangle($image, 0, 0, $width, 100, $blue);
         
-        // Bilingual title
-        $this->drawTTFText($img, $receiptData['template']->title ?? 'QNB Alahli Bank', $width / 2, $y + 30, $black, $fontPath, 20, 'center');
-        $this->drawTTFText($img, 'eFood Wallet Top-Up', $width / 2, $y + 55, $black, $fontPath, 16, 'center');
+        $title = 'WALLET TOP-UP RECEIPT';
+        $titleWidth = imagefontwidth(5) * strlen($title);
+        $titleX = ($width - $titleWidth) / 2;
+        imagestring($image, 5, $titleX, 40, $title, $white);
         
-        $this->drawTTFText($img, $receiptData['date'], $width / 2, $y + 90, $gray, $fontPath, 14, 'center');
-        $this->drawTTFText($img, now()->format('M d, Y'), $width / 2, $y + 110, $gray, $fontPath, 12, 'center');
+        $y = 140;
         
-        // Title section
-        $y = 220;
-        imagefilledrectangle($img, 20, $y, $width - 20, $y + 60, $green);
-        $this->drawTTFText($img, 'إيصال شحن محفظة', $width / 2, $y + 35, $white, $fontPath, 18, 'center');
-        $this->drawTTFText($img, 'Wallet Top-Up Receipt', $width / 2, $y + 55, $white, $fontPath, 14, 'center');
-        
-        // Details
-        $y = 300;
-        $lineHeight = 45;
-        
-        // Transaction ID
-        $this->drawTTFLabelValue($img, 'رقم العملية / Transaction ID:', $receiptData['transaction_id'], 50, $y, $gray, $black, $fontPath, 12);
+        // ===== TRANSACTION INFO =====
+        $this->drawLabel($image, 'Transaction ID:', $data['transaction_id'], $leftMargin, $y, $black, $darkBlue);
         $y += $lineHeight;
         
-        // Account
-        $this->drawTTFLabelValue($img, 'الحساب / Account:', $receiptData['account_number'], 50, $y, $gray, $black, $fontPath, 12);
+        $dateTime = $data['date'] . ' ' . $data['time'];
+        $this->drawLabel($image, 'Date & Time:', $dateTime, $leftMargin, $y, $black, $gray);
         $y += $lineHeight;
         
-        // Customer
-        $this->drawTTFLabelValue($img, 'العميل / Customer:', $receiptData['customer_name'], 50, $y, $gray, $black, $fontPath, 12);
-        $y += $lineHeight;
-        
-        // Divider
-        imageline($img, 30, $y, $width - 30, $y, $borderColor);
-        $y += 30;
-        
-        // Amount section
-        imagefilledrectangle($img, 30, $y, $width - 30, $y + 100, $lightGray);
-        $this->drawTTFLabelValue($img, 'المبلغ / Amount:', $receiptData['amount'] . ' ' . $receiptData['currency'], 50, $y + 25, $gray, $green, $fontPath, 14);
-        $this->drawTTFLabelValue($img, 'الضريبة / Tax:', $receiptData['tax'] . ' ' . $receiptData['currency'], 50, $y + 60, $gray, $black, $fontPath, 12);
-        $y += 120;
-        
-        // Previous balance
-        $this->drawTTFLabelValue($img, 'الرصيد السابق / Previous Balance:', $receiptData['previous_balance'] . ' ' . $receiptData['currency'], 50, $y, $gray, $black, $fontPath, 12);
-        $y += $lineHeight;
-        
-        // New Balance (highlighted)
-        imagefilledrectangle($img, 30, $y - 10, $width - 30, $y + 50, $lightGray);
-        imagesetthickness($img, 2);
-        imagerectangle($img, 30, $y - 10, $width - 30, $y + 50, $green);
-        $this->drawTTFLabelValue($img, 'الرصيد الجديد / New Balance:', $receiptData['new_balance'] . ' ' . $receiptData['currency'], 50, $y + 20, $gray, $white, $fontPath, 16);
-        
-        $y += 90;
-        
-        // Footer
-        imageline($img, 30, $y, $width - 30, $y, $borderColor);
-        $y += 30;
-        
-        $footerTextAr = $this->replacePlaceholders($receiptData['template']->footer_text ?? 'شكراً لاستخدام خدماتنا', $receiptData);
-        $footerTextEn = $this->replacePlaceholders('Thank you for using our service', $receiptData);
-        $this->drawTTFText($img, $footerTextAr, $width / 2, $y, $gray, $fontPath, 12, 'center');
-        $this->drawTTFText($img, $footerTextEn, $width / 2, $y + 20, $gray, $fontPath, 10, 'center');
+        // Separator
+        $this->drawSeparator($image, $leftMargin, $y, $width - $leftMargin, $lightGray);
         $y += 40;
         
-        $arabicDate = Carbon::now()->locale('ar')->formatLocalized('%A، %d %B %Y');
-        $englishDate = now()->format('l, F d, Y');
-        $this->drawTTFText($img, $arabicDate, $width / 2, $y, $gray, $fontPath, 11, 'center');
-        $this->drawTTFText($img, $englishDate, $width / 2, $y + 20, $gray, $fontPath, 10, 'center');
+        // ===== CUSTOMER INFO =====
+        imagestring($image, 5, $leftMargin, $y, 'CUSTOMER DETAILS', $blue);
+        $y += $lineHeight;
         
-        // Save
-        $fileName = 'receipt_' . $receiptData['transaction_id'] . '_' . time() . '.png';
-        $filePath = 'receipts/images/' . $fileName;
-        $fullPath = storage_path('app/public/' . $filePath);
+        $this->drawLabel($image, 'Name:', $data['customer_name'], $leftMargin, $y, $black, $gray);
+        $y += $lineHeight;
         
-        Storage::disk('public')->makeDirectory('receipts/images');
-        imagepng($img, $fullPath, 9);
-        imagedestroy($img);
+        $this->drawLabel($image, 'Account:', $data['account_number'], $leftMargin, $y, $black, $gray);
+        $y += $lineHeight;
         
-        Log::info('Receipt image generated with fallback', ['path' => $fullPath, 'used_ttf' => $fontPath ? 'yes' : 'no']);
-        return $fullPath;
+        // Separator
+        $this->drawSeparator($image, $leftMargin, $y, $width - $leftMargin, $lightGray);
+        $y += 40;
+        
+        // ===== AMOUNT BOX (Highlighted) =====
+        $boxTop = $y - 10;
+        $boxBottom = $y + 90;
+        $boxLeft = $leftMargin - 10;
+        $boxRight = $width - $leftMargin + 10;
+        
+        // Box background
+        imagefilledrectangle($image, $boxLeft, $boxTop, $boxRight, $boxBottom, $lightGray);
+        // Box border (thick green)
+        for ($i = 0; $i < 3; $i++) {
+            imagerectangle($image, $boxLeft + $i, $boxTop + $i, $boxRight - $i, $boxBottom - $i, $green);
+        }
+        
+        imagestring($image, 5, $leftMargin, $y, 'AMOUNT CREDITED', $green);
+        $y += 35;
+        
+        // Amount in larger font (using multiple font draws for bold effect)
+        $amount = $data['amount'] . ' ' . $data['currency'];
+        for ($i = 0; $i < 2; $i++) {
+            imagestring($image, 5, $leftMargin + $i, $y, $amount, $green);
+        }
+        $y += 80;
+        
+        // ===== BALANCE INFO =====
+        imagestring($image, 5, $leftMargin, $y, 'BALANCE DETAILS', $blue);
+        $y += $lineHeight;
+        
+        $this->drawLabel($image, 'Previous Balance:', 
+            number_format($data['previous_balance'], 2) . ' ' . $data['currency'], 
+            $leftMargin, $y, $black, $gray);
+        $y += $lineHeight;
+        
+        $this->drawLabel($image, 'New Balance:', 
+            number_format($data['new_balance'], 2) . ' ' . $data['currency'], 
+            $leftMargin, $y, $black, $green);
+        $y += $lineHeight;
+        
+        if (isset($data['tax']) && $data['tax'] > 0) {
+            $this->drawLabel($image, 'Tax:', 
+                number_format($data['tax'], 2) . ' ' . $data['currency'], 
+                $leftMargin, $y, $black, $gray);
+            $y += $lineHeight;
+        }
+        
+        // Separator
+        $this->drawSeparator($image, $leftMargin, $y + 10, $width - $leftMargin, $lightGray);
+        $y += 60;
+        
+        // ===== FOOTER =====
+        $footer = 'Thank you for using our service!';
+        $footerWidth = imagefontwidth(4) * strlen($footer);
+        $footerX = ($width - $footerWidth) / 2;
+        imagestring($image, 4, $footerX, $y, $footer, $gray);
+        $y += 40;
+        
+        $company = 'Powered by eFood';
+        $companyWidth = imagefontwidth(3) * strlen($company);
+        $companyX = ($width - $companyWidth) / 2;
+        imagestring($image, 3, $companyX, $y, $company, $gray);
+        $y += 30;
+        
+        // Timestamp
+        $timestamp = 'Generated on ' . date('Y-m-d H:i:s');
+        $timestampWidth = imagefontwidth(2) * strlen($timestamp);
+        $timestampX = ($width - $timestampWidth) / 2;
+        imagestring($image, 2, $timestampX, $y, $timestamp, $lightGray);
+        
+        // Save image with high quality
+        imagepng($image, $outputPath, 9); // Compression level 0-9 (9 = max)
+        imagedestroy($image);
     }
 
     /**
-     * Get a readable TTF font path
+     * Helper to draw label-value pairs
      */
-    private function getReadableFontPath(): ?string
+    private function drawLabel($image, string $label, string $value, int $x, int $y, $labelColor, $valueColor): void
     {
-        $fonts = [
-            public_path('fonts/Amiri-Regular.ttf'),
-            public_path('fonts/DejaVuSans.ttf')
-        ];
-        
-        foreach ($fonts as $path) {
-            if (file_exists($path) && is_readable($path)) {
-                Log::info('Using TTF font', ['path' => $path]);
-                return $path;
-            }
-        }
-        
-        return null;
+        imagestring($image, 4, $x, $y, $label, $labelColor);
+        imagestring($image, 4, $x + 220, $y, $value, $valueColor);
     }
 
     /**
-     * Draw TTF text (enhanced RTL for Arabic)
+     * Helper to draw separator line
      */
-    private function drawTTFText($img, $text, $x, $y, $color, $fontPath, $size, $align = 'left')
+    private function drawSeparator($image, int $x1, int $y, int $x2, $color): void
     {
-        if (!$fontPath || !file_exists($fontPath) || !is_readable($fontPath)) {
-            $this->drawBitmapText($img, $text, $x, $y, $color, $size, $align);
-            return;
-        }
-        
+        imageline($image, $x1, $y, $x2, $y, $color);
+        imageline($image, $x1, $y + 1, $x2, $y + 1, $color); // Make it thicker
+    }
+
+    /**
+     * Get public URL for receipt
+     */
+    public function getReceiptUrl(string $path): string
+    {
+        $relativePath = str_replace(storage_path('app/public/'), '', $path);
+        return url(Storage::url($relativePath));
+    }
+
+    /**
+     * Cleanup old receipts (call this periodically via cron)
+     */
+    public function cleanupOldReceipts(int $daysToKeep = 7): void
+    {
         try {
-            $bbox = imagettfbbox($size, 0, $fontPath, $text);
-            if ($bbox === false) {
-                throw new \Exception('TTF bbox failed');
+            $receiptPath = storage_path('app/public/receipts/images/');
+            
+            if (!file_exists($receiptPath)) {
+                return;
             }
             
-            $textWidth = $bbox[4] - $bbox[0];
+            $now = time();
+            $maxAge = 60 * 60 * 24 * $daysToKeep;
+            $files = glob($receiptPath . 'receipt_*.png');
+            $deletedCount = 0;
             
-            if ($align === 'center') {
-                $x -= $textWidth / 2;
-            } elseif ($align === 'right') {
-                $x -= $textWidth;
+            foreach ($files as $file) {
+                if (is_file($file) && ($now - filemtime($file) >= $maxAge)) {
+                    unlink($file);
+                    $deletedCount++;
+                }
             }
             
-            // Improved RTL: Reverse Arabic segments
-            if (preg_match('/[\x{0600}-\x{06FF}]/u', $text)) {
-                $text = $this->reverseArabic($text);
+            if ($deletedCount > 0) {
+                Log::info("Cleaned up {$deletedCount} old receipt(s)");
             }
-            
-            imagettftext($img, $size, 0, $x, $y + $size, $color, $fontPath, $text);
         } catch (\Exception $e) {
-            Log::warning('TTF rendering failed, falling back to bitmap', [
-                'text' => substr($text, 0, 50),
-                'font' => $fontPath,
+            Log::warning('Failed to cleanup old receipts', [
                 'error' => $e->getMessage()
             ]);
-            $this->drawBitmapText($img, $text, $x, $y, $color, $size, $align);
         }
-    }
-
-    /**
-     * Bitmap fallback for text
-     */
-    private function drawBitmapText($img, $text, $x, $y, $color, $size, $align = 'left')
-    {
-        $fontSize = min(5, max(1, round($size / 4)));
-        $textWidth = imagefontwidth($fontSize) * strlen($text);
-        
-        if ($align === 'center') {
-            $x -= $textWidth / 2;
-        } elseif ($align === 'right') {
-            $x -= $textWidth;
-        }
-        
-        if (preg_match('/[\x{0600}-\x{06FF}]/u', $text)) {
-            $text = $this->reverseArabic($text);
-        }
-        
-        imagestring($img, $fontSize, $x, $y, $text, $color);
-    }
-
-    /**
-     * Draw TTF label-value
-     */
-    private function drawTTFLabelValue($img, $label, $value, $x, $y, $labelColor, $valueColor, $fontPath, $size)
-    {
-        $this->drawTTFText($img, $label, $x, $y, $labelColor, $fontPath, $size, 'left');
-        
-        if ($fontPath && file_exists($fontPath)) {
-            try {
-                $bbox = imagettfbbox($size, 0, $fontPath, $label);
-                $labelWidth = $bbox[4] - $bbox[0];
-            } catch (\Exception $e) {
-                $labelWidth = strlen($label) * ($size / 2);
-            }
-        } else {
-            $labelWidth = strlen($label) * 6;
-        }
-        
-        $valueX = $x + $labelWidth + 20;
-        $this->drawTTFText($img, $value, $valueX, $y, $valueColor, $fontPath, $size, 'left');
-    }
-
-    /**
-     * Replace placeholders in text
-     */
-    private function replacePlaceholders(string $text, array $data): string
-    {
-        foreach ($data as $key => $value) {
-            $text = str_replace('{' . $key . '}', $value, $text);
-        }
-        return $text;
-    }
-
-    /**
-     * Simple RTL reverse for Arabic
-     */
-    private function reverseArabic(string $text): string
-    {
-        preg_match_all('/[\x{0600}-\x{06FF}]+/u', $text, $matches);
-        foreach ($matches[0] as $match) {
-            $text = str_replace($match, strrev($match), $text);
-        }
-        return $text;
-    }
-
-    /**
-     * Prepare receipt data with placeholders
-     */
-    private function prepareReceiptData(array $data, $template): array
-    {
-        $prepared = [
-            'template' => $template,
-            'transaction_id' => $data['transaction_id'],
-            'date' => $data['date'] ?? now()->format('d/m/Y'),
-            'time' => $data['time'] ?? now()->format('h:i A'),
-            'customer_name' => $data['customer_name'],
-            'account_number' => str_pad($data['account_number'], 8, '0', STR_PAD_LEFT),
-            'branch' => $data['branch'] ?? 'Main Branch',
-            'amount' => $data['amount'],
-            'currency' => $data['currency'] ?? 'EGP',
-            'previous_balance' => $data['previous_balance'] ?? '0.00',
-            'new_balance' => $data['new_balance'],
-            'tax' => $data['tax'] ?? '0.00',
-            'company_name' => $template?->title ?? config('app.name'),
-            'company_logo' => $template?->logo ? asset('storage/whatsapp_template/' . $template->logo) : null,
-            'company_phone' => config('company.phone', '8009999'),
-            'company_email' => config('company.email', 'info@company.com'),
-            'company_address' => config('company.address', 'Yemen - Aden'),
-        ];
-
-        if ($template) {
-            $prepared['footer_text'] = $this->replacePlaceholders($template->footer_text ?? '', $prepared);
-        }
-
-        return $prepared;
-    }
-
-    /**
-     * Generate receipt with custom format
-     */
-    public function generateReceipt(array $data, string $format = 'image'): string
-    {
-        if ($format === 'pdf') {
-            return $this->generateReceiptPDF($data);
-        }
-        
-        return $this->generateReceiptImage($data);
-    }
-
-    /**
-     * Extract data from PDF path
-     */
-    private function extractDataFromPath(string $pdfPath): array
-    {
-        $fileName = basename($pdfPath, '.pdf');
-        return [
-            'transaction_id' => explode('_', $fileName)[1] ?? 'UNKNOWN',
-            'date' => now()->format('d/m/Y'),
-            'customer_name' => 'Customer',
-            'account_number' => 'N/A',
-            'amount' => '0.00 EGP',
-            'currency' => 'EGP',
-            'previous_balance' => '0.00',
-            'new_balance' => '0.00',
-            'tax' => '0.00',
-        ];
     }
 }
