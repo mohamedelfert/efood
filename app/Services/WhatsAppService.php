@@ -18,7 +18,7 @@ class WhatsAppService
         $this->client = new Client([
             'timeout' => env('WHATSAPP_TIMEOUT', 30),
             'connect_timeout' => 10,
-            'verify' => false,
+            'verify' => true,
             'http_errors' => false,
         ]);
     }
@@ -28,27 +28,16 @@ class WhatsAppService
      */
     private function formatPhoneNumber(string $phone): string
     {
-        // Remove all non-numeric characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // Remove leading zeros
-        $phone = ltrim($phone, '0');
-        
-        // Handle different formats
-        if (strlen($phone) === 10) {
-            // Local format: 1153225410
-            $phone = '20' . $phone;
-        } elseif (strlen($phone) === 11 && substr($phone, 0, 1) === '1') {
-            // Format with leading 1: 11153225410
-            $phone = '20' . $phone;
-        } elseif (strlen($phone) === 12 && substr($phone, 0, 2) !== '20') {
-            // Already has country code but not 20
-            // Keep as is
-        } elseif (strlen($phone) === 13 && substr($phone, 0, 3) === '020') {
-            // Has 020 prefix
-            $phone = '20' . substr($phone, 3);
+        $phone = preg_replace('/\D+/', '', $phone);
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '2' . $phone;
         }
-        
+
+        if (!preg_match('/^20(1)[0-9]{9}$/', $phone)) {
+            throw new \InvalidArgumentException("Invalid Egyptian phone number: {$phone}");
+        }
+
         return $phone;
     }
 
@@ -86,7 +75,7 @@ class WhatsAppService
             'authkey' => $authKey,
             'to' => $to,
             'message' => $message,
-            'sandbox' => env('WHATSAPP_SANDBOX','false'), // Changed to false for production
+            'sandbox' => filter_var(env('WHATSAPP_SANDBOX', false), FILTER_VALIDATE_BOOLEAN)
         ];
 
         if ($fileUrl) {
@@ -115,11 +104,11 @@ class WhatsAppService
                 ]);
 
                 $response = $this->client->post($this->baseUrl, [
-                    'form_params' => $data,
+                    'json' => $data,
                     'headers' => [
-                        'User-Agent' => 'Laravel-WhatsApp/1.0',
                         'Accept' => 'application/json',
-                    ],
+                        'Content-Type' => 'application/json'
+                    ]
                 ]);
 
                 $statusCode = $response->getStatusCode();
