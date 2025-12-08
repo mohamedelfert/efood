@@ -86,7 +86,7 @@ class WhatsAppService
             'authkey' => $authKey,
             'to' => $to,
             'message' => $message,
-            'sandbox' => 'false', // Changed to false for production
+            'sandbox' => env('WHATSAPP_SANDBOX','false'), // Changed to false for production
         ];
 
         if ($fileUrl) {
