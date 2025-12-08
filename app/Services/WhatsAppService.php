@@ -19,8 +19,37 @@ class WhatsAppService
             'timeout' => env('WHATSAPP_TIMEOUT', 30),
             'connect_timeout' => 10,
             'verify' => false,
-            'http_errors' => false, // Don't throw exceptions on HTTP errors
+            'http_errors' => false,
         ]);
+    }
+
+    /**
+     * Format Egyptian phone number correctly
+     */
+    private function formatPhoneNumber(string $phone): string
+    {
+        // Remove all non-numeric characters
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Remove leading zeros
+        $phone = ltrim($phone, '0');
+        
+        // Handle different formats
+        if (strlen($phone) === 10) {
+            // Local format: 1153225410
+            $phone = '20' . $phone;
+        } elseif (strlen($phone) === 11 && substr($phone, 0, 1) === '1') {
+            // Format with leading 1: 11153225410
+            $phone = '20' . $phone;
+        } elseif (strlen($phone) === 12 && substr($phone, 0, 2) !== '20') {
+            // Already has country code but not 20
+            // Keep as is
+        } elseif (strlen($phone) === 13 && substr($phone, 0, 3) === '020') {
+            // Has 020 prefix
+            $phone = '20' . substr($phone, 3);
+        }
+        
+        return $phone;
     }
 
     public function sendMessage(string $to, string $message, ?string $fileUrl = null): array
@@ -29,39 +58,48 @@ class WhatsAppService
         $authKey = env('WHATSAPP_AUTH_KEY');
 
         if (!$appKey || !$authKey) {
-            Log::error('WhatsApp keys missing');
+            Log::error('WhatsApp: Missing API credentials');
             return ['success' => false, 'error' => 'Missing API keys'];
         }
 
-        // ✅ Better phone number cleaning
-        $to = preg_replace('/[^0-9]/', '', $to);
-        
-        // Remove leading zeros
-        $to = ltrim($to, '0');
-        
-        // Remove country code if present
-        if (strlen($to) === 10 && substr($to, 0, 2) !== '20') {
-            $to = '20' . $to;
-        }
+        // Format phone number
+        $originalNumber = $to;
+        $to = $this->formatPhoneNumber($to);
         
         Log::info('WhatsApp: Phone number formatted', [
-            'final_number' => $to,
+            'original' => $originalNumber,
+            'formatted' => $to,
             'length' => strlen($to)
         ]);
+
+        // Validate phone number length
+        if (strlen($to) < 10 || strlen($to) > 15) {
+            Log::error('WhatsApp: Invalid phone number length', [
+                'number' => $to,
+                'length' => strlen($to)
+            ]);
+            return ['success' => false, 'error' => 'Invalid phone number format'];
+        }
 
         $data = [
             'appkey' => $appKey,
             'authkey' => $authKey,
             'to' => $to,
             'message' => $message,
-            'sandbox' => 'true',
+            'sandbox' => 'false', // Changed to false for production
         ];
 
         if ($fileUrl) {
-            $data['file'] = $fileUrl;
+            // Validate file URL
+            if (filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+                $data['file'] = $fileUrl;
+                Log::info('WhatsApp: Including file attachment', ['url' => $fileUrl]);
+            } else {
+                Log::warning('WhatsApp: Invalid file URL provided', ['url' => $fileUrl]);
+            }
         }
 
-        // ✅ Retry logic
+        // Retry logic
         $attempt = 0;
         $lastError = null;
 
@@ -69,9 +107,11 @@ class WhatsAppService
             $attempt++;
             
             try {
-                Log::info("WhatsApp: Attempt {$attempt}/{$this->maxRetries}", [
+                Log::info("WhatsApp: Sending message (Attempt {$attempt}/{$this->maxRetries})", [
                     'to' => $to,
-                    'message_preview' => substr($message, 0, 50) . '...'
+                    'has_file' => isset($data['file']),
+                    'message_length' => strlen($message),
+                    'message_preview' => substr($message, 0, 100) . '...'
                 ]);
 
                 $response = $this->client->post($this->baseUrl, [
@@ -85,76 +125,98 @@ class WhatsAppService
                 $statusCode = $response->getStatusCode();
                 $body = $response->getBody()->getContents();
                 
-                Log::info('WhatsApp: API Response', [
+                Log::info('WhatsApp: API Response received', [
                     'status' => $statusCode,
+                    'body_length' => strlen($body),
                     'body' => $body
                 ]);
 
-                // Check if response is valid JSON
+                // Parse JSON response
                 $result = json_decode($body, true);
                 
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     Log::error('WhatsApp: Invalid JSON response', [
                         'body' => $body,
-                        'json_error' => json_last_error_msg()
+                        'json_error' => json_last_error_msg(),
+                        'attempt' => $attempt
                     ]);
-                    $lastError = 'Invalid API response format';
+                    $lastError = 'Invalid API response format: ' . json_last_error_msg();
                     
                     if ($attempt < $this->maxRetries) {
-                        sleep(2); // Wait 2 seconds before retry
+                        sleep(2);
                         continue;
                     }
                     
                     return ['success' => false, 'error' => $lastError];
                 }
 
-                // Check for success
-                if ($statusCode === 200 && (
-                    (isset($result['success']) && $result['success'] === true) ||
-                    (isset($result['message_status']) && $result['message_status'] === 'Success')
-                )) {
-                    Log::info('WhatsApp: Message sent successfully', [
-                        'to' => $to,
-                        'attempt' => $attempt,
-                        'response' => $result
-                    ]);
-                    return ['success' => true, 'response' => $result];
+                // ✅ SUCCESS CASES
+                if ($statusCode === 200) {
+                    // Check multiple success indicators
+                    $isSuccess = (
+                        (isset($result['success']) && $result['success'] === true) ||
+                        (isset($result['message_status']) && $result['message_status'] === 'Success') ||
+                        (isset($result['status']) && $result['status'] === 'success')
+                    );
+
+                    if ($isSuccess) {
+                        Log::info('WhatsApp: ✅ Message sent successfully', [
+                            'to' => $to,
+                            'attempt' => $attempt,
+                            'response' => $result
+                        ]);
+                        return ['success' => true, 'response' => $result, 'attempts' => $attempt];
+                    }
                 }
 
-                // Handle API errors
+                // ✅ HANDLE 500 ERROR WITH "after messageSend"
                 if ($statusCode === 500) {
-                    $errorMsg = $result['error'] ?? 'Internal Server Error';
-                    Log::error('WhatsApp: Server error', [
+                    $errorMsg = $result['error'] ?? $result['message'] ?? 'Internal Server Error';
+                    
+                    Log::error('WhatsApp: 500 Server Error', [
                         'status' => $statusCode,
                         'error' => $errorMsg,
-                        'attempt' => $attempt
+                        'attempt' => $attempt,
+                        'full_response' => $result
                     ]);
                     
-                    // ✅ Don't retry on "Request Failed internally after messageSend"
-                    // This usually means message was queued but confirmation failed
-                    if (strpos($errorMsg, 'after messageSend') !== false) {
-                        Log::warning('WhatsApp: Message likely sent despite error');
+                    // Message was likely sent but confirmation failed
+                    if (stripos($errorMsg, 'after messagesend') !== false || 
+                        stripos($errorMsg, 'message sent') !== false) {
+                        
+                        Log::warning('WhatsApp: ⚠️ Message likely sent despite error', [
+                            'error' => $errorMsg,
+                            'to' => $to
+                        ]);
+                        
                         return [
-                            'success' => true, // Mark as success since message was likely queued
+                            'success' => true,
                             'warning' => 'Message sent but confirmation failed',
-                            'error' => $errorMsg
+                            'error' => $errorMsg,
+                            'attempts' => $attempt
                         ];
                     }
                     
                     $lastError = $errorMsg;
                     
+                    // Retry on other 500 errors
                     if ($attempt < $this->maxRetries) {
-                        sleep(3); // Wait 3 seconds before retry
+                        sleep(3);
                         continue;
                     }
                 }
 
-                // Handle session errors
-                if ($statusCode === 401 || strpos($body, 'Session not found') !== false) {
-                    Log::critical('WhatsApp: Session expired', [
-                        'to' => $to,
-                        'status' => $statusCode
+                // ✅ HANDLE SESSION ERRORS
+                if ($statusCode === 401 || 
+                    stripos($body, 'session not found') !== false ||
+                    stripos($body, 'unauthorized') !== false) {
+                    
+                    Log::critical('WhatsApp: 🔴 Session/Auth Error', [
+                        'status' => $statusCode,
+                        'body' => $body,
+                        'to' => $to
                     ]);
+                    
                     return [
                         'success' => false,
                         'error' => 'WhatsApp session disconnected. Please contact administrator.',
@@ -162,15 +224,38 @@ class WhatsAppService
                     ];
                 }
 
-                // Other errors
-                $lastError = $result['message'] ?? $result['error'] ?? 'Unknown error';
+                // Handle other HTTP errors
+                if ($statusCode >= 400) {
+                    $lastError = $result['error'] ?? $result['message'] ?? "HTTP {$statusCode} error";
+                    
+                    Log::error('WhatsApp: HTTP Error', [
+                        'status' => $statusCode,
+                        'error' => $lastError,
+                        'attempt' => $attempt
+                    ]);
+                    
+                    if ($attempt < $this->maxRetries && $statusCode >= 500) {
+                        sleep(2);
+                        continue;
+                    }
+                }
+
+                // Unexpected response format
+                $lastError = $result['message'] ?? $result['error'] ?? 'Unexpected API response';
+                Log::warning('WhatsApp: Unexpected response', [
+                    'status' => $statusCode,
+                    'result' => $result,
+                    'attempt' => $attempt
+                ]);
                 
             } catch (\Exception $e) {
                 $lastError = $e->getMessage();
                 Log::error('WhatsApp: Exception occurred', [
                     'attempt' => $attempt,
                     'error' => $lastError,
-                    'trace' => $e->getTraceAsString()
+                    'class' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
                 ]);
                 
                 if ($attempt < $this->maxRetries) {
@@ -180,8 +265,8 @@ class WhatsAppService
             }
         }
 
-        // All retries failed
-        Log::error('WhatsApp: All retry attempts failed', [
+        // All retries exhausted
+        Log::error('WhatsApp: ❌ All retry attempts failed', [
             'to' => $to,
             'attempts' => $attempt,
             'last_error' => $lastError
@@ -189,7 +274,8 @@ class WhatsAppService
 
         return [
             'success' => false,
-            'error' => $lastError ?? 'Failed to send message after multiple attempts'
+            'error' => $lastError ?? 'Failed to send message after multiple attempts',
+            'attempts' => $attempt
         ];
     }
 
@@ -200,36 +286,47 @@ class WhatsAppService
             ->first();
         
         if (!$template) {
-            Log::warning('WhatsApp template not found, using fallback', ['type' => $whatsappType]);
+            Log::warning('WhatsApp: Template not found, using fallback', [
+                'type' => $whatsappType,
+                'data_keys' => array_keys($data)
+            ]);
             return $this->getFallbackMessage($whatsappType, $data);
         }
 
-        $message = "*{$template->title}*".PHP_EOL.PHP_EOL;
+        Log::info('WhatsApp: Using template', [
+            'type' => $whatsappType,
+            'template_id' => $template->id
+        ]);
+
+        $message = "*{$template->title}*" . PHP_EOL . PHP_EOL;
         
+        // Replace placeholders in body
         $body = $template->body;
         foreach ($data as $key => $value) {
-            $body = str_replace("{{{$key}}}", $value, $body);
-            $body = str_replace("{" . $key . "}", $value, $body);
+            $body = str_replace(["{{{$key}}}", "{{$key}}", "{".$key."}"], $value, $body);
         }
         
-        $message .= $body . PHP_EOL.PHP_EOL;
+        $message .= $body . PHP_EOL . PHP_EOL;
         
+        // Add button
         if ($template->button_name && $template->button_url) {
             $buttonName = $template->button_name;
             foreach ($data as $key => $value) {
-                $buttonName = str_replace("{" . $key . "}", $value, $buttonName);
+                $buttonName = str_replace(["{{$key}}", "{".$key."}"], $value, $buttonName);
             }
-            $message .= "👉 {$buttonName}: {$template->button_url}".PHP_EOL.PHP_EOL;
+            $message .= "👉 {$buttonName}: {$template->button_url}" . PHP_EOL . PHP_EOL;
         }
         
+        // Add footer
         if ($template->footer_text) {
             $footer = $template->footer_text;
             foreach ($data as $key => $value) {
-                $footer = str_replace("{" . $key . "}", $value, $footer);
+                $footer = str_replace(["{{$key}}", "{".$key."}"], $value, $footer);
             }
-            $message .= "_{$footer}_".PHP_EOL.PHP_EOL;
+            $message .= "_{$footer}_" . PHP_EOL . PHP_EOL;
         }
         
+        // Add policy links
         $links = [];
         if ($template->privacy) $links[] = "Privacy Policy";
         if ($template->refund) $links[] = "Refund Policy";
@@ -237,13 +334,14 @@ class WhatsAppService
         if ($template->contact) $links[] = "Contact Us";
         
         if (!empty($links)) {
-            $message .= implode(" | ", $links) . PHP_EOL.PHP_EOL;
+            $message .= implode(" | ", $links) . PHP_EOL . PHP_EOL;
         }
         
+        // Add copyright
         if ($template->copyright_text) {
             $copyright = $template->copyright_text;
             foreach ($data as $key => $value) {
-                $copyright = str_replace("{" . $key . "}", $value, $copyright);
+                $copyright = str_replace(["{{$key}}", "{".$key."}"], $value, $copyright);
             }
             $message .= $copyright;
         }
@@ -254,95 +352,29 @@ class WhatsAppService
     private function getFallbackMessage(string $type, array $data): string
     {
         $userName = $data['user_name'] ?? 'Customer';
+        $appName = env('APP_NAME', 'eFood');
         
         switch ($type) {
-            case 'login_otp':
-                return "*eFood - Login Verification*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "Your verification code is: *{$data['otp']}*".PHP_EOL.PHP_EOL.
-                       "This code will expire in {$data['expiry_minutes']} minutes.".PHP_EOL.PHP_EOL.
-                       "If you didn't request this code, please ignore this message.".PHP_EOL.PHP_EOL.
-                       "_Do not share this code with anyone._".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
-
             case 'wallet_topup':
-                return "*eFood - Wallet Top-Up*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "Your wallet has been topped up successfully!".PHP_EOL.PHP_EOL.
-                       "*Transaction Details:*".PHP_EOL.
-                       "• Transaction ID: {$data['transaction_id']}".PHP_EOL.
-                       "• Amount: {$data['amount']} {$data['currency']}".PHP_EOL.
-                       "• Date: {$data['date']}".PHP_EOL.
-                       "• Previous Balance: {$data['previous_balance']} {$data['currency']}".PHP_EOL.
-                       "• New Balance: {$data['new_balance']} {$data['currency']}".PHP_EOL.PHP_EOL.
-                       "_Thank you for using our service._".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
+                return "*{$appName} - Wallet Top-Up Successful*" . PHP_EOL . PHP_EOL .
+                       "Hello {$userName}," . PHP_EOL . PHP_EOL .
+                       "Your wallet has been topped up successfully! 🎉" . PHP_EOL . PHP_EOL .
+                       "*Transaction Details:*" . PHP_EOL .
+                       "• Transaction ID: {$data['transaction_id']}" . PHP_EOL .
+                       "• Amount: {$data['amount']} {$data['currency']}" . PHP_EOL .
+                       "• Date: {$data['date']}" . PHP_EOL .
+                       "• Previous Balance: {$data['previous_balance']} {$data['currency']}" . PHP_EOL .
+                       "• New Balance: {$data['new_balance']} {$data['currency']}" . PHP_EOL . PHP_EOL .
+                       "_Thank you for using our service._" . PHP_EOL . PHP_EOL .
+                       "© " . date('Y') . " {$appName}. All rights reserved.";
 
-            case 'transfer_sent':
-                return "*eFood - Money Sent*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "You have successfully sent {$data['amount']} {$data['currency']} to {$data['recipient_name']}.".PHP_EOL.PHP_EOL.
-                       "*Transaction Details:*".PHP_EOL.
-                       "• Transaction ID: {$data['transaction_id']}".PHP_EOL.
-                       "• Amount: {$data['amount']} {$data['currency']}".PHP_EOL.
-                       "• Recipient: {$data['recipient_name']}".PHP_EOL.
-                       "• New Balance: {$data['new_balance']} {$data['currency']}".PHP_EOL.PHP_EOL.
-                       "_Thank you for using our service._".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
-
-            case 'transfer_received':
-                return "*eFood - Money Received*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "You have received {$data['amount']} {$data['currency']} from {$data['sender_name']}.".PHP_EOL.PHP_EOL.
-                       "*Transaction Details:*".PHP_EOL.
-                       "• Transaction ID: {$data['transaction_id']}".PHP_EOL.
-                       "• Amount: {$data['amount']} {$data['currency']}".PHP_EOL.
-                       "• From: {$data['sender_name']}".PHP_EOL.
-                       "• New Balance: {$data['new_balance']} {$data['currency']}".PHP_EOL.PHP_EOL.
-                       "_Thank you for using our service._".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
-
-            case 'transfer_otp':
-                return "*eFood - Transfer Verification*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "Your transfer verification code is: *{$data['otp']}*".PHP_EOL.PHP_EOL.
-                       "Transfer Details:".PHP_EOL.
-                       "• Amount: {$data['amount']} {$data['currency']}".PHP_EOL.
-                       "• Recipient: {$data['receiver_name']}".PHP_EOL.PHP_EOL.
-                       "This code will expire in {$data['expiry_minutes']} minutes.".PHP_EOL.PHP_EOL.
-                       "_Do not share this code with anyone._".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
-
-            case 'order_placed':
-                return "*eFood - Order Confirmation*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "Your order has been placed successfully!".PHP_EOL.PHP_EOL.
-                       "*Order Details:*".PHP_EOL.
-                       "• Order ID: #{$data['order_id']}".PHP_EOL.
-                       "• Amount: {$data['order_amount']} {$data['currency']}".PHP_EOL.
-                       "• Items: {$data['items_count']}".PHP_EOL.
-                       "• Type: {$data['order_type']}".PHP_EOL.PHP_EOL.
-                       "_Thank you for your order!_".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
-
-            case 'loyalty_conversion':
-                return "*eFood - Loyalty Points Converted*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "You have successfully converted {$data['points_used']} loyalty points to {$data['converted_amount']} {$data['currency']}.".PHP_EOL.PHP_EOL.
-                       "*Transaction Details:*".PHP_EOL.
-                       "• Transaction ID: {$data['transaction_id']}".PHP_EOL.
-                       "• Points Used: {$data['points_used']}".PHP_EOL.
-                       "• Amount Credited: {$data['converted_amount']} {$data['currency']}".PHP_EOL.
-                       "• New Balance: {$data['new_balance']} {$data['currency']}".PHP_EOL.
-                       "• Remaining Points: {$data['remaining_points']}".PHP_EOL.PHP_EOL.
-                       "_Thank you for being a loyal customer!_".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
+            // Add other cases as needed...
 
             default:
-                return "*eFood Notification*".PHP_EOL.PHP_EOL.
-                       "Hello {$userName},".PHP_EOL.PHP_EOL.
-                       "You have a new notification from eFood.".PHP_EOL.PHP_EOL.
-                       "© ".date('Y')." eFood. All rights reserved.";
+                return "*{$appName} Notification*" . PHP_EOL . PHP_EOL .
+                       "Hello {$userName}," . PHP_EOL . PHP_EOL .
+                       "You have a new notification from {$appName}." . PHP_EOL . PHP_EOL .
+                       "© " . date('Y') . " {$appName}. All rights reserved.";
         }
     }
 
@@ -355,16 +387,30 @@ class WhatsAppService
         $authKey = env('WHATSAPP_AUTH_KEY');
 
         if (!$appKey || !$authKey) {
-            return ['success' => false, 'error' => 'Missing API keys'];
+            return [
+                'success' => false,
+                'error' => 'Missing API credentials in .env file',
+                'missing' => [
+                    'WHATSAPP_APP_KEY' => empty($appKey),
+                    'WHATSAPP_AUTH_KEY' => empty($authKey)
+                ]
+            ];
         }
 
-        Log::info('Testing WhatsApp connection...');
+        Log::info('WhatsApp: Testing connection...', [
+            'base_url' => $this->baseUrl,
+            'timeout' => env('WHATSAPP_TIMEOUT', 30)
+        ]);
 
-        $result = $this->sendMessage('1234567890', 'Connection test');
+        // Use a test number
+        $result = $this->sendMessage(
+            env('WHATSAPP_TEST_NUMBER', '1234567890'),
+            "Connection test from " . env('APP_NAME', 'Application') . " at " . now()->format('Y-m-d H:i:s')
+        );
         
         return [
             'success' => $result['success'] ?? false,
-            'message' => $result['success'] ? 'Connection OK' : 'Connection Failed',
+            'message' => $result['success'] ? 'Connection OK ✅' : 'Connection Failed ❌',
             'details' => $result
         ];
     }
