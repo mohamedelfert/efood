@@ -227,13 +227,21 @@ class ConfigController extends Controller
 
         $data = [];
         foreach ($methods as $method) {
-            $credentialsData = json_decode($method->$credentials);
-            $additionalData = json_decode($method->additional_data);
-            if ($credentialsData->status == 1) {
+            // Decode JSON string to array/object
+            $credentialsData = is_string($method->$credentials) 
+                ? json_decode($method->$credentials) 
+                : $method->$credentials;
+            
+            $additionalData = is_string($method->additional_data)
+                ? json_decode($method->additional_data)
+                : $method->additional_data;
+
+            // Check if status exists and is 1
+            if (isset($credentialsData->status) && $credentialsData->status == 1) {
                 $data[] = [
                     'gateway' => $method->key_name,
-                    'gateway_title' => $additionalData?->gateway_title,
-                    'gateway_image' => $additionalData?->gateway_image
+                    'gateway_title' => $additionalData->gateway_title ?? null,
+                    'gateway_image' => $additionalData->gateway_image ?? null
                 ];
             }
         }
@@ -259,13 +267,21 @@ class ConfigController extends Controller
 
         $data = [];
         foreach ($methods as $method) {
-            $credentialsData = json_decode($method->$credentials);
-            $additionalData = json_decode($method->additional_data);
-            if ($credentialsData->status == 1) {
+            // Decode JSON string to array/object
+            $credentialsData = is_string($method->$credentials) 
+                ? json_decode($method->$credentials) 
+                : $method->$credentials;
+            
+            $additionalData = is_string($method->additional_data)
+                ? json_decode($method->additional_data)
+                : $method->additional_data;
+
+            // Check if status exists and is 1
+            if (isset($credentialsData->status) && $credentialsData->status == 1) {
                 $data[] = [
                     'gateway' => $method->key_name,
-                    'gateway_title' => $additionalData?->gateway_title,
-                    'gateway_image' => $additionalData?->gateway_image
+                    'gateway_title' => $additionalData->gateway_title ?? null,
+                    'gateway_image' => $additionalData->gateway_image ?? null
                 ];
             }
         }
