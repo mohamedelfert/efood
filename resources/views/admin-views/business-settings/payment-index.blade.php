@@ -145,11 +145,7 @@
                                         </div>
                                     @endif
 
-                                    @if($payment->key_name === 'paystack')
-                                        @php($skip=['gateway', 'mode', 'status', 'supported_country', 'callback_url'])
-                                    @else
-                                        @php($skip=['gateway','mode','status', 'supported_country'])
-                                    @endif
+                                    @php($skip=['gateway','mode','status', 'supported_country'])
 
                                     @foreach($data_values->where('key_name',$payment->key_name)->first()->live_values as $key=>$value)
                                         @if(!in_array($key,$skip))
