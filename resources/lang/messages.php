@@ -74,7 +74,7 @@
   'bulk_export' => 'Bulk export',
   'reviews' => 'Reviews',
   'promotion' => 'Promotion',
-  'banner' => 'Banner',
+  'banner' => 'Offer',
   'coupon' => 'Coupon',
   'send' => 'Send',
   'notification' => 'Notification',
