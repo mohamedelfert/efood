@@ -77,13 +77,13 @@ class UpdateController extends Controller
         if (BusinessSetting::where(['key' => 'paymob'])->first() == false) {
             BusinessSetting::insert([
                 'key' => 'paymob',
-                'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'
+                'value' => '{"status":"1"}'
             ]);
         }
         if (BusinessSetting::where(['key' => 'qib'])->first() == false) {
             BusinessSetting::insert([
                 'key' => 'qib',
-                'value' => '{"status":"1","api_key":"","iframe_id":"","integration_id":"","hmac":""}'
+                'value' => '{"status":"1"}'
             ]);
         }
         if (BusinessSetting::where(['key' => 'internal_point'])->first() == false) {
@@ -722,21 +722,11 @@ class UpdateController extends Controller
 
                if ($gateway == 'qib') {
                     $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'callback_url' => null,
-                        'api_key' => $decoded_value['api_key'],
-                        'iframe_id' => $decoded_value['iframe_id'],
-                        'integration_id' => $decoded_value['integration_id'],
-                        'hmac' => $decoded_value['hmac'],
+                        'status' => $decoded_value['status']
                     ];
                 } elseif ($gateway == 'paymob') {
                     $additional_data = [
-                        'status' => $decoded_value['status'],
-                        'callback_url' => null,
-                        'api_key' => $decoded_value['api_key'],
-                        'iframe_id' => $decoded_value['iframe_id'],
-                        'integration_id' => $decoded_value['integration_id'],
-                        'hmac' => $decoded_value['hmac'],
+                        'status' => $decoded_value['status']
                     ];
                 }
 
@@ -817,21 +807,13 @@ class UpdateController extends Controller
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "live",
                     'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => "",
-                    'public_key' => $paymobAcceptValues['public_key'] ?? '',
-                    'secret_key' => $paymobAcceptValues['secret_key'] ?? '',
-                    'integration_id' => $paymobAcceptValues['integration_id'] ?? '',
-                    'hmac' => $paymobAcceptValues['hmac'] ?? '',
+                    'supported_country' => ""
                 ],
                 'test_values' => [
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "test",
                     'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => "",
-                    'public_key' => $paymobAcceptValues['public_key'] ?? '',
-                    'secret_key' => $paymobAcceptValues['secret_key'] ?? '',
-                    'integration_id' => $paymobAcceptValues['integration_id'] ?? '',
-                    'hmac' => $paymobAcceptValues['hmac'] ?? '',
+                    'supported_country' => ""
                 ],
                 'settings_type' => 'payment_config',
                 'mode' => 'test',

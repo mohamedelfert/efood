@@ -441,21 +441,13 @@ class BusinessSettingsController extends Controller
         if ($request['gateway'] == 'qib') {
             $additionalData = [
                 'status' => 'required|in:1,0',
-                'api_key' => 'required',
-                'iframe_id' => 'required',
-                'integration_id' => 'required',
-                'hmac' => 'required',
-                'callback_url' => 'required|url',
                 'gateway_title' => 'required|string',
             ];
         } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [
                 'status' => 'required|in:1,0',
                 'supported_country' => 'required',
-                'public_key' => 'required',
-                'secret_key' => 'required',
-                'integration_id' => 'required',
-                'hmac' => 'required'
+                'gateway_title' => 'required|string',
             ];
         }
 
@@ -2081,21 +2073,13 @@ class BusinessSettingsController extends Controller
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "live",
                     'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => "",
-                    'public_key' => $paymobAcceptValues['public_key'] ?? '',
-                    'secret_key' => $paymobAcceptValues['secret_key'] ?? '',
-                    'integration_id' => $paymobAcceptValues['integration_id'] ?? '',
-                    'hmac' => $paymobAcceptValues['hmac'] ?? '',
+                    'supported_country' => ""
                 ],
                 'test_values' => [
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "test",
                     'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => "",
-                    'public_key' => $paymobAcceptValues['public_key'] ?? '',
-                    'secret_key' => $paymobAcceptValues['secret_key'] ?? '',
-                    'integration_id' => $paymobAcceptValues['integration_id'] ?? '',
-                    'hmac' => $paymobAcceptValues['hmac'] ?? '',
+                    'supported_country' => ""
                 ],
                 'settings_type' => 'payment_config',
                 'mode' => 'test',

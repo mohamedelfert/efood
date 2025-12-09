@@ -25,8 +25,8 @@ class AddonSettingsSeeder extends Seeder
             [
                 'id' => 'b8992bd4-d6a0-11ed-962c-0c7a158e4469',
                 'key_name' => 'paymob',
-                'live_values' => '{"gateway":"paymob","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
-                'test_values' => '{"gateway":"paymob","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
+                'live_values' => '{"gateway":"paymob","mode":"live","status":"0"}',
+                'test_values' => '{"gateway":"paymob","mode":"live","status":"0"}',
                 'settings_type' => 'payment_config',
                 'mode' => 'test',
                 'is_active' => 0,
@@ -37,8 +37,8 @@ class AddonSettingsSeeder extends Seeder
             [
                 'id' => 'c41c0dcd-d119-11ed-9f67-0c7a158e4469',
                 'key_name' => 'qib',
-                'live_values' => '{"gateway":"qib","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
-                'test_values' => '{"gateway":"qib","mode":"live","status":"0","api_key":"","iframe_id":"","integration_id":"","hmac":"","callback_url":""}',
+                'live_values' => '{"gateway":"qib","mode":"live","status":"0"}',
+                'test_values' => '{"gateway":"qib","mode":"live","status":"0"}',
                 'settings_type' => 'payment_config',
                 'mode' => 'test',
                 'is_active' => 0,

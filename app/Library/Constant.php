@@ -2,7 +2,7 @@
 
 //payment methods
 const GATEWAYS_PAYMENT_METHODS = [
-    ['key' => 'paymob', 'value' => 'Paymob Accept'],
+    ['key' => 'paymob', 'value' => 'Paymob Payment'],
     ['key' => 'qib', 'value' => 'QIB Payment'],
 ];
 
