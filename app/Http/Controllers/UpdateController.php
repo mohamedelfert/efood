@@ -699,57 +699,43 @@ class UpdateController extends Controller
 
     private function set_payment_data(){
         try{
-            $gateway= [
-                'paymob',
-                'qib',
-            ];
+            $gateways = ['paymob', 'qib'];
 
+            foreach($gateways as $gateway){
+                $old = BusinessSetting::where('key', $gateway)->first();
+                $status = $old ? json_decode($old->value)->status ?? 0 : 1;
 
-            $data= BusinessSetting::whereIn('key',$gateway)->pluck('value','key')->toArray();
-
-            foreach($data as $key => $value){
-                $gateway=$key;
-                if($key == 'paymob' ){
-                    $gateway='paymob';
-                }
-
-                $decoded_value= json_decode($value , true);
-                $data= ['gateway' => $gateway ,
-                    'mode' =>  isset($decoded_value['status']) == 1  ?  'live': 'test'
+                $live_values = [
+                    'gateway' => $gateway,
+                    'mode' => $status == 1 ? 'live' : 'test',
+                    'status' => $status,
                 ];
 
-                $additional_data =[];
+                $additional_data = [
+                    'gateway_title' => $gateway == 'paymob' ? 'Paymob' : 'QIB',
+                    'gateway_image' => null
+                ];
 
-               if ($gateway == 'qib') {
-                    $additional_data = [
-                        'status' => $decoded_value['status']
-                    ];
-                } elseif ($gateway == 'paymob') {
-                    $additional_data = [
-                        'status' => $decoded_value['status']
-                    ];
+                if($gateway == 'paymob') {
+                    $live_values['supported_country'] = 'egypt';
                 }
 
-                $credentials= json_encode(array_merge($data, $additional_data));
-
-                $payment_additional_data=['gateway_title' => ucfirst(str_replace('_',' ',$gateway)),
-                    'gateway_image' => null];
-
-                DB::table('addon_settings')->updateOrInsert(['key_name' => $gateway, 'settings_type' => 'payment_config'], [
-                    'key_name' => $gateway,
-                    'live_values' => $credentials,
-                    'test_values' => $credentials,
-                    'settings_type' => 'payment_config',
-                    'mode' => isset($decoded_value['status']) == 1  ?  'live': 'test',
-                    'is_active' => isset($decoded_value['status']) == 1  ?  1: 0 ,
-                    'additional_data' => json_encode($payment_additional_data),
-                ]);
+                DB::table('addon_settings')->updateOrInsert(
+                    ['key_name' => $gateway, 'settings_type' => 'payment_config'],
+                    [
+                        'key_name' => $gateway,
+                        'live_values' => json_encode($live_values),
+                        'test_values' => json_encode($live_values),
+                        'settings_type' => 'payment_config',
+                        'mode' => $status == 1 ? 'live' : 'test',
+                        'is_active' => $status,
+                        'additional_data' => json_encode($additional_data),
+                    ]
+                );
             }
-        } catch (\Exception $exception) {
-            Toastr::error('Database import failed! try again');
-            return true;
+        } catch (\Exception $e) {
+            Toastr::error('Payment config migration failed');
         }
-        return true;
     }
 
     private function set_sms_data(){
@@ -797,29 +783,34 @@ class UpdateController extends Controller
 
     private function updatePaymobConfigForSupportCountry(): void
     {
-        $paymobAccept = Setting::where(['key_name' => 'paymob'])->first()?->live_values ?? [];
-        $paymobAcceptValues = is_array($paymobAccept) ? $paymobAccept : json_decode($paymobAccept, true);
+        $paymob = Setting::where(['key_name' => 'paymob', 'settings_type' => 'payment_config'])->first();
 
-        if (!isset($paymobAcceptValues['supported_country']) || !isset($paymobAcceptValues['secret_key'])) {
-            Setting::updateOrCreate(['key_name' => 'paymob', 'settings_type' => 'payment_config'], [
-                'key_name' => 'paymob',
-                'live_values' => [
-                    'gateway' => $paymobAcceptValues['gateway'] ?? '',
-                    'mode' => "live",
-                    'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => "",
-                ],
-                'test_values' => [
-                    'gateway' => $paymobAcceptValues['gateway'] ?? '',
-                    'mode' => "test",
-                    'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => ""
-                ],
-                'settings_type' => 'payment_config',
-                'mode' => 'test',
-                'is_active' => 0 ,
-                'additional_data' => null,
-            ]);
+        if (!$paymob || !isset($paymob->live_values['supported_country'])) {
+            Setting::updateOrCreate(
+                ['key_name' => 'paymob', 'settings_type' => 'payment_config'],
+                [
+                    'key_name' => 'paymob',
+                    'live_values' => json_encode([
+                        'gateway' => 'paymob',
+                        'mode' => 'live',
+                        'status' => 1,
+                        'supported_country' => 'egypt', // default
+                    ]),
+                    'test_values' => json_encode([
+                        'gateway' => 'paymob',
+                        'mode' => 'test',
+                        'status' => 1,
+                        'supported_country' => 'egypt',
+                    ]),
+                    'settings_type' => 'payment_config',
+                    'mode' => 'live',
+                    'is_active' => 1,
+                    'additional_data' => json_encode([
+                        'gateway_title' => 'Paymob',
+                        'gateway_image' => null
+                    ]),
+                ]
+            );
         }
     }
 }

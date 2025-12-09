@@ -130,20 +130,22 @@
                                         </select>
                                     </div>
 
-                                    @php($supportedCountry = $data_values->where('key_name',$payment->key_name)->first()->live_values)
-                                    @if (isset($supportedCountry['supported_country']))
-                                        @php($supportedCountry = $supportedCountry['supported_country'])
-                                        <label for="{{ $payment->key_name }}-title" class="form-label">{{translate('supported_country')}} *</label>
-                                        <div class="mb-2" >
-                                            <select class="js-select form-control w-100" name="supported_country">
-                                                <option value="egypt" {{$supportedCountry == 'egypt'?'selected':''}}>{{ translate('Egypt') }}</option>
-                                                <option value="PAK" {{$supportedCountry == 'PAK'?'selected':''}}>{{ translate('Pakistan') }}</option>
-                                                <option value="KSA" {{$supportedCountry == 'KSA'?'selected':''}}>{{ translate('Saudi Arabia') }}</option>
-                                                <option value="oman" {{$supportedCountry == 'oman'?'selected':''}}>{{ translate('Oman') }}</option>
-                                                <option value="UAE" {{$supportedCountry == 'UAE'?'selected':''}}>{{ translate('UAE') }}</option>
+                                    @php($liveValues = is_string($payment->live_values) ? json_decode($payment->live_values, true) : (array)$payment->live_values)
+                                    @if ($payment->key_name == 'paymob' && isset($liveValues['supported_country']))
+                                        <div class="mb-3">
+                                            <label class="form-label">{{translate('Supported Country')}} <span class="text-danger">*</span></label>
+                                            <select name="supported_country" class="form-control">
+                                                <option value="egypt" {{$liveValues['supported_country'] == 'egypt' ? 'selected' : ''}}>Egypt</option>
+                                                <option value="KSA" {{$liveValues['supported_country'] == 'KSA' ? 'selected' : ''}}>Saudi Arabia</option>
+                                                <option value="UAE" {{$liveValues['supported_country'] == 'UAE' ? 'selected' : ''}}>UAE</option>
+                                                <option value="oman" {{$liveValues['supported_country'] == 'oman' ? 'selected' : ''}}>Oman</option>
+                                                <option value="PAK" {{$liveValues['supported_country'] == 'PAK' ? 'selected' : ''}}>Pakistan</option>
                                             </select>
                                         </div>
                                     @endif
+
+                                    <input type="hidden" name="gateway" value="{{$payment->key_name}}">
+                                    <input type="hidden" name="status" value="{{$payment->is_active}}">
 
                                     @php($skip=['gateway','mode','status', 'supported_country'])
 

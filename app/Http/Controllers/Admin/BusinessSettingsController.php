@@ -358,7 +358,7 @@ class BusinessSettingsController extends Controller
     {
         $this->updatePaymobConfigForSupportCountry();
 
-        $published_status = 0; // Set a default value
+        $published_status = 0;
         $payment_published_status = config('get_payment_publish_status');
         if (isset($payment_published_status[0]['is_published'])) {
             $published_status = $payment_published_status[0]['is_published'];
@@ -2062,29 +2062,34 @@ class BusinessSettingsController extends Controller
 
     private function updatePaymobConfigForSupportCountry(): void
     {
-        $paymobAccept = Setting::where(['key_name' => 'paymob'])->first()?->live_values ?? [];
-        $paymobAcceptValues = is_array($paymobAccept) ? $paymobAccept : json_decode($paymobAccept, true);
+        $paymob = Setting::where(['key_name' => 'paymob', 'settings_type' => 'payment_config'])->first();
 
-        if (!isset($paymobAcceptValues['supported_country']) || !isset($paymobAcceptValues['secret_key'])) {
-            Setting::updateOrCreate(['key_name' => 'paymob', 'settings_type' => 'payment_config'], [
-                'key_name' => 'paymob',
-                'live_values' => [
-                    'gateway' => $paymobAcceptValues['gateway'] ?? '',
-                    'mode' => "live",
-                    'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => ""
-                ],
-                'test_values' => [
-                    'gateway' => $paymobAcceptValues['gateway'] ?? '',
-                    'mode' => "test",
-                    'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => ""
-                ],
-                'settings_type' => 'payment_config',
-                'mode' => 'test',
-                'is_active' => 0 ,
-                'additional_data' => null,
-            ]);
+        if (!$paymob || !isset($paymob->live_values['supported_country'])) {
+            Setting::updateOrCreate(
+                ['key_name' => 'paymob', 'settings_type' => 'payment_config'],
+                [
+                    'key_name' => 'paymob',
+                    'live_values' => json_encode([
+                        'gateway' => 'paymob',
+                        'mode' => 'live',
+                        'status' => 1,
+                        'supported_country' => 'egypt', // default
+                    ]),
+                    'test_values' => json_encode([
+                        'gateway' => 'paymob',
+                        'mode' => 'test',
+                        'status' => 1,
+                        'supported_country' => 'egypt',
+                    ]),
+                    'settings_type' => 'payment_config',
+                    'mode' => 'live',
+                    'is_active' => 1,
+                    'additional_data' => json_encode([
+                        'gateway_title' => 'Paymob',
+                        'gateway_image' => null
+                    ]),
+                ]
+            );
         }
     }
 }
