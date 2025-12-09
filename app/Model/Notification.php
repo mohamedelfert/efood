@@ -17,11 +17,59 @@ class Notification extends Model
         'updated_at' => 'datetime'
     ];
 
+    /**
+     * Get active notifications
+     */
     public function scopeActive($query)
     {
         return $query->where('status', '=', 1);
     }
 
+    /**
+     * Get unread notifications
+     */
+    public function scopeUnread($query)
+    {
+        return $query->where('is_read', false);
+    }
+
+    /**
+     * Get broadcast notifications (sent to all users)
+     */
+    public function scopeBroadcast($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('user_id')->orWhere('user_id', 0);
+        });
+    }
+
+    /**
+     * Get user-specific notifications
+     */
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Get notifications by type
+     */
+    public function scopeOfType($query, $type)
+    {
+        return $query->where('notification_type', $type);
+    }
+
+    /**
+     * Check if notification is broadcast
+     */
+    public function isBroadcast(): bool
+    {
+        return empty($this->user_id) || $this->user_id == 0;
+    }
+
+    /**
+     * Get full image path
+     */
     public function getImageFullPathAttribute(): string
     {
         $image = $this->image ?? null;
@@ -31,5 +79,63 @@ class Notification extends Model
             $path = asset('storage/app/public/notification/' . $image);
         }
         return $path;
+    }
+
+    /**
+     * Get formatted created at date
+     */
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->created_at->diffForHumans();
+    }
+
+    /**
+     * Relationship: User who owns this notification
+     */
+    public function user()
+    {
+        return $this->belongsTo(\App\User::class, 'user_id');
+    }
+
+    /**
+     * Mark this notification as read
+     */
+    public function markAsRead(): bool
+    {
+        return $this->update(['is_read' => true]);
+    }
+
+    /**
+     * Mark this notification as unread
+     */
+    public function markAsUnread(): bool
+    {
+        return $this->update(['is_read' => false]);
+    }
+
+    /**
+     * Static method to create a notification
+     */
+    public static function createNotification(array $data): self
+    {
+        return self::create([
+            'user_id' => $data['user_id'] ?? null,
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'notification_type' => $data['type'] ?? 'general',
+            'reference_id' => $data['reference_id'] ?? null,
+            'image' => $data['image'] ?? null,
+            'is_read' => false,
+            'status' => 1,
+            'data' => $data['data'] ?? null,
+        ]);
+    }
+
+    /**
+     * Static method to send broadcast notification
+     */
+    public static function broadcast(array $data): self
+    {
+        return self::createNotification(array_merge($data, ['user_id' => null]));
     }
 }

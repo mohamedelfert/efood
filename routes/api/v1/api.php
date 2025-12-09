@@ -124,8 +124,27 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::get('/', [BannerController::class, 'getBanners']);
     });
 
-    Route::group(['prefix' => 'notifications'], function () {
+    Route::group(['prefix' => 'notifications', 'middleware' => ['auth:api']], function () {
+        // Get all notifications (user + broadcast)
         Route::get('/', [NotificationController::class, 'getNotifications']);
+        
+        // Get unread count
+        Route::get('/unread-count', [NotificationController::class, 'getUnreadCount']);
+        
+        // Get notifications by type
+        Route::get('/type/{type}', [NotificationController::class, 'getNotificationsByType']);
+        
+        // Mark single notification as read
+        Route::post('/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
+        
+        // Mark all notifications as read
+        Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
+        
+        // Delete a notification
+        Route::delete('/{id}', [NotificationController::class, 'deleteNotification']);
+        
+        // Clear all notifications
+        Route::delete('/clear-all', [NotificationController::class, 'clearAllNotifications']);
     });
 
     Route::group(['prefix' => 'categories'], function () {
