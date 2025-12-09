@@ -104,14 +104,14 @@
                                         <span class="mr-2 switch--custom-label-text text-primary on text-uppercase">on</span>
                                         <span class="mr-2 switch--custom-label-text off text-uppercase">off</span>
                                         <input type="checkbox" name="status" value="1"
-                                               class="toggle-switch-input" {{$payment['is_active']==1?'checked':''}}>
+                                               class="toggle-switch-input" {{$payment->is_active==1?'checked':''}}>
                                         <span class="toggle-switch-label text">
                                             <span class="toggle-switch-indicator"></span>
                                         </span>
                                     </label>
                                 </div>
 
-                                @php($additional_data = $payment['additional_data'] != null ? json_decode($payment['additional_data']) : [])
+                                @php($additional_data = $payment->additional_data != null ? json_decode($payment->additional_data) : [])
                                 <div class="card-body">
                                     <div class="payment--gateway-img">
                                         <img style="height: 80px"
@@ -122,7 +122,9 @@
 
                                     <input name="gateway" value="{{$payment->key_name}}" class="d-none">
 
-                                    @php($mode=$data_values->where('key_name',$payment->key_name)->first()->live_values['mode'])
+                                    @php($liveValues = is_string($payment->live_values) ? json_decode($payment->live_values, true) : (array)$payment->live_values)
+                                    @php($mode = $liveValues['mode'] ?? 'live')
+                                    
                                     <div class="form-floating" style="margin-bottom: 10px">
                                         <select class="js-select form-control theme-input-style w-100" name="mode">
                                             <option value="live" {{$mode=='live'?'selected':''}}>{{ translate('live') }}</option>
@@ -130,7 +132,6 @@
                                         </select>
                                     </div>
 
-                                    @php($liveValues = is_string($payment->live_values) ? json_decode($payment->live_values, true) : (array)$payment->live_values)
                                     @if ($payment->key_name == 'paymob' && isset($liveValues['supported_country']))
                                         <div class="mb-3">
                                             <label class="form-label">{{translate('Supported Country')}} <span class="text-danger">*</span></label>
@@ -149,7 +150,7 @@
 
                                     @php($skip=['gateway','mode','status', 'supported_country'])
 
-                                    @foreach($data_values->where('key_name',$payment->key_name)->first()->live_values as $key=>$value)
+                                    @foreach($liveValues as $key=>$value)
                                         @if(!in_array($key,$skip))
                                             <div class="form-floating mb-3">
                                                 <label for="exampleFormControlInput1"
@@ -228,18 +229,16 @@
             let status = $(this).prop('checked');
             let partialPaymentStatus = "{{ $partial_payment }}";
             let partialCombineWith = "{{ $combine_with }}";
-            let $checkbox = $(this); // Store reference to the checkbox
+            let $checkbox = $(this);
 
             console.log(partialPaymentStatus)
 
             if (partialPaymentStatus == '1') {
                 if ((partialCombineWith === method || partialCombineWith === 'all') && status === false) {
-                    // Show Bootstrap modal
                     $('#offlinePaymentWarningModal').modal('show');
 
-                    // Revert the checkbox state after showing the modal
                     setTimeout(() => {
-                        $checkbox.prop('checked', true); // Reset to checked
+                        $checkbox.prop('checked', true);
                     }, 300);
                 }
             }
@@ -253,7 +252,7 @@
 
             if (this.files && this.files[0]) {
                 var reader = new FileReader();
-                var $imagePreview = $form.find('.payment--gateway-img img'); // Find the img element within the form
+                var $imagePreview = $form.find('.payment--gateway-img img');
 
                 reader.onload = function (e) {
                     $imagePreview.attr('src', e.target.result);
