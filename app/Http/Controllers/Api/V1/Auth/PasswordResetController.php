@@ -2,30 +2,33 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
-use App\CentralLogics\Helpers;
-use App\CentralLogics\SMS_module;
-use App\Http\Controllers\Controller;
-use App\Models\LoginSetup;
-use App\Models\Setting;
-use App\Traits\HelperTrait;
 use App\User;
+use App\Models\Setting;
+use App\Models\LoginSetup;
 use Carbon\CarbonInterval;
-use Illuminate\Http\JsonResponse;
+use App\Traits\HelperTrait;
 use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
 use Illuminate\Support\Carbon;
+use App\CentralLogics\SMS_module;
+use App\Services\WhatsAppService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 use Modules\Gateways\Traits\SmsGateway;
+use Illuminate\Support\Facades\Validator;
 
 class PasswordResetController extends Controller
 {
-    use HelperTrait;
+        use HelperTrait;
+    
     public function __construct(
         private User $user,
-        private LoginSetup $loginSetup
+        private LoginSetup $loginSetup,
+        private WhatsAppService $whatsapp
     ){}
-
 
     public function passwordResetRequest(Request $request)
     {
@@ -48,21 +51,17 @@ class PasswordResetController extends Controller
             return response()->json(['errors' => [['code' => 'not-found', 'message' => translate('Customer not found!')]]], 404);
         }
 
-        $OTPIntervalTime = Helpers::get_business_settings('otp_resend_time') ?? 60; // seconds
+        $OTPIntervalTime = Helpers::get_business_settings('otp_resend_time') ?? 60;
         $passwordVerificationData = DB::table('password_resets')->where('email_or_phone', $request['email_or_phone'])->first();
 
         if ($passwordVerificationData && isset($passwordVerificationData->created_at) && Carbon::parse($passwordVerificationData->created_at)->DiffInSeconds() < $OTPIntervalTime) {
-
             $time = $OTPIntervalTime - Carbon::parse($passwordVerificationData->created_at)->DiffInSeconds();
 
-            $errors = [];
-            $errors[] = [
-                'code' => 'otp',
-                'message' => translate('please_try_again_after_') . $time . ' ' . translate('seconds')
-            ];
-
             return response()->json([
-                'errors' => $errors
+                'errors' => [[
+                    'code' => 'otp',
+                    'message' => translate('please_try_again_after_') . $time . ' ' . translate('seconds')
+                ]]
             ], 403);
         }
 
@@ -73,39 +72,119 @@ class PasswordResetController extends Controller
             'created_at' => now(),
         ]);
 
-
+        // SEND OTP via PHONE (SMS + WhatsApp)
         if ($request['type'] == 'phone') {
+            $results = ['sms' => false, 'whatsapp' => false];
+            
+            // Send SMS (existing)
             $activeSMSGatewaysCount = $this->getActiveSMSGatewayCount();
-            if ($activeSMSGatewaysCount == 0){
-                return response()->json(['errors' => [['code' => 'otp', 'message' => translate('Unable to send OTP')]]], 404);
+            if ($activeSMSGatewaysCount > 0) {
+                $publishedStatus = 0;
+                $paymentPublishedStatus = config('get_payment_publish_status');
+                if (isset($paymentPublishedStatus[0]['is_published'])) {
+                    $publishedStatus = $paymentPublishedStatus[0]['is_published'];
+                }
+                
+                try {
+                    if($publishedStatus == 1){
+                        $smsResponse = SmsGateway::send($customer['phone'], $token);
+                    }else{
+                        $smsResponse = SMS_module::send($customer['phone'], $token);
+                    }
+                    $results['sms'] = true;
+                    
+                    Log::info('Password reset SMS sent', [
+                        'phone' => $customer['phone'],
+                        'response' => $smsResponse
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Password reset SMS failed', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
-
-            $publishedStatus = 0;
-            $paymentPublishedStatus = config('get_payment_publish_status');
-            if (isset($paymentPublishedStatus[0]['is_published'])) {
-                $publishedStatus = $paymentPublishedStatus[0]['is_published'];
+            
+            // SEND WhatsApp OTP (NEW)
+            try {
+                $whatsappData = [
+                    'user_name' => $customer['name'],
+                    'otp' => $token,
+                    'expiry_minutes' => '5',
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ];
+                
+                $message = $this->whatsapp->sendTemplateMessage('password_reset_otp', $whatsappData);
+                
+                if (!$message) {
+                    // Fallback message if template not found
+                    $appName = env('APP_NAME', 'eFood');
+                    $message = "*{$appName} - Password Reset*\n\n" .
+                              "Hello {$customer['name']},\n\n" .
+                              "Your password reset code is: *{$token}*\n\n" .
+                              "This code will expire in 5 minutes.\n\n" .
+                              "_Do not share this code with anyone._\n\n" .
+                              "© " . date('Y') . " {$appName}";
+                }
+                
+                $whatsappResponse = $this->whatsapp->sendMessage($customer['phone'], $message);
+                $results['whatsapp'] = $whatsappResponse['success'] ?? false;
+                
+                Log::info('Password reset WhatsApp sent', [
+                    'phone' => $customer['phone'],
+                    'success' => $results['whatsapp']
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('Password reset WhatsApp failed', [
+                    'error' => $e->getMessage()
+                ]);
             }
-            if($publishedStatus == 1){
-                $response = SmsGateway::send($customer['phone'], $token);
-            }else{
-                $response = SMS_module::send($customer['phone'], $token);
+            
+            // Return response based on what succeeded
+            if ($results['sms'] || $results['whatsapp']) {
+                $channels = [];
+                if ($results['sms']) $channels[] = 'SMS';
+                if ($results['whatsapp']) $channels[] = 'WhatsApp';
+                
+                return response()->json([
+                    'message' => translate('OTP sent successfully via ') . implode(' & ', $channels)
+                ], 200);
+            } else {
+                return response()->json([
+                    'errors' => [['code' => 'otp', 'message' => translate('Unable to send OTP')]]
+                ], 400);
             }
-            return response()->json(['message' => $response], 200);
-        } else{
+        } 
+        
+        // SEND OTP via EMAIL (existing)
+        else {
             try {
                 $emailServices = Helpers::get_business_settings('mail_config');
                 $mailStatus = Helpers::get_business_settings('forget_password_mail_status_user');
 
                 if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
-                    Mail::to($customer['email'])->send(new \App\Mail\PasswordResetMail($token, $customer['name'], $customer->language_code ));
+                    Mail::to($customer['email'])->send(new \App\Mail\PasswordResetMail($token, $customer['name'], $customer->language_code));
+                    
+                    Log::info('Password reset email sent', [
+                        'email' => $customer['email']
+                    ]);
+                    
+                    return response()->json(['message' => translate('Email sent successfully.')], 200);
                 }
+                
+                return response()->json([
+                    'errors' => [['code' => 'otp', 'message' => translate('Email service disabled')]]
+                ], 400);
 
             } catch (\Exception $exception) {
-                return response()->json(['errors' => [
-                    ['code' => 'otp', 'message' => translate('Unable to send OTP.')]
-                ]], 400);
+                Log::error('Password reset email failed', [
+                    'error' => $exception->getMessage()
+                ]);
+                
+                return response()->json([
+                    'errors' => [['code' => 'otp', 'message' => translate('Unable to send OTP.')]]
+                ], 400);
             }
-            return response()->json(['message' => translate('Email sent successfully.')], 200);
         }
     }
 
