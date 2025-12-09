@@ -446,8 +446,7 @@ class BusinessSettingsController extends Controller
         } elseif ($request['gateway'] == 'paymob') {
             $additionalData = [
                 'status' => 'required|in:1,0',
-                'supported_country' => 'required',
-                'gateway_title' => 'required|string',
+                'supported_country' => 'required'
             ];
         }
 

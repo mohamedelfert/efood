@@ -384,8 +384,7 @@ class PaymentsController extends Controller
     {
         $rows = Setting::where('settings_type', 'payment_config')
             ->whereIn('key_name', [
-                'ssl_commerz','paypal','stripe','razor_pay','senang_pay',
-                'paystack','paymob_accept','flutterwave','bkash','mercadopago',
+                'paymob','qib',
             ])
             ->get();
 

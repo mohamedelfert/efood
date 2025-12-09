@@ -807,7 +807,7 @@ class UpdateController extends Controller
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',
                     'mode' => "live",
                     'status' => $paymobAcceptValues['status'] ?? 0,
-                    'supported_country' => ""
+                    'supported_country' => "",
                 ],
                 'test_values' => [
                     'gateway' => $paymobAcceptValues['gateway'] ?? '',

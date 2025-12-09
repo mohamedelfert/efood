@@ -32,7 +32,7 @@ class AddonSettingsSeeder extends Seeder
                 'is_active' => 0,
                 'created_at' => null,
                 'updated_at' => null,
-                'additional_data' => null,
+                'additional_data' => '{"gateway_title":"paymob","gateway_image":""}',
             ],
             [
                 'id' => 'c41c0dcd-d119-11ed-9f67-0c7a158e4469',
@@ -44,7 +44,7 @@ class AddonSettingsSeeder extends Seeder
                 'is_active' => 0,
                 'created_at' => null,
                 'updated_at' => '2023-08-30 04:49:15',
-                'additional_data' => '{"gateway_title":null,"gateway_image":""}',
+                'additional_data' => '{"gateway_title":"qib","gateway_image":""}',
             ]
         ];
 
