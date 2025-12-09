@@ -28,42 +28,38 @@ class WhatsAppService
      */
     private function formatPhoneNumber(string $phone): string
     {
+        // Store original for logging
         $original = $phone;
-        
-        // Remove all non-digit characters
+
+        // Remove all non-digit characters (including + sign)
         $phone = preg_replace('/\D+/', '', $phone);
-        
-        // Handle Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
+
+        // Handle common Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
         if (str_starts_with($phone, '0') && strlen($phone) === 11) {
-            $phone = '2' . substr($phone, 1); // 01xxxxxxxxx → 21xxxxxxxxx (remove leading 0, add 2)
+            $phone = '2' . substr($phone, 1); // 01xxxxxxxxx → 21xxxxxxxxx
         }
-        
-        // Remove 00 prefix if present
+
+        // If number starts with 00, remove it
         if (str_starts_with($phone, '00')) {
             $phone = substr($phone, 2);
         }
-        
-        // Ensure it starts with country code
+
+        // Ensure it starts with country code 2 (Egypt)
         if (!str_starts_with($phone, '2')) {
             $phone = '2' . $phone;
         }
-        
-        // Add + prefix for E.164 format (WhatsApp standard)
-        if (!str_starts_with($phone, '+')) {
-            $phone = '+' . $phone;
+
+        // Final validation: 10–15 digits (standard E.164 without +)
+        if (strlen($phone) < 10 || strlen($phone) > 15) {
+            throw new \InvalidArgumentException("Invalid phone number length after formatting: {$original} → {$phone}");
         }
-        
-        // Validate length: E.164 allows +[1-15 digits]
-        $digitCount = strlen(preg_replace('/\D+/', '', $phone));
-        if ($digitCount < 10 || $digitCount > 15) {
-            throw new \InvalidArgumentException("Invalid phone: {$original} → {$phone}");
-        }
-        
-        Log::info('WhatsApp: Phone formatted', [
+
+        Log::info('WhatsApp: Phone formatted successfully', [
             'original' => $original,
             'formatted' => $phone
         ]);
-        
+
+        // Return WITHOUT + prefix (Snefru Cloud requirement)
         return $phone;
     }
 
