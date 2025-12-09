@@ -123,45 +123,49 @@ class WhatsAppService
 
                 Log::info('WhatsApp: API Response', compact('status', 'body'));
 
-                // ✅ ACCEPTED / QUEUED
-                if ($status === 200 && empty($result['error'])) {
+                // ✅ SNEFRU CLOUD SUCCESS CHECK (FIXED!)
+                if ($status === 200 && 
+                    isset($result['message_status']) && 
+                    strtolower($result['message_status']) === 'success') {
+                    
                     return [
                         'success'  => true,
                         'queued'   => true,
                         'attempts' => $attempt,
-                        'response' => $result
+                        'response' => $result,
+                        'message_id' => $result['data']['status_code'] ?? null
                     ];
                 }
 
-                // ⚠ UNKNOWN DELIVERY
-                if ($status === 500) {
+                // ❌ EXPLICIT ERROR RESPONSE
+                if (isset($result['error'])) {
+                    // 🔴 AUTH ERROR
+                    if ($status === 401 || str_contains(strtolower($result['error']), 'session')) {
+                        return [
+                            'success' => false,
+                            'error'   => 'WhatsApp session invalid. Reconnect required.',
+                            'code'    => 401
+                        ];
+                    }
+
                     return [
                         'success' => false,
-                        'pending' => true,
-                        'error'   => 'Provider failed after submission. Delivery unknown.',
-                        'raw'     => $result
+                        'error'   => $result['error'],
+                        'code'    => $status
                     ];
                 }
 
-                // 🔴 AUTH ERROR
-                if ($status === 401 || str_contains(strtolower($body), 'session')) {
-                    return [
-                        'success' => false,
-                        'error'   => 'WhatsApp session invalid. Reconnect required.',
-                        'code'    => 401
-                    ];
-                }
-
-                // ⚠ RETRY ON 5XX
-                if ($status >= 500 && $attempt < $this->maxRetries) {
+                // ⚠ UNKNOWN STATUS
+                if ($status === 500 && $attempt < $this->maxRetries) {
                     sleep(2);
                     continue;
                 }
 
                 return [
                     'success' => false,
-                    'error'   => $result['error'] ?? 'Unexpected API error',
-                    'code'    => $status
+                    'error'   => 'Unexpected API response: ' . ($result['message'] ?? 'Unknown error'),
+                    'code'    => $status,
+                    'raw'     => $result
                 ];
 
             } catch (\Throwable $e) {
