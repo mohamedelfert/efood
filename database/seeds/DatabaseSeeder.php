@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             CurrenciesTableSeeder::class,
             AddonSettingsSeeder::class,
             LoginSetupsSeeder::class,
+            EmailTemplateSeeder::class,
+            WhatsAppTemplateSeeder::class,
          ]);
     }
 }
