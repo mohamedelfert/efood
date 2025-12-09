@@ -39,7 +39,7 @@ class WhatsAppService
         }
         
         // Remove 00 prefix if present
-        if (str_starts_with($phone, '00')) {
+        if (str_starts_with($phone, '0')) {
             $phone = substr($phone, 2);
         }
         
