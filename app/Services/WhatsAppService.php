@@ -28,32 +28,42 @@ class WhatsAppService
      */
     private function formatPhoneNumber(string $phone): string
     {
-        // Store original for logging
         $original = $phone;
-
+        
         // Remove all non-digit characters
         $phone = preg_replace('/\D+/', '', $phone);
-
-        // Handle common Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
+        
+        // Handle Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
         if (str_starts_with($phone, '0') && strlen($phone) === 11) {
-            $phone = '2' . $phone; // 01xxxxxxxxx → 201xxxxxxxxx
+            $phone = '2' . substr($phone, 1); // 01xxxxxxxxx → 21xxxxxxxxx (remove leading 0, add 2)
         }
-
-        // If number starts with 00 instead of +, replace with nothing (00 201... → 201...)
+        
+        // Remove 00 prefix if present
         if (str_starts_with($phone, '00')) {
             $phone = substr($phone, 2);
         }
-
-        // Final validation: 10–15 digits (standard E.164 without +)
-        if (strlen($phone) < 10 || strlen($phone) > 15) {
-            throw new \InvalidArgumentException("Invalid phone number length after formatting: {$original} → {$phone}");
+        
+        // Ensure it starts with country code
+        if (!str_starts_with($phone, '2')) {
+            $phone = '2' . $phone;
         }
-
-        Log::info('WhatsApp: Phone formatted successfully', [
+        
+        // Add + prefix for E.164 format (WhatsApp standard)
+        if (!str_starts_with($phone, '+')) {
+            $phone = '+' . $phone;
+        }
+        
+        // Validate length: E.164 allows +[1-15 digits]
+        $digitCount = strlen(preg_replace('/\D+/', '', $phone));
+        if ($digitCount < 10 || $digitCount > 15) {
+            throw new \InvalidArgumentException("Invalid phone: {$original} → {$phone}");
+        }
+        
+        Log::info('WhatsApp: Phone formatted', [
             'original' => $original,
             'formatted' => $phone
         ]);
-
+        
         return $phone;
     }
 
