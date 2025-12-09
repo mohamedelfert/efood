@@ -10,60 +10,85 @@ class WhatsAppService
 {
     private Client $client;
     private string $baseUrl = 'https://wa.snefru.cloud/api/create-message';
-    private int $maxRetries = 3;
+    private int $maxRetries = 2;
     private int $maxMessageLength = 3500;
 
     public function __construct()
     {
         $this->client = new Client([
-            'timeout'         => env('WHATSAPP_TIMEOUT', 30),
+            'timeout' => env('WHATSAPP_TIMEOUT', 30),
             'connect_timeout' => 10,
-            'verify'          => env('WHATSAPP_VERIFY_SSL', true),
-            'http_errors'     => false,
+            'verify' => true,
+            'http_errors' => false,
         ]);
     }
 
+    /**
+     * E.164 Format Validation (Egypt Only)
+     */
     private function formatPhoneNumber(string $phone): string
     {
+        // Store original for logging
         $original = $phone;
+
+        // Remove all non-digit characters
         $phone = preg_replace('/\D+/', '', $phone);
 
-        // Egyptian local format: 01xxxxxxxxx → 201xxxxxxxxx
+        // Handle common Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
         if (str_starts_with($phone, '0') && strlen($phone) === 11) {
-            $phone = '2' . $phone;
+            $phone = '2' . $phone; // 01xxxxxxxxx → 201xxxxxxxxx
         }
 
-        // International prefix 00 → remove it
+        // If number starts with 00 instead of +, replace with nothing (00 201... → 201...)
         if (str_starts_with($phone, '00')) {
             $phone = substr($phone, 2);
         }
 
+        // Final validation: 10–15 digits (standard E.164 without +)
         if (strlen($phone) < 10 || strlen($phone) > 15) {
-            throw new \InvalidArgumentException("Invalid phone number: {$original} → {$phone}");
+            throw new \InvalidArgumentException("Invalid phone number length after formatting: {$original} → {$phone}");
         }
 
-        Log::info('WhatsApp: Phone formatted', ['original' => $original, 'formatted' => $phone]);
+        Log::info('WhatsApp: Phone formatted successfully', [
+            'original' => $original,
+            'formatted' => $phone
+        ]);
 
         return $phone;
     }
 
+    /**
+     * Main Sender
+     */
     public function sendMessage(string $to, string $message, ?string $fileUrl = null): array
     {
         $appKey  = env('WHATSAPP_APP_KEY');
         $authKey = env('WHATSAPP_AUTH_KEY');
 
         if (!$appKey || !$authKey) {
-            return ['success' => false, 'error' => 'Missing WHATSAPP_APP_KEY or WHATSAPP_AUTH_KEY'];
+            return ['success' => false, 'error' => 'Missing WhatsApp API credentials'];
         }
 
         if (mb_strlen($message) > $this->maxMessageLength) {
-            return ['success' => false, 'error' => 'Message too long (>3500 chars)'];
+            return ['success' => false, 'error' => 'Message exceeds safe length limit'];
         }
 
-        try {
-            $to = $this->formatPhoneNumber($to);
-        } catch (\Throwable $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+        // Format number
+        $original = $to;
+        $to = $this->formatPhoneNumber($to);
+
+        Log::info('WhatsApp: Phone formatted', compact('original', 'to'));
+
+        $payload = [
+            'appkey'  => $appKey,
+            'authkey' => $authKey,
+            'to'      => $to,
+            'message' => $message,
+            'sandbox' => filter_var(env('WHATSAPP_SANDBOX', false), FILTER_VALIDATE_BOOLEAN),
+        ];
+
+        if ($fileUrl && filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+            $payload['file'] = $fileUrl;
         }
 
         $attempt = 0;
@@ -71,130 +96,135 @@ class WhatsAppService
         while ($attempt < $this->maxRetries) {
             $attempt++;
 
-            // Build payload differently if we have a file
-            $options = ['multipart' => []];
-
-            if ($fileUrl && filter_var($fileUrl, FILTER_VALIDATE_URL)) {
-                $options['multipart'] = [
-                    ['name' => 'appkey',  'contents' => $appKey],
-                    ['name' => 'authkey', 'contents' => $authKey],
-                    ['name' => 'to',      'contents' => $to],
-                    ['name' => 'message', 'contents' => $message],
-                    ['name' => 'file',    'contents' => fopen($fileUrl, 'r'), 'filename' => basename($fileUrl)],
-                    ['name' => 'sandbox', 'contents' => env('WHATSAPP_SANDBOX', false) ? 'true' : 'false'],
-                ];
-            } else {
-                $options = [
-                    'json' => [
-                        'appkey'  => $appKey,
-                        'authkey' => $authKey,
-                        'to'      => $to,
-                        'message' => $message,
-                        'sandbox' => filter_var(env('WHATSAPP_SANDBOX', false), FILTER_VALIDATE_BOOLEAN),
-                    ]
-                ];
-            }
-
             try {
-                Log::info("WhatsApp: Sending message (Attempt {$attempt})", [
+                Log::info("WhatsApp: Sending Attempt {$attempt}", [
                     'to' => $to,
-                    'has_file' => !empty($fileUrl),
+                    'length' => mb_strlen($message),
+                    'file' => $payload['file'] ?? null
                 ]);
 
-                $response = $this->client->post($this->baseUrl, $options);
+                $response = $this->client->post($this->baseUrl, [
+                    'json' => $payload
+                ]);
 
                 $status = $response->getStatusCode();
-                $body   = trim($response->getBody()->getContents());
-                $result = json_decode($body, true) ?? ['raw' => $body];
+                $body = trim((string) $response->getBody());
+                $result = json_decode($body, true);
 
-                Log::info('WhatsApp: API Response', ['status' => $status, 'body' => $result]);
+                Log::info('WhatsApp: API Response', compact('status', 'body'));
 
-                // Success responses from Snefru
-                if ($status === 200) {
-                    if (isset($result['message_status']) && $result['message_status'] === 'Success') {
-                        return ['success' => true, 'response' => $result];
-                    }
-                    if (isset($result['status']) && $result['status'] === 'queued') {
-                        return ['success' => true, 'response' => $result];
-                    }
-                    if (empty($result['error'])) {
-                        return ['success' => true, 'response' => $result];
-                    }
-                }
-
-                // 401 = Session expired → most important case
-                if ($status === 401) {
+                // ✅ ACCEPTED / QUEUED
+                if ($status === 200 && empty($result['error'])) {
                     return [
-                        'success' => false,
-                        'error'  => 'WhatsApp session expired! Go to https://wa.snefru.cloud and scan QR code again.',
-                        'code'    => 401,
+                        'success'  => true,
+                        'queued'   => true,
+                        'attempts' => $attempt,
+                        'response' => $result
                     ];
                 }
 
-                // Retry on server errors
+                // ⚠ UNKNOWN DELIVERY
+                if ($status === 500) {
+                    return [
+                        'success' => false,
+                        'pending' => true,
+                        'error'   => 'Provider failed after submission. Delivery unknown.',
+                        'raw'     => $result
+                    ];
+                }
+
+                // 🔴 AUTH ERROR
+                if ($status === 401 || str_contains(strtolower($body), 'session')) {
+                    return [
+                        'success' => false,
+                        'error'   => 'WhatsApp session invalid. Reconnect required.',
+                        'code'    => 401
+                    ];
+                }
+
+                // ⚠ RETRY ON 5XX
                 if ($status >= 500 && $attempt < $this->maxRetries) {
-                    sleep(3);
+                    sleep(2);
                     continue;
                 }
 
                 return [
                     'success' => false,
-                    'error'  => $result['error'] ?? 'Failed to send message',
-                    'code'    => $status,
-                    'raw'     => $result,
+                    'error'   => $result['error'] ?? 'Unexpected API error',
+                    'code'    => $status
                 ];
 
             } catch (\Throwable $e) {
-                Log::error('WhatsApp: Request exception', [
+                Log::error('WhatsApp Exception', [
                     'attempt' => $attempt,
-                    'error'   => $e->getMessage()
+                    'error' => $e->getMessage()
                 ]);
 
                 if ($attempt < $this->maxRetries) {
-                    sleep(3);
+                    sleep(2);
                     continue;
                 }
 
-                return ['success' => false, 'error' => 'Connection failed: ' . $e->getMessage()];
+                return [
+                    'success' => false,
+                    'error' => 'Connection failure: ' . $e->getMessage()
+                ];
             }
         }
 
-        return ['success' => false, 'error' => 'Max retries reached'];
+        return ['success' => false, 'error' => 'Max retry reached'];
     }
 
-    // Rest of the class (template methods) unchanged
+    /**
+     * Template Generator
+     */
     public function sendTemplateMessage(string $type, array $data = []): string
     {
         $template = WhatsAppTemplate::where([
             'whatsapp_type' => $type,
-            'type'          => 'user'
-        ])->firstOrFail();
+            'type' => 'user'
+        ])->first();
+
+        if (!$template) {
+            return $this->getFallbackMessage($type, $data);
+        }
 
         $message = "*{$template->title}*\n\n";
         $body = $template->body;
 
-        foreach ($data as $key => $value) {
-            $body = str_replace(["{{$key}}", "{{$key}}", "{".$key."}"], $value, $body);
+        foreach ($data as $k => $v) {
+            $body = str_replace(["{{$k}}", "{{{$k}}}", "{".$k."}"], $v, $body);
         }
 
         $message .= $body . "\n\n";
 
         if ($template->button_name && $template->button_url) {
-            $btn = str_replace(array_keys($data), array_values($data), $template->button_name);
-            $message .= "$btn: {$template->button_url}\n\n";
+            $btn = $template->button_name;
+            foreach ($data as $k => $v) {
+                $btn = str_replace(["{{$k}}"], $v, $btn);
+            }
+            $message .= "👉 {$btn}: {$template->button_url}\n\n";
         }
 
         if ($template->footer_text) {
-            $footer = str_replace(array_keys($data), array_values($data), $template->footer_text);
+            $footer = $template->footer_text;
+            foreach ($data as $k => $v) {
+                $footer = str_replace(["{{$k}}"], $v, $footer);
+            }
             $message .= "_{$footer}_\n\n";
         }
 
         return trim($message);
     }
 
+    /**
+     * Fallback Message
+     */
     private function getFallbackMessage(string $type, array $data): string
     {
-        $name = $data['user_name'] ?? 'العميل';
-        return "*Efood*\n\nمرحباً {$name}،\n\nتم إضافة رصيد جديد لحسابك بنجاح!";
+        $name = $data['user_name'] ?? 'Customer';
+        $app  = env('APP_NAME', 'Application');
+
+        return "*{$app} Notification*\n\nHello {$name},\n\nYou received a new notification.";
     }
 }
