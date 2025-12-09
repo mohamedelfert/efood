@@ -63,7 +63,7 @@ class AddonSettingsSeeder extends Seeder
                     'hmac_secret' => ''
                 ]),
                 'additional_data' => json_encode([
-                    'gateway_title' => 'Paymob',
+                    'gateway_title' => 'paymob',
                     'gateway_image' => ''
                 ]),
             ],
@@ -84,7 +84,7 @@ class AddonSettingsSeeder extends Seeder
                     'status'  => 0
                 ]),
                 'additional_data' => json_encode([
-                    'gateway_title' => 'QIB',
+                    'gateway_title' => 'qib',
                     'gateway_image' => ''
                 ]),
             ],
