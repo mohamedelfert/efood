@@ -22,32 +22,16 @@ class AddonSettingsSeeder extends Seeder
                 'updated_at' => '2023-08-12 07:01:29',
                 'additional_data' => null,
             ],
-            [
-                'id' => 'b8992bd4-d6a0-11ed-962c-0c7a158e4469',
-                'key_name' => 'paymob',
-                'live_values' => '{"gateway":"paymob","mode":"live","status":"0"}',
-                'test_values' => '{"gateway":"paymob","mode":"live","status":"0"}',
-                'settings_type' => 'payment_config',
-                'mode' => 'test',
-                'is_active' => 0,
-                'created_at' => null,
-                'updated_at' => null,
-                'additional_data' => '{"gateway_title":"paymob","gateway_image":""}',
-            ],
-            [
-                'id' => 'c41c0dcd-d119-11ed-9f67-0c7a158e4469',
-                'key_name' => 'qib',
-                'live_values' => '{"gateway":"qib","mode":"live","status":"0"}',
-                'test_values' => '{"gateway":"qib","mode":"live","status":"0"}',
-                'settings_type' => 'payment_config',
-                'mode' => 'test',
-                'is_active' => 0,
-                'created_at' => null,
-                'updated_at' => '2023-08-30 04:49:15',
-                'additional_data' => '{"gateway_title":"qib","gateway_image":""}',
-            ]
+            // Third-Party Gateways
+            ['key_name' => 'paymob',       'settings_type' => 'payment_config', 'is_active' => 1, 'mode' => 'live', 'live_values' => '{"gateway":"paymob","status":1,"api_key":"","hmac_secret":"","supported_currencies":["EGP","USD"]}', 'test_values' => '{"gateway":"paymob","status":0,"api_key":"","hmac_secret":""}', 'additional_data' => '{"gateway_title":"paymob","gateway_image":""}'],
+            ['key_name' => 'qib',          'settings_type' => 'payment_config', 'is_active' => 1, 'mode' => 'live', 'live_values' => '{"gateway":"qib","status":1}', 'test_values' => '{"status":0}', 'additional_data' => '{"gateway_title":"qib","gateway_image":""}'],
         ];
 
-        DB::table('addon_settings')->insertOrIgnore($settings);
+        foreach ($settings as $setting) {
+            DB::table('addon_settings')->updateOrInsert(
+                ['key_name' => $setting['key_name'], 'settings_type' => $setting['settings_type']],
+                $setting
+            );
+        }
     }
 }
