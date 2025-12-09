@@ -130,7 +130,7 @@ class NotificationService
                 try {
                     $receiptUrl = null;
                     
-                    // Try to generate receipt and get public URL
+                    // Generate receipt
                     try {
                         $receiptGenerator = app(\App\Services\ReceiptGeneratorService::class);
                         $receiptData = [
@@ -148,40 +148,36 @@ class NotificationService
                         
                         $receiptPath = $receiptGenerator->generateReceiptImage($receiptData);
                         
-                        //  Convert file path to public URL
                         if ($receiptPath && file_exists($receiptPath)) {
                             $filename = basename($receiptPath);
                             $receiptUrl = url('storage/receipts/images/' . $filename);
                             
-                            Log::info('Receipt URL generated', [
-                                'transaction_id' => $data['transaction_id'],
-                                'public_url' => $receiptUrl
-                            ]);
+                            // Add receipt URL to notification data
+                            $notificationData['receipt_url'] = $receiptUrl;
+                            $notificationData['receipt_link'] = "View your receipt: " . $receiptUrl;
                         }
                     } catch (\Exception $receiptError) {
-                        Log::warning('Receipt generation failed, sending WhatsApp text-only', [
+                        Log::warning('Receipt generation failed', [
                             'error' => $receiptError->getMessage(),
                             'transaction_id' => $data['transaction_id']
                         ]);
                     }
 
-                    // Build WhatsApp message
+                    // Build WhatsApp message (now includes receipt URL in text)
                     $message = $this->whatsapp->sendTemplateMessage('wallet_topup', $notificationData);
                     
-                    // Send WhatsApp (with receipt URL if available, otherwise text-only)
-                    $response = $this->whatsapp->sendMessage($user->phone, $message, $receiptUrl);
+                    // Send as text only (no file attachment)
+                    $response = $this->whatsapp->sendMessage($user->phone, $message, null);
                     
                     Log::info('Wallet top-up WhatsApp sent', [
                         'user_id' => $user->id,
                         'transaction_id' => $data['transaction_id'],
-                        'has_receipt' => !empty($receiptUrl),
-                        'receipt_url' => $receiptUrl,
+                        'has_receipt_url' => !empty($receiptUrl),
                         'success' => $response['success'] ?? false
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Wallet top-up WhatsApp failed', [
                         'user_id' => $user->id,
-                        'transaction_id' => $data['transaction_id'],
                         'error' => $e->getMessage()
                     ]);
                 }
