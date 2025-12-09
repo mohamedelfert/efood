@@ -11,29 +11,30 @@ class AddonSettingsSeeder extends Seeder
     public function run(): void
     {
         $settings = [
-            // SMS
+            // Twilio SMS (يسيبها زي ما هي)
             [
-                'id'              => '070c6bbd-d777-11ed-96f4-0c7a158e4469',
+                'id'            => '070c6bbd-d777-11ed-96f4-0c7a158e4469',
                 'key_name'      => 'twilio',
                 'live_values'   => json_encode([
                     'gateway'              => 'twilio',
                     'mode'                 => 'live',
                     'status'               => 0,
-                    'sid'                  => 'data',
-                    'messaging_service_sid'=> 'data',
-                    'token'                => 'data',
-                    'from'                 => 'data',
-                    'otp_template'         => 'data'
+                    'sid'                  => '',
+                    'messaging_service_sid'=> '',
+                    'token'                => '',
+                    'from'                 => '',
+                    'otp_template'         => ''
                 ]),
                 'test_values'   => json_encode([
                     'gateway'              => 'twilio',
-                    'mode'                 => 'live',
+                    'mode'                 => 'test',
                     'status'               => 0,
-                    'sid'                  => 'data',
-                    'messaging_service_sid'=> 'data',
-                    'token'                => 'data',
-                    'from'                 => 'data',
-                    'otp_template'         => 'data'
+                    'sid'                  => '',
+                    '',
+                    'messaging_service_sid'=> '',
+                    'token'                => '',
+                    'from'                 => '',
+                    'otp_template'         => ''
                 ]),
                 'settings_type' => 'sms_config',
                 'mode'          => 'live',
@@ -41,7 +42,7 @@ class AddonSettingsSeeder extends Seeder
                 'additional_data' => null,
             ],
 
-            // Payment Gateways – Paymob
+            // Paymob Payment Gateway
             [
                 'id'             => (string) Str::uuid(),
                 'key_name'       => 'paymob',
@@ -53,7 +54,7 @@ class AddonSettingsSeeder extends Seeder
                     'status'              => 1,
                     'api_key'             => '',
                     'hmac_secret'         => '',
-                    'supported_currencies'=> ['EGP','USD']
+                    'supported_currencies'=> ['EGP', 'USD']
                 ]),
                 'test_values'    => json_encode([
                     'gateway'     => 'paymob',
@@ -61,26 +62,32 @@ class AddonSettingsSeeder extends Seeder
                     'api_key'     => '',
                     'hmac_secret' => ''
                 ]),
-                'additional_data'=> json_encode([
-                    'gateway_title' => 'paymob',
+                'additional_data' => json_encode([
+                    'gateway_title' => 'Paymob',
                     'gateway_image' => ''
                 ]),
             ],
 
-            // QIB
+            // QIB Payment Gateway
             [
                 'id'             => (string) Str::uuid(),
                 'key_name'       => 'qib',
                 'settings_type'  => 'payment_config',
                 'is_active'      => 1,
                 'mode'           => 'live',
-                'live_values'    => json_encode(['gateway' => 'qib', 'status' => 1]),
-                'test_values'    => json_encode(['status' => 0]),
-                'additional_data'=> json_encode([
-                    'gateway_title' => 'qib',
+                'live_values'    => json_encode([
+                    'gateway' => 'qib',
+                    'status'  => 1
+                ]),
+                'test_values'    => json_encode([
+                    'gateway' => 'qib',
+                    'status'  => 0
+                ]),
+                'additional_data' => json_encode([
+                    'gateway_title' => 'QIB',
                     'gateway_image' => ''
                 ]),
-            ]
+            ],
         ];
 
         foreach ($settings as $setting) {
