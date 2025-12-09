@@ -28,39 +28,37 @@ class WhatsAppService
      */
     private function formatPhoneNumber(string $phone): string
     {
-        // Store original for logging
         $original = $phone;
-
-        // Remove all non-digit characters (including + sign)
+        
+        // Remove all non-digit characters
         $phone = preg_replace('/\D+/', '', $phone);
-
-        // Handle common Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
+        
+        // Handle Egyptian local format (01xxxxxxxxx → 201xxxxxxxxx)
         if (str_starts_with($phone, '0') && strlen($phone) === 11) {
-            $phone = '2' . substr($phone, 1); // 01xxxxxxxxx → 21xxxxxxxxx
+            $phone = '2' . substr($phone, 1); // Remove leading 0, prepend country code
         }
-
-        // If number starts with 00, remove it
+        
+        // Remove 00 prefix if present
         if (str_starts_with($phone, '00')) {
             $phone = substr($phone, 2);
         }
-
-        // Ensure it starts with country code 2 (Egypt)
-        if (!str_starts_with($phone, '2')) {
+        
+        // Ensure starts with country code (Egypt = 2)
+        if (!str_starts_with($phone, '2') && strlen($phone) === 10) {
             $phone = '2' . $phone;
         }
-
-        // Final validation: 10–15 digits (standard E.164 without +)
+        
+        // Validate: 12 digits for Egyptian numbers (2 + 10 digits)
         if (strlen($phone) < 10 || strlen($phone) > 15) {
-            throw new \InvalidArgumentException("Invalid phone number length after formatting: {$original} → {$phone}");
+            throw new \InvalidArgumentException("Invalid phone: {$original} → {$phone}");
         }
-
+        
         Log::info('WhatsApp: Phone formatted successfully', [
             'original' => $original,
             'formatted' => $phone
         ]);
-
-        // Return WITHOUT + prefix (Snefru Cloud requirement)
-        return $phone;
+        
+        return $phone; // Return without + sign
     }
 
     /**
