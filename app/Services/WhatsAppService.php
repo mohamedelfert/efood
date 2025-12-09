@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppService
 {
     private Client $client;
-    private string $baseUrl = 'https://wa.sendsnefru.xyz/api/create-message';
+    private string $baseUrl = 'https://wa.snefru.cloud/api/create-message';
     private int $maxRetries = 2;
     private int $maxMessageLength = 3500;
 
