@@ -790,7 +790,6 @@ class CustomerAuthController extends Controller
 
     public function registrationWithOTP(Request $request)
     {
-        dd($request->all());
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'nullable|max:255',
