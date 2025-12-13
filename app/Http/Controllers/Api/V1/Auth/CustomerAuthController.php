@@ -23,19 +23,26 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use App\Services\NotificationService;
 use Modules\Gateways\Traits\SmsGateway;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Validator;
 
 class CustomerAuthController extends Controller
 {
+    protected $notificationService;
+
     public function __construct(
         private User              $user,
         private BusinessSetting   $businessSetting,
         private PhoneVerification $phoneVerification,
         private LoginSetup $loginSetup,
         private WhatsAppService $whatsapp,
-    ){}
+        NotificationService $notificationService
+    ){
+        $this->notificationService = $notificationService;
+        $this->whatsapp = $whatsapp;
+    }
 
     /**
      * @param Request $request
@@ -120,27 +127,42 @@ class CustomerAuthController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $publishedStatus = 0;
-            $paymentPublishedStatus = config('get_payment_publish_status');
-            if (isset($paymentPublishedStatus[0]['is_published'])) {
-                $publishedStatus = $paymentPublishedStatus[0]['is_published'];
-            }
-            if($publishedStatus == 1){
-                $response = SmsGateway::send($request['phone'], $token);
-            }else{
-                $response = SMS_module::send($request['phone'], $token);
-            }
+            try {
+                $user = $this->user->where('phone', $request['phone'])->first();
+                
+                if ($user) {
+                    $results = $this->notificationService->sendLoginOTP($user, $token);
+                    
+                    Log::info('Phone OTP sent', [
+                        'phone' => $request['phone'],
+                        'results' => $results
+                    ]);
+                } else {
+                    // Fallback for SMS gateway
+                    $publishedStatus = 0;
+                    $paymentPublishedStatus = config('get_payment_publish_status');
+                    if (isset($paymentPublishedStatus[0]['is_published'])) {
+                        $publishedStatus = $paymentPublishedStatus[0]['is_published'];
+                    }
+                    
+                    if($publishedStatus == 1){
+                        $response = SmsGateway::send($request['phone'], $token);
+                    } else {
+                        $response = SMS_module::send($request['phone'], $token);
+                    }
+                }
 
-            return response()->json([
-                'message' => $response,
-                'token' => 'active'
-            ], 200);
+                return response()->json([
+                    'message' => $response ?? 'OTP sent successfully',
+                    'token' => 'active'
+                ], 200);
 
-        } else {
-            return response()->json([
-                'message' => translate('Number is ready to register'),
-                'token' => 'inactive'
-            ], 200);
+            } catch (\Exception $e) {
+                Log::error('Phone OTP failed', ['error' => $e->getMessage()]);
+                return response()->json([
+                    'errors' => [['code' => 'otp', 'message' => translate('Failed to send OTP')]]
+                ], 403);
+            }
         }
     }
 
@@ -151,34 +173,41 @@ class CustomerAuthController extends Controller
     public function checkEmail(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required'
+            'email' => 'required|email'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
+        Log::info('checkEmail called', ['email' => $request->email]);
+
         $emailVerification = (int) $this->loginSetup->where(['key' => 'email_verification'])?->first()->value ?? 0;
+        Log::info('Email verification setting:', ['enabled' => $emailVerification]);
 
         if ($emailVerification == 1) {
+            $OTPIntervalTime = Helpers::get_business_settings('otp_resend_time') ?? 60;
+            $OTPVerificationData = DB::table('email_verifications')->where('email', $request['email'])->first();
 
-            $OTPIntervalTime= Helpers::get_business_settings('otp_resend_time') ?? 60;// seconds
-            $OTPVerificationData= DB::table('email_verifications')->where('email', $request['email'])->first();
+            Log::info('OTP interval check', [
+                'interval' => $OTPIntervalTime,
+                'exists' => !is_null($OTPVerificationData),
+                'time_diff' => $OTPVerificationData ? Carbon::parse($OTPVerificationData->created_at)->DiffInSeconds() : null
+            ]);
 
-            if(isset($OTPVerificationData) &&  Carbon::parse($OTPVerificationData->created_at)->DiffInSeconds() < $OTPIntervalTime){
-                $time= $OTPIntervalTime - Carbon::parse($OTPVerificationData->created_at)->DiffInSeconds();
-
-                $errors = [];
-                $errors[] = [
-                    'code' => 'otp',
-                    'message' => translate('please_try_again_after_') . $time . ' ' . translate('seconds')
-                ];
+            if(isset($OTPVerificationData) && Carbon::parse($OTPVerificationData->created_at)->DiffInSeconds() < $OTPIntervalTime){
+                $time = $OTPIntervalTime - Carbon::parse($OTPVerificationData->created_at)->DiffInSeconds();
+                
                 return response()->json([
-                    'errors' => $errors
+                    'errors' => [[
+                        'code' => 'otp',
+                        'message' => translate('please_try_again_after_') . $time . ' ' . translate('seconds')
+                    ]]
                 ], 403);
             }
 
             $token = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
+            Log::info('Generated OTP token:', ['token' => $token]);
 
             DB::table('email_verifications')->updateOrInsert(['email' => $request['email']], [
                 'email' => $request['email'],
@@ -187,36 +216,74 @@ class CustomerAuthController extends Controller
                 'updated_at' => now(),
             ]);
 
+            // Send via NotificationService
             try {
-                $languageCode = $request->header('X-localization') ?? 'en';
-                $emailServices = Helpers::get_business_settings('mail_config');
-                $mailStatus = Helpers::get_business_settings('registration_otp_mail_status_user');
+                $user = $this->user->where('email', $request['email'])->first();
+                Log::info('User found:', ['user' => $user ? $user->id : null]);
+                
+                if ($user) {
+                    // Use NotificationService for existing users
+                    Log::info('Using NotificationService for user');
+                    $results = $this->notificationService->sendLoginOTP($user, $token);
+                    
+                    Log::info('NotificationService results:', $results);
+                } else {
+                    // Fallback for non-registered users (registration flow)
+                    Log::info('Using direct mail for non-registered user');
+                    $languageCode = $request->header('X-localization') ?? 'en';
+                    $emailServices = Helpers::get_business_settings('mail_config');
+                    $mailStatus = Helpers::get_business_settings('registration_otp_mail_status_user');
 
-                if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
-                    Mail::to($request['email'])->send(new EmailVerification($token, $languageCode));
+                    Log::info('Email services config:', [
+                        'config' => $emailServices,
+                        'mail_status' => $mailStatus
+                    ]);
+
+                    if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1){
+                        Log::info('Attempting to send email to: ' . $request['email']);
+                        
+                        // Test with simple email first
+                        try {
+                            Mail::raw("Your OTP is: $token", function($message) use ($request) {
+                                $message->to($request['email'])
+                                        ->subject('Your EFood OTP Code');
+                            });
+                            Log::info('Simple test email sent successfully');
+                        } catch (\Exception $e) {
+                            Log::error('Simple test email failed:', ['error' => $e->getMessage()]);
+                        }
+                        
+                        // Then try with EmailVerification class
+                        Mail::to($request['email'])->send(new EmailVerification($token, $languageCode));
+                        Log::info('EmailVerification email sent');
+                    } else {
+                        Log::warning('Email services disabled or mail status off');
+                    }
                 }
 
+                return response()->json([
+                    'message' => translate('Email is ready to register'),
+                    'token' => 'active'
+                ], 200);
+
             } catch (\Exception $exception) {
+                Log::error('OTP sending failed with details:', [
+                    'email' => $request['email'],
+                    'error' => $exception->getMessage(),
+                    'trace' => $exception->getTraceAsString()
+                ]);
 
                 return response()->json([
-                    'errors' => [
-                        ['code' => 'otp', 'message' => translate('Token sent failed!')]
-                    ]
+                    'errors' => [['code' => 'otp', 'message' => translate('Token sent failed!')]]
                 ], 403);
-
             }
-
-            return response()->json([
-                'message' => translate('Email is ready to register'),
-                'token' => 'active'
-            ], 200);
-
-        } else {
-            return response()->json([
-                'message' => translate('Email is ready to register'),
-                'token' => 'inactive'
-            ], 200);
         }
+
+        Log::info('Email verification is disabled, returning inactive');
+        return response()->json([
+            'message' => translate('Email is ready to register'),
+            'token' => 'inactive'
+        ], 200);
     }
 
     /**
@@ -723,6 +790,7 @@ class CustomerAuthController extends Controller
 
     public function registrationWithOTP(Request $request)
     {
+        dd($request->all());
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'nullable|max:255',
