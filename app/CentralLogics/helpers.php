@@ -419,13 +419,13 @@ class Helpers
             ]
         ];
 
-      /*  if (!$isNotificationPayloadRemove) {
+        if (!$isNotificationPayloadRemove) {
             $postData['message']['notification'] = [
                 "title" => (string)$data['title'],
                 "body" => (string)$data['description'],
                 "image" => (string)$data['image']
             ];
-        }*/
+        }
 
         return self::sendNotificationToHttp($postData);
     }
