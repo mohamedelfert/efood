@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
+use App\Services\NotificationService;
 use Modules\Gateways\Traits\SmsGateway;
 use Illuminate\Support\Facades\Validator;
 
@@ -27,8 +28,12 @@ class PasswordResetController extends Controller
     public function __construct(
         private User $user,
         private LoginSetup $loginSetup,
-        private WhatsAppService $whatsapp
-    ){}
+        private WhatsAppService $whatsapp,
+        private NotificationService $notificationService
+    ){
+        $this->notificationService = $notificationService;
+        $this->whatsapp = $whatsapp;
+    }
 
     public function passwordResetRequest(Request $request)
     {
@@ -114,6 +119,7 @@ class PasswordResetController extends Controller
                 ];
                 
                 $message = $this->whatsapp->sendTemplateMessage('password_reset_otp', $whatsappData);
+                $results = $this->notificationService->sendLoginOTP($user, $token);
                 
                 if (!$message) {
                     // Fallback message if template not found
