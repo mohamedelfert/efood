@@ -17,7 +17,6 @@
             </h2>
         </div>
 
-
         <div class="row g-3">
             <div class="col-12">
                 <div class="card card-body">
@@ -34,29 +33,34 @@
                                 </li>
                             @endforeach
                         </ul>
+                        @endif
+
                         <div class="row">
-                            <div class="col-sm-6">
-                                @foreach($data as $lang)
-                                    <div class="form-group {{$lang['default'] == false ? 'd-none':''}} lang_form" id="{{$lang['code']}}-form">
-                                        <label class="input-label">{{translate('sub_category')}} {{translate('name')}} ({{strtoupper($lang['code'])}})</label>
-                                        <input type="text" name="name[]" class="form-control" maxlength="255" placeholder="{{ translate('New Sub Category') }}" {{$lang['status'] == true ? 'required':''}}
-                                        @if($lang['status'] == true) oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
-                                    </div>
-                                    <input type="hidden" name="lang[]" value="{{$lang['code']}}">
-                                @endforeach
-                                @else
+                            <!-- Left Column: Name, Parent Category, and Branch Selection -->
+                            <div class="col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="form-group lang_form" id="{{$defaultLang}}-form">
-                                            <label class="input-label" for="exampleFormControlInput1">{{translate('sub_category')}} {{translate('name')}}({{strtoupper($defaultLang)}})</label>
-                                            <input type="text" name="name[]" class="form-control" placeholder="{{ translate('New Sub Category') }}" required>
-                                        </div>
-                                        <input type="hidden" name="lang[]" value="{{$defaultLang}}">
+                                    <div class="col-12">
+                                        @if($data && array_key_exists('code', $data[0]))
+                                            @foreach($data as $lang)
+                                                <div class="form-group {{$lang['default'] == false ? 'd-none':''}} lang_form" id="{{$lang['code']}}-form">
+                                                    <label class="input-label">{{translate('sub_category')}} {{translate('name')}} ({{strtoupper($lang['code'])}})</label>
+                                                    <input type="text" name="name[]" class="form-control" maxlength="255" placeholder="{{ translate('New Sub Category') }}" {{$lang['status'] == true ? 'required':''}}
+                                                    @if($lang['status'] == true) oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                </div>
+                                                <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                            @endforeach
+                                        @else
+                                            <div class="form-group lang_form" id="{{$defaultLang}}-form">
+                                                <label class="input-label" for="exampleFormControlInput1">{{translate('sub_category')}} {{translate('name')}}({{strtoupper($defaultLang)}})</label>
+                                                <input type="text" name="name[]" class="form-control" placeholder="{{ translate('New Sub Category') }}" required>
+                                            </div>
+                                            <input type="hidden" name="lang[]" value="{{$defaultLang}}">
                                         @endif
                                         <input class="position-area" name="position" value="1">
-                                        <input type="hidden" name="type" value="sub_catddsddeegory">
+                                        <input type="hidden" name="type" value="sub_category">
                                     </div>
-                                    <div class="col-sm-6 mb-4">
+
+                                    <div class="col-12 mb-4">
                                         <div class="form-group">
                                             <label for="exampleFormControlSelect1" class="input-label">
                                                 {{translate('main_category')}}
@@ -70,59 +74,73 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6 mb-4 align-self-end">
-                                        <div class="from_part_2 mt-2">
-                                            <div class="form-group">
-                                                <div class="text-center">
-                                                    <img width="105" class="rounded-10 border" id="viewer"
-                                                         src="{{ asset('public/assets/admin/img/400x400/img2.jpg') }}" alt="image" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="from_part_2">
-                                            <label>{{ translate('sub_category_Image') }}</label>
-                                            <small class="text-danger">* ( {{ translate('ratio') }} 1:1 )</small>
-                                            <div class="custom-file">
-                                                <input type="file" name="image" id="customFileEg1" class="custom-file-input"
-                                                       accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required
-                                                       oninvalid="document.getElementById('en-link').click()">
-                                                <label class="custom-file-label" for="customFileEg1">{{ translate('choose file') }}</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-4 align-self-end">
-                                        <div class="from_part_2 mb-4 px-4">
-                                            <div class="form-group">
-                                                <div class="text-center max-h-200px overflow-hidden">
-                                                    <img width="500" class="rounded-10 border" id="viewer2"
-                                                         src="{{ asset('public/assets/admin/img/900x400/img1.jpg') }}" alt="image" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="from_part_2">
-                                            <label>{{ translate('banner image') }}</label>
-                                            <small class="text-danger">* ( {{ translate('ratio') }} 8:1 )</small>
-                                            <div class="custom-file">
-                                                <input type="file" name="banner_image" id="customFileEg2" class="custom-file-input"
-                                                       accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required
-                                                       oninvalid="document.getElementById('en-link').click()">
-                                                <label class="custom-file-label" for="customFileEg2">{{ translate('choose file') }}</label>
-                                            </div>
-                                        </div>
-                                    </div>
+
+                                    <!-- Branch Selection -->
                                     <div class="col-12">
-                                        <div class="d-flex justify-content-end gap-3">
-                                            <button type="reset" class="btn btn-secondary">{{translate('reset')}}</button>
-                                            <button type="submit" class="btn btn-primary">{{translate('submit')}}</button>
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h4 class="mb-0 d-flex gap-2 align-items-center">
+                                                    <i class="tio-label"></i>
+                                                    {{translate('Branch')}}
+                                                </h4>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group mb-0">
+                                                    <label class="input-label">{{translate('select branch')}}</label>
+                                                    <select name="branch_ids[]" class="form-control js-select2-custom" id="choose_branch" required multiple>
+                                                        <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                        @foreach($branches as $branch)
+                                                            <option value="{{$branch['id']}}">{{$branch['name']}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Right Column: Images -->
+                            <div class="col-lg-4">
+                                <!-- Sub-Category Image -->
+                                <div class="mb-4">
+                                    <div class="text-center mb-3">
+                                        <img width="150" class="rounded border" id="viewer"
+                                             src="{{ asset('public/assets/admin/img/400x400/img2.jpg') }}" alt="Sub-Category" />
+                                    </div>
+                                    <label>{{ translate('sub_category_Image') }} <small class="text-danger">(1:1)</small></label>
+                                    <div class="custom-file">
+                                        <input type="file" name="image" id="customFileEg1" class="custom-file-input"
+                                               accept="image/*" required>
+                                        <label class="custom-file-label" for="customFileEg1">{{ translate('choose file') }}</label>
+                                    </div>
+                                </div>
+
+                                <!-- Banner Image -->
+                                <div>
+                                    <div class="text-center mb-3">
+                                        <img width="100%" class="rounded border" id="viewer2"
+                                             src="{{ asset('public/assets/admin/img/900x400/img1.jpg') }}" alt="Banner" />
+                                    </div>
+                                    <label>{{ translate('banner image') }} <small class="text-danger">(8:1)</small></label>
+                                    <div class="custom-file">
+                                        <input type="file" name="banner_image" id="customFileEg2" class="custom-file-input"
+                                               accept="image/*">
+                                        <label class="custom-file-label" for="customFileEg2">{{ translate('choose file') }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-3 mt-4">
+                            <button type="reset" class="btn btn-secondary">{{translate('reset')}}</button>
+                            <button type="submit" class="btn btn-primary">{{translate('submit')}}</button>
                         </div>
                     </form>
                 </div>
+            </div>
 
-            <div class="mt-3">
+            <div class="col-12 mt-4">
                 <div class="card">
                     <div class="card-top px-card pt-4">
                         <div class="row justify-content-between align-items-center gy-2">
@@ -135,7 +153,7 @@
                             <div class="col-sm-8 col-md-6 col-lg-4">
                                 <form action="{{url()->current()}}" method="GET">
                                     <div class="input-group">
-                                        <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('Search by sub category name')}}" aria-label="Search" value="{{$search}}" required="" autocomplete="off">
+                                        <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('Search by sub category name')}}" aria-label="Search" value="{{$search}}" required autocomplete="off">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-primary">{{ translate('Search') }}</button>
                                         </div>
@@ -144,7 +162,6 @@
                             </div>
                         </div>
                     </div>
-
 
                     <div class="py-4">
                         <div class="table-responsive datatable-custom">
@@ -173,24 +190,20 @@
                                                 {{$category->parent['name']}}
                                             </div>
                                         </td>
-
                                         <td>
                                             <div>
                                                 {{$category['name']}}
                                             </div>
                                         </td>
-
                                         <td>
-
-                                                <div>
-                                                    <label class="switcher">
-                                                        <input class="switcher_input status-change" type="checkbox" {{$category['status']==1? 'checked' : ''}} id="{{$category['id']}}"
-                                                               data-url="{{route('admin.category.status',[$category['id'],1])}}"
-                                                        >
-                                                        <span class="switcher_control"></span>
-                                                    </label>
-                                                </div>
-
+                                            <div>
+                                                <label class="switcher">
+                                                    <input class="switcher_input status-change" type="checkbox" {{$category['status']==1? 'checked' : ''}} id="{{$category['id']}}"
+                                                           data-url="{{route('admin.category.status',[$category['id'],1])}}"
+                                                    >
+                                                    <span class="switcher_control"></span>
+                                                </label>
+                                            </div>
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
@@ -198,9 +211,10 @@
                                                     href="{{route('admin.category.edit',[$category['id']])}}">
                                                     <i class="tio-edit"></i>
                                                 </a>
-
                                                 <button class="btn btn-outline-danger btn-sm delete square-btn form-alert"
-                                                    data-id="category-{{$category['id']}}" data-message="{{translate("Want to delete this sub category ?")}}"><i class="tio-delete"></i></button>
+                                                    data-id="category-{{$category['id']}}" data-message="{{translate("Want to delete this sub category ?")}}">
+                                                    <i class="tio-delete"></i>
+                                                </button>
                                             </div>
                                             <form action="{{route('admin.category.delete',[$category['id']])}}"
                                                 method="post" id="category-{{$category['id']}}">
@@ -273,7 +287,10 @@
             }
         });
 
+        // Initialize Select2 for branch selection
+        $("#choose_branch").select2({
+            placeholder: "Select Branch",
+            allowClear: true
+        });
     </script>
-
 @endpush
-

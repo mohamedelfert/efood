@@ -54,22 +54,24 @@ class CategoryController extends Controller
      * @return Renderable
      */
     function subIndex(Request $request): Renderable
-    {
-        $search = $request['search'];
-        $queryParam = ['search' => $search];
+{
+    $search = $request['search'];
+    $queryParam = ['search' => $search];
 
+    $categories = $this->category->with(['parent'])
+        ->when($request['search'], function ($query) use ($search) {
+            $query->orWhere('name', 'like', "%{$search}%");
+        })
+        ->where(['position' => 1])
+        ->latest()
+        ->paginate(Helpers::getPagination())
+        ->appends($queryParam);
 
-        $categories = $this->category->with(['parent'])
-            ->when($request['search'], function ($query) use ($search) {
-                $query->orWhere('name', 'like', "%{$search}%");
-            })
-            ->where(['position' => 1])
-            ->latest()
-            ->paginate(Helpers::getPagination())
-            ->appends($queryParam);
+    // Fetch branches for the form
+    $branches = $this->branch->active()->get();
 
-        return view('admin-views.category.sub-index', compact('categories', 'search'));
-    }
+    return view('admin-views.category.sub-index', compact('categories', 'search', 'branches'));
+}
 
     /**
      * @param Request $request
