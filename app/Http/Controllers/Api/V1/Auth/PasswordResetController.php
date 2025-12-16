@@ -119,7 +119,7 @@ class PasswordResetController extends Controller
                 ];
                 
                 $message = $this->whatsapp->sendTemplateMessage('password_reset_otp', $whatsappData);
-                $results = $this->notificationService->sendLoginOTP($user, $token);
+                $results = $this->notificationService->sendLoginOTP($customer, $token);
                 
                 if (!$message) {
                     // Fallback message if template not found
