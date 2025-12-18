@@ -176,6 +176,7 @@ return new class extends Migration
             ['key' => 'place_order_mail_status_user', 'value' => '1'],
             ['key' => 'forget_password_mail_status_user', 'value' => '1'],
             ['key' => 'registration_otp_mail_status_user', 'value' => '1'],
+            ['key' => 'qr_code', 'value' => '{"branch_id":"1","logo":"","title":"","description":"","opening_time":"","closing_time":"","phone":"","website":"","social_media":""}'],
         ]);
     }
 

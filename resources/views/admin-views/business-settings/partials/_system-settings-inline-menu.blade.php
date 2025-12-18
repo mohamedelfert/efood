@@ -15,10 +15,12 @@
 {{--                {{translate('Firebase Configuration')}}--}}
 {{--            </a>--}}
 {{--        </li>--}}
+        <!--
         <li class="nav-item">
             <a class="nav-link {{Request::is('admin/business-settings/web-app/system-setup/db-index*')? 'active' : ''}}"  href="{{route('admin.business-settings.web-app.system-setup.db-index')}}">
                 {{translate('Clean Database')}}
             </a>
         </li>
+        -->
     </ul>
 </div>

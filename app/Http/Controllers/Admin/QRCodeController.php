@@ -31,8 +31,28 @@ class QRCodeController extends Controller
     {
         $branches = $this->branch->all();
         $data = Helpers::get_business_settings('qr_code');
-        $qr = base64_encode(json_encode($data));
-        $code = QrCode::size(180)->generate($data['website'].'?qrcode='.$qr);
+        
+        // Handle null data - when QR code settings haven't been configured yet
+        if ($data === null) {
+            $data = [
+                'branch_id' => null,
+                'logo' => '',
+                'title' => '',
+                'description' => '',
+                'opening_time' => '',
+                'closing_time' => '',
+                'phone' => '',
+                'website' => url('/'),
+                'social_media' => '',
+            ];
+            // Generate a default QR code with the base URL
+            $qr = base64_encode(json_encode($data));
+            $code = QrCode::size(180)->generate(url('/').'?qrcode='.$qr);
+        } else {
+            $qr = base64_encode(json_encode($data));
+            $code = QrCode::size(180)->generate($data['website'].'?qrcode='.$qr);
+        }
+        
         return view('admin-views.business-settings.qrcode-index', compact('branches', 'data', 'code'));
     }
 
@@ -74,27 +94,42 @@ class QRCodeController extends Controller
 
         Toastr::success(translate('updated successfully'));
         return back();
-
     }
 
     /**
-     * @return Response
+     * @return Response|RedirectResponse
      */
-    public function downloadPdf(): Response
+    public function downloadPdf(): Response|RedirectResponse
     {
         $data = Helpers::get_business_settings('qr_code');
+        
+        // Check if QR code settings exist before generating PDF
+        if ($data === null) {
+            Toastr::error(translate('Please configure QR code settings first'));
+            return redirect()->route('admin.business-settings.restaurant.qrcode-index');
+        }
+        
         $qr = base64_encode(json_encode($data));
         $code = QrCode::size(180)->generate($data['website'].'?qrcode='.$qr);
         $pdf = PDF::loadView('admin-views.business-settings.partials.qrcode-pdf', compact('data', 'code'));
         return $pdf->download('qr-code' . rand(00001, 99999) . '.pdf');
     }
 
-    public function printQRCode()
+    /**
+     * @return View|RedirectResponse
+     */
+    public function printQRCode(): View|RedirectResponse
     {
         $data = Helpers::get_business_settings('qr_code');
+        
+        // Check if QR code settings exist before printing
+        if ($data === null) {
+            Toastr::error(translate('Please configure QR code settings first'));
+            return redirect()->route('admin.business-settings.restaurant.qrcode-index');
+        }
+        
         $qr = base64_encode(json_encode($data));
         $code = QrCode::size(180)->generate($data['website'].'?qrcode='.$qr);
         return view('admin-views.business-settings.partials.qrcode-print', compact('data', 'code'));
     }
-
 }

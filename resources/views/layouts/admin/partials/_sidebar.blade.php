@@ -181,11 +181,8 @@
                         </li>
 
                         <!-- Employees -->
-                        {{--    
                         @if(Helpers::module_permission_check(MANAGEMENT_SECTION['user_management']))
                             @if(auth('admin')->user()->admin_role_id == 1)
-                            --}}
-                                <!--
                                 <li class="navbar-vertical-aside-has-menu {{Request::is('admin/custom-role*') || Request::is('admin/employee*')?'active':''}}">
                                     <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{translate('Employees')}}">
                                         <i class="tio-incognito nav-icon"></i>
@@ -226,11 +223,8 @@
                                         </li>
                                     </ul>
                                 </li>
-                                -->
-                            {{--
                             @endif
                         @endif
-                        --}}
 
                         <!-- Delivery -->
                         <li class="navbar-vertical-aside-has-menu {{Request::is('admin/delivery-man*')?'active':''}}">
