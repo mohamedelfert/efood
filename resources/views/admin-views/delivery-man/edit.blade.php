@@ -52,6 +52,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!--
                                 <div class="col-md-6">
                                     <div class="form-group text-center">
                                         <label
@@ -71,10 +72,12 @@
                                         </div>
                                     </div>
                                 </div>
+                                -->
 
                             </div>
                         </div>
                     </div>
+                    <!--
                     <div class="card mt-3">
                         <div class="card-header">
                             <h5 class="mb-0 d-flex align-items-center gap-2 mb-0">
@@ -137,6 +140,7 @@
                             </div>
                         </div>
                     </div>
+                    -->
                     <div class="card mt-3">
                         <div class="card-header">
                             <div>

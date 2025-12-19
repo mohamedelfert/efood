@@ -45,9 +45,10 @@
                                     </select>
                                 </div>
 
+                                <!--
                                 <div class="form-group">
                                     <label for="identity_type">{{translate('Identity Type')}}</label>
-                                    <select class="custom-select" name="identity_type" id="identity_type" required>
+                                    <select class="custom-select" name="identity_type" id="identity_type">
                                         <option selected disabled>---{{translate('select_Identity_Type')}}---</option>
                                         <option value="passport">{{translate('passport')}}</option>
                                         <option value="driving_license">{{translate('driving_License')}}</option>
@@ -56,9 +57,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="identity_number">{{translate('identity_Number')}}</label>
-                                    <input type="text" name="identity_number" class="form-control" id="identity_number" required value="{{old('identity_number')}}">
+                                    <input type="text" name="identity_number" class="form-control" id="identity_number" value="{{old('identity_number')}}">
                                 </div>
+                                -->
                             </div>
+                            <!--
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <div class="text-center mb-3">
@@ -70,7 +73,7 @@
                                     <div class="form-group">
                                         <div class="custom-file text-left">
                                             <input type="file" name="image" id="customFileUpload" class="custom-file-input"
-                                                accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
+                                                accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
                                             <label class="custom-file-label" for="customFileUpload">{{translate('choose')}} {{translate('file')}}</label>
                                         </div>
                                     </div>
@@ -83,6 +86,7 @@
                                 </div>
 
                             </div>
+                            -->
                         </div>
                     </div>
                 </div>

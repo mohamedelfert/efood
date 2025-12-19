@@ -527,12 +527,14 @@
                                     <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('reports')}}</span>
                                 </a>
                                 <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/report/*')?'block':'none'}}">
+                                    <!--
                                     <li class="nav-item {{Request::is('admin/report/earning')?'active':''}}">
                                         <a class="nav-link" href="{{route('admin.report.earning')}}">
                                             <span class="tio-circle nav-indicator-icon"></span>
                                             <span class="text-truncate">{{translate('earning_report')}}</span>
                                         </a>
                                     </li>
+                                    -->
                                     <li class="nav-item {{Request::is('admin/report/order')?'active':''}}">
                                         <a class="nav-link" href="{{route('admin.report.order')}}">
                                             <span class="tio-circle nav-indicator-icon"></span>

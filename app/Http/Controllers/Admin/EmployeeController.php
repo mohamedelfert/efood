@@ -43,19 +43,19 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => 'required',
             'role_id' => 'required',
-            'image' => 'required',
+            'image' => 'nullable|image',
             'email' => 'required|email|unique:admins',
             'password' => 'required',
             'phone' => 'required',
-            'identity_image' => 'required',
-            'identity_type' => 'required',
-            'identity_number' => 'required',
+            'identity_image' => 'nullable',
+            'identity_type' => 'nullable',
+            'identity_number' => 'nullable',
             'confirm_password' => 'same:password'
         ], [
             'name.required' => translate('Role name is required!'),
             'role_name.required' => translate('Role id is Required'),
             'email.required' => translate('Email id is Required'),
-            'image.required' => translate('Image is Required'),
+            'image.nullable' => translate('Image is Required'),
 
         ]);
 
@@ -143,8 +143,8 @@ class EmployeeController extends Controller
             'role_id' => 'required',
             'email' => 'required|email|unique:admins,email,' . $id,
             'phone' => 'required',
-            'identity_type' => 'required',
-            'identity_number' => 'required',
+            'identity_type' => 'nullable',
+            'identity_number' => 'nullable',
         ], [
             'name.required' => translate('Role name is required!'),
         ]);

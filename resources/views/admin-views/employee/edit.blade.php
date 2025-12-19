@@ -49,6 +49,7 @@
                                             @endforeach
                                     </select>
                                 </div>
+                                <!--
                                 <div class="form-group">
                                     <label for="identity_type">{{translate('Identity Type')}}</label>
                                     <select class="custom-select" name="identity_type" id="identity_type">
@@ -59,9 +60,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="identity_number">{{translate('identity_Number')}}</label>
-                                    <input type="text" name="identity_number" class="form-control" id="identity_number" required value="{{$employee->identity_number}}">
+                                    <input type="text" name="identity_number" class="form-control" id="identity_number" value="{{$employee->identity_number}}">
                                 </div>
+                                -->
                             </div>
+                            <!--
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <div class="text-center mb-3">
@@ -93,6 +96,7 @@
                                     </div>
                                 </div>
                             </div>
+                            -->
                         </div>
                     </div>
                 </div>

@@ -14,9 +14,9 @@ class AddIdentityInfosToAdminsTable extends Migration
     public function up()
     {
         Schema::table('admins', function (Blueprint $table) {
-            $table->string('identity_image')->after('status');
-            $table->string('identity_type', 30)->after('status');
-            $table->string('identity_number', 30)->after('status');
+            $table->string('identity_image')->nullable()->after('status');
+            $table->string('identity_type', 30)->nullable()->after('status');
+            $table->string('identity_number', 30)->nullable()->after('status');
         });
     }
 
