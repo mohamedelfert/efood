@@ -53,7 +53,7 @@ const ADD_WALLET_BONUS_MESSAGE = 'add_wallet_bonus_message';
 
 const PAYMENT_GATEWAY_IMAGE_ARRAY = [
     'qib' => 'qib.png',
-    'paymob' => 'paymob.png',
+    'stripe' => 'stripe.png',
 ];
 
 const TELEPHONE_CODES = [

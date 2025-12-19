@@ -29,26 +29,15 @@ return [
     ],
 
     // ===============================
-    // International Cards (PayMob)
+    // International Cards (Stripe)
     // ===============================
 
-    'paymob' => [
-        'enabled' => env('PAYMOB_ENABLED', true),
-        'api_key' => env('PAYMOB_API_KEY'),
-        'integration_id' => env('PAYMOB_INTEGRATION_ID'),
-        'iframe_id' => env('PAYMOB_IFRAME_ID'),
-        'hmac_secret' => env('PAYMOB_HMAC_SECRET'),
-        'public_key' => env('PAYMOB_PUBLIC_KEY'),
-        'secret_key' => env('PAYMOB_SECRET_KEY'),
-        'base_url' => env('PAYMOB_BASE_URL', 'https://accept.paymob.com/api'),
-        'mode' => env('PAYMOB_MODE', 'test'),
-        'supported_currencies' => ['EGP', 'USD', 'EUR', 'SAR'],
-        'max_amount' => env('PAYMOB_MAX_AMOUNT', 100000),
-        'min_amount' => env('PAYMOB_MIN_AMOUNT', 1),
-        'fees' => [
-            'fixed' => 0,
-            'percentage' => 2.5
-        ]
+   'stripe' => [
+        'enabled' => env('STRIPE_ENABLED', true),
+        'secret_key' => env('STRIPE_SECRET_KEY'),
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'mode' => env('STRIPE_MODE', 'test'),
     ],
 
     // ===============================

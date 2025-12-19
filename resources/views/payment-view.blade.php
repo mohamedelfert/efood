@@ -64,18 +64,17 @@
                     @php($customer = \App\User::find(session('customer_id')))
                     @php($callback = session('callback'))
 
-                    @php($config=\App\CentralLogics\Helpers::get_business_settings('paymob'))
+                    @php($config=\App\CentralLogics\Helpers::get_business_settings('stripe'))
                     @if(isset($config) && $config['status'])
                         <div class="col-md-6 mb-4" style="cursor: pointer">
                             <div class="card">
                                 <div class="card-body" style="height: 70px">
-                                    <form class="needs-validation" method="POST" id="payment-form-paymob"
+                                    <form class="needs-validation" method="POST" id="payment-form-stripe"
 
-                                          action="{!! route('paymob-credit',['order_amount'=>$order_amount,'customer_id'=>$customer['id'],'callback'=>$callback]) !!}">
+                                          action="{!! route('stripe-credit',['order_amount'=>$order_amount,'customer_id'=>$customer['id'],'callback'=>$callback]) !!}">
                                         {{ csrf_field() }}
-                                        <button class="btn btn-block click-if-alone" id="paymob-button">
-
-                                            <img width="100" src="{{asset('public/assets/admin/img/paymob.png')}}"/>
+                                        <button class="btn btn-block click-if-alone" id="stripe-button">
+                                            <img width="100" src="{{asset('public/assets/admin/img/stripe.png')}}"/>
                                         </button>
                                     </form>
                                 </div>
@@ -180,8 +179,8 @@
 
        if (payment_method === 'qib') {
             $('#qib-button').click();
-        } else if (payment_method === 'paymob') {
-            $('#paymob-button').click();
+        } else if (payment_method === 'stripe') {
+            $('#stripe-button').click();
         } else if (payment_method === 'digital_payment') {
             $('#internal-point-pay-button').click();
         }

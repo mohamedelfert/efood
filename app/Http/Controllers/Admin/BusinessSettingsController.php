@@ -356,7 +356,7 @@ class BusinessSettingsController extends Controller
      */
     public function paymentIndex(): Renderable
     {
-        $this->updatePaymobConfigForSupportCountry();
+        $this->updateStripeConfigForSupportCountry();
 
         $published_status = 0;
         $payment_published_status = config('get_payment_publish_status');
@@ -378,7 +378,7 @@ class BusinessSettingsController extends Controller
         }
 
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['paymob', 'qib'])
+            ->whereIn('key_name', ['stripe', 'qib'])
             ->get();
 
         return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'data_values'));
@@ -430,7 +430,7 @@ class BusinessSettingsController extends Controller
     public function paymentConfigUpdate(Request $request): RedirectResponse
     {
         $validation = [
-            'gateway' => 'required|in:qib,paymob',
+            'gateway' => 'required|in:qib,stripe',
             'mode' => 'required|in:live,test'
         ];
 
@@ -443,7 +443,7 @@ class BusinessSettingsController extends Controller
                 'status' => 'required|in:1,0',
                 'gateway_title' => 'required|string',
             ];
-        } elseif ($request['gateway'] == 'paymob') {
+        } elseif ($request['gateway'] == 'stripe') {
             $additionalData = [
                 'status' => 'required|in:1,0',
                 'supported_country' => 'required'
@@ -2063,23 +2063,23 @@ class BusinessSettingsController extends Controller
         }
     }
 
-    private function updatePaymobConfigForSupportCountry(): void
+    private function updateStripeConfigForSupportCountry(): void
     {
-        $paymob = Setting::where(['key_name' => 'paymob', 'settings_type' => 'payment_config'])->first();
+        $stripe = Setting::where(['key_name' => 'stripe', 'settings_type' => 'payment_config'])->first();
 
-        if (!$paymob || !isset($paymob->live_values['supported_country'])) {
+        if (!$stripe || !isset($stripe->live_values['supported_country'])) {
             Setting::updateOrCreate(
-                ['key_name' => 'paymob', 'settings_type' => 'payment_config'],
+                ['key_name' => 'stripe', 'settings_type' => 'payment_config'],
                 [
-                    'key_name' => 'paymob',
+                    'key_name' => 'stripe',
                     'live_values' => json_encode([
-                        'gateway' => 'paymob',
+                        'gateway' => 'stripe',
                         'mode' => 'live',
                         'status' => 1,
                         'supported_country' => 'egypt', // default
                     ]),
                     'test_values' => json_encode([
-                        'gateway' => 'paymob',
+                        'gateway' => 'stripe',
                         'mode' => 'test',
                         'status' => 1,
                         'supported_country' => 'egypt',
@@ -2088,7 +2088,7 @@ class BusinessSettingsController extends Controller
                     'mode' => 'live',
                     'is_active' => 1,
                     'additional_data' => json_encode([
-                        'gateway_title' => 'Paymob',
+                        'gateway_title' => 'Stripe',
                         'gateway_image' => null
                     ]),
                 ]

@@ -26,7 +26,7 @@ class PaymentsController extends Controller
 
     public function __construct(Request $request,WhatsAppService $whatsappService,ReceiptGeneratorService $receiptGenerator)
     {
-        $gatewayType = $request->input('gateway', 'paymob');
+        $gatewayType = $request->input('gateway', 'stripe');
         $this->gateway = PaymentGatewayFactory::create($gatewayType);
         if (!$this->gateway) {
             throw new Exception('Invalid payment gateway');
@@ -40,15 +40,15 @@ class PaymentsController extends Controller
         try {
             $data = $request->all();
             $transactionId = $data['transaction_id'] ?? $request->query('transaction_id');
-            $orderId = $data['order'] ?? $request->query('order'); // Paymob order ID
-            $paymobTransactionId = $data['id'] ?? $request->query('id'); // Paymob transaction ID
+            $orderId = $data['order'] ?? $request->query('order'); // stripe order ID
+            $stripeTransactionId = $data['id'] ?? $request->query('id'); // Stripe transaction ID
             $hmac = $data['hmac'] ?? $request->query('hmac');
 
             // Log incoming callback data
             Log::info('Callback Data Received', [
                 'transaction_id' => $transactionId,
                 'order_id' => $orderId,
-                'paymob_transaction_id' => $paymobTransactionId,
+                'stripe_transaction_id' => $stripeTransactionId,
                 'hmac' => $hmac,
                 'query' => $request->query(),
                 'data' => $data
@@ -58,10 +58,10 @@ class PaymentsController extends Controller
             $query = WalletTransaction::where('status', 'pending');
             if ($transactionId) {
                 $query->where('transaction_id', $transactionId);
-            } elseif ($paymobTransactionId) {
-                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_transaction_id")) = ?', [$paymobTransactionId]);
+            } elseif ($stripeTransactionId) {
+                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_transaction_id")) = ?', [$stripeTransactionId]);
             } elseif ($orderId) {
-                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.paymob_order_id")) = ?', [$orderId]);
+                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_order_id")) = ?', [$orderId]);
             }
             $transaction = $query->first();
 
@@ -71,7 +71,7 @@ class PaymentsController extends Controller
                 Log::error('Callback: Transaction not found', [
                     'transaction_id' => $transactionId,
                     'order_id' => $orderId,
-                    'paymob_transaction_id' => $paymobTransactionId,
+                    'stripe_transaction_id' => $stripeTransactionId,
                     'pending_transactions' => $pendingTransactions
                 ]);
                 return response()->json([
@@ -98,7 +98,7 @@ class PaymentsController extends Controller
             if (!$gateway) {
                 Log::error('Callback: Gateway not specified', [
                     'transaction_id' => $transaction->transaction_id,
-                    'paymob_order_id' => $orderId
+                    'stripe_order_id' => $orderId
                 ]);
                 return response()->json([
                     'success' => false,
@@ -115,9 +115,9 @@ class PaymentsController extends Controller
                 ], 400);
             }
 
-            // Update transaction with Paymob transaction ID if missing
-            if ($paymobTransactionId && empty($metadata['paymob_transaction_id'])) {
-                $metadata['paymob_transaction_id'] = $paymobTransactionId;
+            // Update transaction with Stripe transaction ID if missing
+            if ($stripeTransactionId && empty($metadata['stripe_transaction_id'])) {
+                $metadata['stripe_transaction_id'] = $stripeTransactionId;
                 $transaction->update(['metadata' => json_encode($metadata)]);
             }
 
@@ -126,9 +126,9 @@ class PaymentsController extends Controller
             if (
                 isset($response['status']) && 
                 $response['status'] === 'success' && 
-                isset($response['paymob_transaction_id']) && 
-                $response['paymob_transaction_id'] === 
-                ($metadata['paymob_transaction_id'])
+                isset($response['stripe_transaction_id']) && 
+                $response['stripe_transaction_id'] === 
+                ($metadata['stripe_transaction_id'])
             ) {
                 DB::beginTransaction();
                 try {
@@ -183,8 +183,8 @@ class PaymentsController extends Controller
                         'transaction_id' => $transaction->transaction_id,
                         'user_id' => $transaction->user_id,
                         'order_id' => $metadata['order_id'] ?? null,
-                        'paymob_order_id' => $orderId,
-                        'paymob_transaction_id' => $paymobTransactionId,
+                        'stripe_order_id' => $orderId,
+                        'stripe_transaction_id' => $stripeTransactionId,
                         'new_balance' => $transaction->user->wallet_balance
                     ]);
 
@@ -255,7 +255,7 @@ class PaymentsController extends Controller
                 'error' => $e->getMessage(),
                 'transaction_id' => $transactionId,
                 'order_id' => $orderId,
-                'paymob_transaction_id' => $paymobTransactionId,
+                'stripe_transaction_id' => $stripeTransactionId,
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
@@ -384,7 +384,7 @@ class PaymentsController extends Controller
     {
         $rows = Setting::where('settings_type', 'payment_config')
             ->whereIn('key_name', [
-                'paymob','qib',
+                'stripe','qib',
             ])
             ->get();
 

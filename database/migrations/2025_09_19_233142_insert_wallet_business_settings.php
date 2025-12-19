@@ -76,7 +76,7 @@ return new class extends Migration
             ['key' => 'pagination_limit', 'value' => '10'],
             ['key' => 'map_api_key', 'value' => ''],
             ['key' => 'delivery_management', 'value' => '{"status":0,"min_shipping_charge":0,"shipping_per_km":0}'],
-            ['key' => 'paymob', 'value' => '{"status":1}'],
+            ['key' => 'stripe', 'value' => '{"status":1}'],
             ['key' => 'qib', 'value' => '{"status":1}'],
             ['key' => 'returned_message', 'value' => '{"status":0,"message":null}'],
             ['key' => 'failed_message', 'value' => '{"status":0,"message":null}'],

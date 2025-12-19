@@ -343,7 +343,6 @@
   'customer_wallet' => 'محفظة العميل',
   'bkash' => 'Bkash',
   'username' => 'اسم المستخدم',
-  'paymob' => 'Paymob',
   'api_key' => 'مفتاح واجهة برمجة التطبيقات',
   'iframe_id' => 'معرف الإطار',
   'integration_id' => 'معرف التكامل',

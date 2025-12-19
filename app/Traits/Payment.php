@@ -35,7 +35,7 @@ trait Payment
         $payment->save();
 
         $routes = [
-            'paymob' => 'payment/paymob/pay',
+            'stripe' => 'payment/stripe/pay',
             'qib' => 'payment/qib/pay',
         ];
         if (array_key_exists($payment->payment_method, $routes)) {

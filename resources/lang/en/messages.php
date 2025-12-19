@@ -417,7 +417,6 @@
   'customer_wallet' => 'Customer wallet',
   'bkash' => 'Bkash',
   'username' => 'Username',
-  'paymob' => 'Paymob',
   'api_key' => 'Api key',
   'iframe_id' => 'Iframe id',
   'integration_id' => 'Integration id',

@@ -132,7 +132,7 @@
                                         </select>
                                     </div>
 
-                                    @if ($payment->key_name == 'paymob' && isset($liveValues['supported_country']))
+                                    @if ($payment->key_name == 'stripe' && isset($liveValues['supported_country']))
                                         <div class="mb-3">
                                             <label class="form-label">{{translate('Supported Country')}} <span class="text-danger">*</span></label>
                                             <select name="supported_country" class="form-control">
