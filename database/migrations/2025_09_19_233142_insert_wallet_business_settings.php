@@ -59,7 +59,7 @@ return new class extends Migration
             ['key' => 'delivery_boy_delivered_message', 'value' => '{"status":1,"message":"boy delivered"}'],
             ['key' => 'order_confirmation_msg', 'value' => '{"status":1,"message":"Your order has been confirmed."}'],
             ['key' => 'razor_pay', 'value' => '{"status":"0","razor_key":null,"razor_secret":null}'],
-            ['key' => 'location_coverage', 'value' => '{"status":1,"longitude":"91.410747","latitude":"22.986282","coverage":"20"}'],
+            ['key' => 'location_coverage', 'value' => '{"status":1,"longitude":"45.0187","latitude":"12.7855","coverage":"300"}'],
             ['key' => 'minimum_order_value', 'value' => '50'],
             ['key' => 'point_per_currency', 'value' => null],
             ['key' => 'internal_point', 'value' => '{"status":null}'],

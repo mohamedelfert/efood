@@ -1569,6 +1569,9 @@ class BusinessSettingsController extends Controller
     public function mainBranchSetup(): Renderable
     {
         $branch = $this->branch->find(1);
+        if (!$branch) {
+            $branch = new Branch();
+        }
         return view('admin-views.business-settings.restaurant.main-branch', compact('branch'));
     }
 

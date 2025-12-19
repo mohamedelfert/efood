@@ -31,8 +31,13 @@
 
         <div class="row g-2">
             <div class="col-12">
-                <form action="{{route('admin.branch.update', ['id' => $branch['id']])}}" method="post" enctype="multipart/form-data">
+                <form action="{{ $branch->exists ? route('admin.branch.update', $branch->id) : route('admin.branch.store') }}"
+                    method="post"
+                    enctype="multipart/form-data">
                     @csrf
+                    @if($branch->exists)
+                        @method('PUT')
+                    @endif
                     <div class="card">
                         <div class="card-header">
                             <h4 class="mb-0 d-flex gap-2 align-items-center">
@@ -46,12 +51,12 @@
                                     <div class="form-group">
                                         <label class="input-label"
                                                for="exampleFormControlInput1">{{translate('name')}}</label>
-                                        <input value="{{$branch['name']}}" type="text" name="name" class="form-control" maxlength="255"
+                                        <input value="{{$branch['name'] ?? ''}}" type="text" name="name" class="form-control" maxlength="255"
                                                placeholder="{{translate('New branch')}}" required>
                                     </div>
                                     <div class="form-group">
                                         <label class="input-label" for="">{{translate('address')}}</label>
-                                        <input value="{{$branch['address']}}" type="text" name="address" class="form-control" placeholder="" required>
+                                        <input value="{{$branch['address'] ?? ''}}" type="text" name="address" class="form-control" placeholder="" required>
                                     </div>
                                     <div class="form-group">
                                         <label class="input-label">{{translate('food_preparation_time')}}<span class="text-danger ml-1">*</span>
@@ -61,7 +66,7 @@
                                                title="{{ translate('Food preparation time will show to customer.') }}">
                                             </i>
                                         </label>
-                                        <input value="{{ $branch['preparation_time'] }}" type="number" name="preparation_time" class="form-control"
+                                        <input value="{{ $branch['preparation_time'] ?? ''}}" type="number" name="preparation_time" class="form-control"
                                                placeholder=" Ex: {{ translate('30') }}" min="1" required>
                                     </div>
                                 </div>
@@ -76,7 +81,7 @@
                                             <div class="upload-file">
                                                 <input type="file" name="image" accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" class="upload-file__input">
                                                 <div class="upload-file__img_drag upload-file__img">
-                                                    <img width="150" src="{{$branch->imageFullPath}}" alt="">
+                                                    <img width="150" src="{{$branch->imageFullPath ?? asset('public/assets/admin/img/placeholder.png')}}" alt="">
                                                 </div>
                                             </div>
                                         </div>
@@ -85,14 +90,14 @@
                                 <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('phone')}}</label>
-                                        <input value="{{$branch['phone']}}" type="tel" name="phone" class="form-control"
+                                        <input value="{{$branch['phone'] ?? ''}}" type="tel" name="phone" class="form-control"
                                                placeholder="{{translate('Ex: +098538534')}}" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('email')}}</label>
-                                        <input value="{{$branch['email']}}" type="email" name="email" class="form-control" maxlength="255"
+                                        <input value="{{$branch['email'] ?? ''}}" type="email" name="email" class="form-control" maxlength="255"
                                                placeholder="{{translate('EX : example@example.com')}}" required>
                                     </div>
                                 </div>
@@ -143,8 +148,8 @@
                                                         </i>
                                                     </label>
                                                     <input type="text" id="latitude" name="latitude" class="form-control"
-                                                           placeholder="{{ translate('Ex:') }} 23.8118428"
-                                                           value="{{ $branch['latitude'] }}" required >
+                                                           placeholder="{{ translate('Ex:') }} 12.7855"
+                                                           value="{{ $branch['latitude'] ?? '12.7855'}}" required >
                                                 </div>
                                             </div>
                                             <div class="col-12">
@@ -158,8 +163,8 @@
                                                         </i>
                                                     </label>
                                                     <input type="text" name="longitude" class="form-control"
-                                                           placeholder="{{ translate('Ex:') }} 90.356331" id="longitude"
-                                                           value="{{ $branch['longitude'] }}" required>
+                                                           placeholder="{{ translate('Ex:') }} 45.0187" id="longitude"
+                                                           value="{{ $branch['longitude'] ?? '45.0187' }}" required>
                                                 </div>
                                             </div>
                                             <div class="col-12">
@@ -173,7 +178,7 @@
                                                         </i>
 
                                                     </label>
-                                                    <input type="number" name="coverage" min="1" max="1000" class="form-control" placeholder="{{ translate('Ex : 3') }}" value="{{ $branch['coverage'] }}" required>
+                                                    <input type="number" name="coverage" min="1" max="1000" class="form-control" placeholder="{{ translate('Ex : 3') }}" value="{{ $branch['coverage'] ?? '300' }}" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -231,13 +236,13 @@
             function initAutocomplete() {
                 var myLatLng = {
 
-                    lat: {{$branch['latitude'] ?? 23.811842872190343}},
-                    lng: {{$branch['longitude'] ??  90.356331}},
+                    lat: {{$branch['latitude'] ?? 12.7855}},
+                    lng: {{$branch['longitude'] ?? 45.0187}},
                 };
                 const map = new google.maps.Map(document.getElementById("location_map_canvas"), {
                     center: {
-                        lat: {{$branch['latitude'] ?? 23.811842872190343}},
-                        lng: {{$branch['longitude'] ?? 90.356331}},
+                        lat: {{$branch['latitude'] ?? 12.7855}},
+                        lng: {{$branch['longitude'] ?? 45.0187}},
                     },
                     zoom: 13,
                     mapTypeId: "roadmap",
