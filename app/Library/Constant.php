@@ -2,7 +2,7 @@
 
 //payment methods
 const GATEWAYS_PAYMENT_METHODS = [
-    ['key' => 'stripe', 'value' => 'Stripe Accept'],
+    ['key' => 'stripe', 'value' => 'Stripe Payment'],
     ['key' => 'qib', 'value' => 'QIB Payment'],
 ];
 

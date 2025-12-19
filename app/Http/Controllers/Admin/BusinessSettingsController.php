@@ -2088,7 +2088,7 @@ class BusinessSettingsController extends Controller
                     'mode' => 'live',
                     'is_active' => 1,
                     'additional_data' => json_encode([
-                        'gateway_title' => 'Stripe',
+                        'gateway_title' => 'stripe',
                         'gateway_image' => null
                     ]),
                 ]
