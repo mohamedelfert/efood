@@ -1335,11 +1335,8 @@ class BusinessSettingsController extends Controller
      */
     public function updateMapApi(Request $request): RedirectResponse
     {
-        $this->InsertOrUpdateBusinessData(['key' => 'map_api_server_key'], [
-            'value' => $request['map_api_server_key'],
-        ]);
-        $this->InsertOrUpdateBusinessData(['key' => 'map_api_client_key'], [
-            'value' => $request['map_api_client_key'],
+        $this->InsertOrUpdateBusinessData(['key' => 'map_api_key'], [
+            'value' => $request['map_api_key'],
         ]);
 
         Toastr::success(translate('Settings updated!'));

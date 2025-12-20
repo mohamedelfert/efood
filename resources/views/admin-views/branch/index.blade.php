@@ -213,7 +213,7 @@
 
 @push('script_2')
 
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ \App\Model\BusinessSetting::where('key', 'map_api_client_key')->first()?->value }}&libraries=places&v=3.51"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ \App\Model\BusinessSetting::where('key', 'map_api_key')->first()?->value }}&libraries=places&v=3.45.8"></script>
     <script src="{{asset('public/assets/admin/js/read-url.js')}}"></script>
 
     <script>

@@ -23,15 +23,13 @@
                               enctype="multipart/form-data">
                             @csrf
                             <div class="row">
-                                @php($serverKey=\App\Model\BusinessSetting::where('key','map_api_server_key')->first()?->value )
-                                <div class="form-group col-md-6">
-                                    <label class="form-label">{{translate('map_api_server')}} {{translate('key')}}</label>
-                                    <textarea name="map_api_server_key" class="form-control">{{env('APP_MODE')!='demo'?$serverKey:''}}</textarea>
-                                </div>
-                                @php($clientKey=\App\Model\BusinessSetting::where('key','map_api_client_key')->first()?->value)
-                                <div class="form-group col-md-6">
-                                    <label class="form-label">{{translate('map_api_client')}} {{translate('key')}}</label>
-                                    <textarea name="map_api_client_key" class="form-control">{{env('APP_MODE')!='demo'?$clientKey:''}}</textarea>
+                                @php($apiKey=\App\Model\BusinessSetting::where('key','map_api_key')->first()?->value )
+                                <div class="form-group col-md-12">
+                                    <label class="form-label">{{translate('Google Maps API Key')}}</label>
+                                    <textarea name="map_api_key" class="form-control" rows="3" placeholder="Enter your Google Maps API Key">{{env('APP_MODE')!='demo'?$apiKey:''}}</textarea>
+                                    <small class="form-text text-muted">
+                                        {{translate('This API key will be used for all Google Maps services (Places, Distance Matrix, Geocoding)')}}
+                                    </small>
                                 </div>
                             </div>
                             <div class="btn--container mt-3">

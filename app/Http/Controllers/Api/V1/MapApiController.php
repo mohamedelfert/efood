@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Validator;
 class MapApiController extends Controller
 {
     /**
+     * Get the API key from settings
+     * @return string
+     */
+    private function getApiKey(): string
+    {
+        return Helpers::get_business_settings('map_api_key');
+    }
+
+    /**
      * @param Request $request
      * @return array|JsonResponse|mixed
      */
@@ -25,22 +34,18 @@ class MapApiController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $apiKey = Helpers::get_business_settings('map_api_server_key');
-//      $response = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json?input=' . $request['search_text'] . '&key=' . $apiKey);
-
+        $apiKey = $this->getApiKey();
         $url = 'https://places.googleapis.com/v1/places:autocomplete';
         $data = [
             'input' => $request->input('search_text'),
         ];
 
-        // API Headers
         $headers = [
             'Content-Type' => 'application/json',
             'X-Goog-Api-Key' => $apiKey,
             'X-Goog-FieldMask' => '*'
         ];
 
-        // Send POST request
         $response = Http::withHeaders($headers)->post($url, $data);
         return $response->json();
     }
@@ -62,7 +67,7 @@ class MapApiController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $apiKey = Helpers::get_business_settings('map_api_server_key');
+        $apiKey = $this->getApiKey();
         $url = 'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix';
 
         $origin = [
@@ -88,20 +93,18 @@ class MapApiController extends Controller
         ];
 
         $data = [
-            "origins" => $origin,
-            "destinations" => $destination,
+            "origins" => [$origin],
+            "destinations" => [$destination],
             "travelMode" => "DRIVE",
             "routingPreference" => "TRAFFIC_AWARE"
         ];
 
-        // API Headers
         $headers = [
             'Content-Type' => 'application/json',
             'X-Goog-Api-Key' => $apiKey,
             'X-Goog-FieldMask' => '*'
         ];
 
-        // Send POST request
         $response = Http::withHeaders($headers)->post($url, $data);
         return $response->json();
     }
@@ -120,19 +123,15 @@ class MapApiController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $apiKey = Helpers::get_business_settings('map_api_server_key');
-       // $response = Http::get('https://maps.googleapis.com/maps/api/place/details/json?placeid=' . $request['placeid'] . '&key=' . $apiKey);
+        $apiKey = $this->getApiKey();
+        $url = 'https://places.googleapis.com/v1/places/'. $request['placeid'];
 
-        $url = 'https://places.googleapis.com/v1/places/'.  $request['placeid'];
-
-        // API Headers
         $headers = [
             'Content-Type' => 'application/json',
             'X-Goog-Api-Key' => $apiKey,
             'X-Goog-FieldMask' => '*'
         ];
 
-        // Send POST request
         $response = Http::withHeaders($headers)->get($url);
         return $response->json();
     }
@@ -152,7 +151,7 @@ class MapApiController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $apiKey = Helpers::get_business_settings('map_api_server_key');
+        $apiKey = $this->getApiKey();
         $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json?latlng=' . $request->lat . ',' . $request->lng . '&key=' . $apiKey);
 
         return $response->json();
