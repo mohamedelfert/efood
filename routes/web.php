@@ -127,5 +127,5 @@ Route::get('/storage/qr_codes/{filename}', function ($filename) {
         abort(404);
     }
 
-    return response()->file(Storage::path($path));
-})->where('filename', 'qr_[0-9]+_[0-9]+\.png');
+    return response()->file(storage_path('app/' . $path));
+})->name('storage.qr_codes')->where('filename', 'qr_[0-9]+_[0-9]+\.png');
