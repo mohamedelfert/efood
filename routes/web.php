@@ -3,16 +3,17 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SslCommerzPaymentController;
-use App\Http\Controllers\StripePaymentController;
-use App\Http\Controllers\PaypalPaymentController;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\PaymobController;
+use App\Http\Controllers\FirebaseController;
+use App\Http\Controllers\PaystackController;
 use App\Http\Controllers\RazorPayController;
 use App\Http\Controllers\SenangPayController;
-use App\Http\Controllers\PaystackController;
-use App\Http\Controllers\PaymobController;
 use App\Http\Controllers\FlutterwaveController;
 use App\Http\Controllers\BkashPaymentController;
-use App\Http\Controllers\FirebaseController;
+use App\Http\Controllers\PaypalPaymentController;
+use App\Http\Controllers\StripePaymentController;
+use App\Http\Controllers\SslCommerzPaymentController;
 
 /**
  * Admin login
@@ -118,3 +119,13 @@ Route::get('setup-currencies', function () {
 Route::get('test', function () {
     Mail::to('abdurrahman.6amtech@gmail.com')->send(new \App\Mail\OrderPlaced(100628));
 });
+
+Route::get('/storage/qr_codes/{filename}', function ($filename) {
+    $path = 'public/qr_codes/' . $filename;
+
+    if (!Storage::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file(Storage::path($path));
+})->where('filename', 'qr_[0-9]+_[0-9]+\.png');
