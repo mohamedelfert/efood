@@ -501,6 +501,12 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
             Route::get('loyalty-point/report', [LoyaltyPointController::class, 'report'])->name('loyalty-point.report');
 
+            // QR Code management
+            Route::post('generate-qr-code/{id}', [CustomerController::class, 'generateQRCode'])->name('generate-qr-code');
+            Route::post('regenerate-qr-code/{id}', [CustomerController::class, 'regenerateQRCode'])->name('regenerate-qr-code');
+            Route::get('download-qr-code/{id}', [CustomerController::class, 'downloadQRCode'])->name('download-qr-code');
+            Route::get('view-qr-code/{id}', [CustomerController::class, 'viewQRCode'])->name('view-qr-code');
+
             Route::group(['prefix' => 'wallet', 'as' => 'wallet.'], function () {
                 Route::get('add-fund', [CustomerWalletController::class, 'addFundView'])->name('add-fund');
                 Route::post('add-fund', [CustomerWalletController::class, 'addFund'])->name('add-fund-store');

@@ -2,27 +2,28 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\CentralLogics\Helpers;
-use App\Http\Controllers\Controller;
-use App\Model\Conversation;
-use App\Model\Newsletter;
-use App\Model\Order;
-use App\Model\PointTransitions;
-use App\Model\BusinessSetting;
 use App\User;
-use Box\Spout\Common\Exception\InvalidArgumentException;
-use Box\Spout\Common\Exception\IOException;
-use Box\Spout\Common\Exception\UnsupportedTypeException;
-use Box\Spout\Writer\Exception\WriterNotOpenedException;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
+use App\Model\Order;
+use App\Model\Newsletter;
+use App\Model\Conversation;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use App\Model\BusinessSetting;
+use App\Model\PointTransitions;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Rap2hpoutre\FastExcel\FastExcel;
+use Illuminate\Http\RedirectResponse;
+use Box\Spout\Common\Exception\IOException;
 use Illuminate\Contracts\Support\Renderable;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Box\Spout\Common\Exception\InvalidArgumentException;
+use Box\Spout\Common\Exception\UnsupportedTypeException;
+use Box\Spout\Writer\Exception\WriterNotOpenedException;
 
 class CustomerController extends Controller
 {
@@ -364,15 +365,26 @@ class CustomerController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         try {
-            $this->customer->findOrFail($request['id'])->delete();
+            $customer = $this->customer->findOrFail($request['id']);
+            
+            // Check if customer has wallet balance
+            if ($customer->wallet_balance > 0) {
+                Toastr::warning(
+                    translate('cannot_delete_customer_with_balance') . ' ' . 
+                    $customer->getFormattedWalletBalanceAttribute()
+                );
+                return back();
+            }
+            
+            $customer->delete();
             Toastr::success(translate('user_deleted_successfully!'));
 
         } catch (\Exception $e) {
             Toastr::error(translate('user_not_found!'));
         }
+        
         return back();
     }
-
 
     /**
      * @return string|StreamedResponse
@@ -442,6 +454,131 @@ class CustomerController extends Controller
 
         Toastr::success(translate('customer_settings_updated_successfully'));
         return back();
+    }
+
+    /**
+    * Generate QR code for customer
+    */
+    public function generateQRCode($id): JsonResponse
+    {
+        try {
+            $customer = $this->customer->findOrFail($id);
+            
+            if ($customer->hasQRCode()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => translate('Customer already has a QR code. Use regenerate instead.')
+                ], 400);
+            }
+            
+            $generated = $customer->generateQRCode();
+            
+            if (!$generated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => translate('Failed to generate QR code. Check logs for details.')
+                ], 500);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => translate('QR code generated successfully'),
+                'qr_code_url' => $customer->fresh()->qr_code_image_url
+            ], 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Admin QR generation failed', [
+                'customer_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => translate('Failed to generate QR code')
+            ], 500);
+        }
+    }
+
+    /**
+     * Regenerate QR code for customer
+     */
+    public function regenerateQRCode($id): JsonResponse
+    {
+        try {
+            $customer = $this->customer->findOrFail($id);
+            
+            $regenerated = $customer->regenerateQRCode();
+            
+            if (!$regenerated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => translate('Failed to regenerate QR code. Check logs for details.')
+                ], 500);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => translate('QR code regenerated successfully'),
+                'qr_code_url' => $customer->fresh()->qr_code_image_url
+            ], 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Admin QR regeneration failed', [
+                'customer_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => translate('Failed to regenerate QR code')
+            ], 500);
+        }
+    }
+
+    /**
+     * Download QR code
+     */
+    public function downloadQRCode($id)
+    {
+        try {
+            $customer = $this->customer->findOrFail($id);
+            
+            if (!$customer->qr_code_image) {
+                Toastr::error(translate('Customer does not have a QR code'));
+                return back();
+            }
+            
+            $path = storage_path('app/public/qr_codes/' . $customer->qr_code_image);
+            
+            if (!file_exists($path)) {
+                Toastr::error(translate('QR code file not found'));
+                return back();
+            }
+            
+            return response()->download(
+                $path,
+                'customer_' . $customer->id . '_qr_code.png'
+            );
+            
+        } catch (\Exception $e) {
+            Toastr::error(translate('Failed to download QR code'));
+            return back();
+        }
+    }
+
+    /**
+     * View QR code page
+     */
+    public function viewQRCode($id): Renderable
+    {
+        $customer = $this->customer->findOrFail($id);
+        
+        if (!$customer->hasQRCode()) {
+            Toastr::warning(translate('Customer does not have a QR code yet'));
+            return redirect()->route('admin.customer.view', ['user_id' => $id]);
+        }
+        
+        return view('admin-views.customer.qr-code-view', compact('customer'));
     }
 
 }

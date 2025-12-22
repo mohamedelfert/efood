@@ -259,6 +259,12 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             // Get user details for transfer confirmation
             Route::get('user-details/{user_id}', [CustomerWalletController::class, 'getUserDetailsForTransfer']);
 
+            // QR Code endpoints
+            Route::get('my-qr-code', [CustomerWalletController::class, 'getMyQRCode']);
+            Route::post('regenerate-qr-code', [CustomerWalletController::class, 'regenerateQRCode']);
+            Route::post('scan-qr-code', [CustomerWalletController::class, 'scanQRCode']);
+            Route::post('send-qr-transfer-otp', [CustomerWalletController::class, 'sendQRTransferOTP']);
+
             // OTP-based transfer endpoints
             Route::post('send-transfer-otp', [CustomerWalletController::class, 'sendTransferOTP']);
             Route::post('verify-transfer-otp', [CustomerWalletController::class, 'verifyTransferOTP']);

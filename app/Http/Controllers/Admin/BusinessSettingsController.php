@@ -2,29 +2,32 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\CentralLogics\Helpers;
-use App\Http\Controllers\Controller;
-use App\Model\Branch;
-use App\Model\BusinessSetting;
-use App\Model\Currency;
-use App\Model\SocialMedia;
-use App\Traits\HelperTrait;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Contracts\Support\Renderable;
-use App\Models\Setting;
-use Illuminate\Support\Facades\Validator;
-use App\Model\Translation;
-use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
+use App\Model\Branch;
+use App\Model\Currency;
+use App\Models\Setting;
+use App\Model\SocialMedia;
+use App\Model\Translation;
+use App\Traits\HelperTrait;
+use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use App\Model\BusinessSetting;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Contracts\Foundation\Application;
 
 class BusinessSettingsController extends Controller
 {
@@ -384,42 +387,56 @@ class BusinessSettingsController extends Controller
         return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'data_values'));
     }
 
-    /**
-     * @param Request $request
-     * @return RedirectResponse
-     */
     public function paymentMethodStatus(Request $request): RedirectResponse
     {
-        $request['cash_on_delivery'] = $request->has('cash_on_delivery') ? 1 : 0;
-        $request['digital_payment'] = $request->has('digital_payment') ? 1 : 0;
-        $request['offline_payment'] = $request->has('offline_payment') ? 1 : 0;
+        try {
+            $request->validate([
+                'cash_on_delivery' => 'nullable|in:on',
+                'digital_payment' => 'nullable|in:on',
+                'offline_payment' => 'nullable|in:on',
+            ]);
 
-        // Validate that at least one payment method is active
-        if (!$request->cash_on_delivery && !$request->digital_payment && !$request->offline_payment) {
-            Toastr::error(translate('At least one payment method must be active!'));
+            // Update Cash on Delivery
+            if ($request->has('cash_on_delivery')) {
+                $this->InsertOrUpdateBusinessData(['key' => 'cash_on_delivery'], [
+                    'value' => json_encode(['status' => 1])
+                ]);
+            } else {
+                $this->InsertOrUpdateBusinessData(['key' => 'cash_on_delivery'], [
+                    'value' => json_encode(['status' => 0])
+                ]);
+            }
+
+            // Update Digital Payment
+            if ($request->has('digital_payment')) {
+                $this->InsertOrUpdateBusinessData(['key' => 'digital_payment'], [
+                    'value' => json_encode(['status' => 1])
+                ]);
+            } else {
+                $this->InsertOrUpdateBusinessData(['key' => 'digital_payment'], [
+                    'value' => json_encode(['status' => 0])
+                ]);
+            }
+
+            // Update Offline Payment
+            if ($request->has('offline_payment')) {
+                $this->InsertOrUpdateBusinessData(['key' => 'offline_payment'], [
+                    'value' => json_encode(['status' => 1])
+                ]);
+            } else {
+                $this->InsertOrUpdateBusinessData(['key' => 'offline_payment'], [
+                    'value' => json_encode(['status' => 0])
+                ]);
+            }
+
+            Toastr::success(translate('Payment method settings updated successfully!'));
+            return back();
+
+        } catch (\Exception $e) {
+            Log::error('Payment Method Status Update Error: ' . $e->getMessage());
+            Toastr::error(translate('Failed to update payment method settings!'));
             return back();
         }
-
-        $this->InsertOrUpdateBusinessData(['key' => 'cash_on_delivery'], [
-            'value' => json_encode([
-                'status' => $request['cash_on_delivery']
-            ])
-        ]);
-
-        $this->InsertOrUpdateBusinessData(['key' => 'digital_payment'], [
-            'value' => json_encode([
-                'status' => $request['digital_payment']
-            ])
-        ]);
-
-        $this->InsertOrUpdateBusinessData(['key' => 'offline_payment'], [
-            'value' => json_encode([
-                'status' => $request['offline_payment']
-            ])
-        ]);
-
-        Toastr::success(translate('updated successfully!'));
-        return back();
     }
 
     /**
@@ -429,67 +446,197 @@ class BusinessSettingsController extends Controller
      */
     public function paymentConfigUpdate(Request $request): RedirectResponse
     {
-        $validation = [
-            'gateway' => 'required|in:qib,stripe',
-            'mode' => 'required|in:live,test'
-        ];
+        try {
+            Log::info('Payment Config Update Started', [
+                'gateway' => $request->gateway,
+                'mode' => $request->mode,
+                'has_status' => $request->has('status')
+            ]);
 
-        $request['status'] = $request->has('status') ? 1 : 0;
+            // Base validation
+            $validated = $request->validate([
+                'gateway' => 'required|in:qib,stripe',
+                'mode' => 'required|in:live,test',
+                'gateway_title' => 'nullable|string|max:255',
+                'gateway_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            ]);
 
-        $additionalData = [];
+            // Gateway-specific validation
+            if ($request->gateway == 'qib') {
+                $request->validate([
+                    'merchant_id' => 'required|string',
+                    'secure_hash' => 'required|string',
+                ]);
+            } elseif ($request->gateway == 'stripe') {
+                $request->validate([
+                    'supported_country' => 'required|in:egypt,KSA,UAE,oman,PAK',
+                    'api_key' => 'required|string',
+                    'published_key' => 'required|string',
+                ]);
+            }
 
-        if ($request['gateway'] == 'qib') {
-            $additionalData = [
-                'status' => 'required|in:1,0',
-                'gateway_title' => 'required|string',
+            // Get or create settings record
+            $settings = Setting::firstOrNew([
+                'key_name' => $request->gateway,
+                'settings_type' => 'payment_config'
+            ]);
+
+            // Helper function to get array from JSON or array
+            $getArrayValue = function($value) {
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    return is_array($decoded) ? $decoded : [];
+                }
+                return is_array($value) ? $value : [];
+            };
+
+            // Get existing values
+            $liveValues = $getArrayValue($settings->live_values);
+            $testValues = $getArrayValue($settings->test_values);
+
+            // Build configuration array based on gateway
+            $config = [
+                'gateway' => $request->gateway,
+                'mode' => $request->mode,
+                'status' => $request->has('status') ? 1 : 0,
             ];
-        } elseif ($request['gateway'] == 'stripe') {
+
+            // Add gateway-specific fields
+            if ($request->gateway == 'qib') {
+                $config['merchant_id'] = $request->merchant_id;
+                $config['secure_hash'] = $request->secure_hash;
+            } elseif ($request->gateway == 'stripe') {
+                $config['supported_country'] = $request->supported_country;
+                $config['api_key'] = $request->api_key;
+                $config['published_key'] = $request->published_key;
+            }
+
+            // Update the appropriate mode values
+            if ($request->mode == 'live') {
+                $liveValues = array_merge($liveValues, $config);
+            } else {
+                $testValues = array_merge($testValues, $config);
+            }
+
+            // Handle gateway image
+            $additionalDataArray = $getArrayValue($settings->additional_data);
+            
+            if ($request->hasFile('gateway_image')) {
+                // Delete old image
+                if (!empty($additionalDataArray['gateway_image'])) {
+                    $oldPath = 'payment_modules/gateway_image/' . $additionalDataArray['gateway_image'];
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+                
+                // Upload new image
+                $image = $request->file('gateway_image');
+                $imageName = $request->gateway . '-' . time() . '.' . $image->extension();
+                $image->storeAs('payment_modules/gateway_image', $imageName, 'public');
+                $gatewayImage = $imageName;
+            } else {
+                $gatewayImage = $additionalDataArray['gateway_image'] ?? '';
+            }
+
+            // Prepare additional data
             $additionalData = [
-                'status' => 'required|in:1,0',
-                'supported_country' => 'required'
+                'gateway_title' => $request->gateway_title ?: ucfirst($request->gateway),
+                'gateway_image' => $gatewayImage,
             ];
+
+            // Save settings
+            $settings->key_name = $request->gateway;
+            $settings->live_values = json_encode($liveValues);
+            $settings->test_values = json_encode($testValues);
+            $settings->settings_type = 'payment_config';
+            $settings->mode = $request->mode;
+            $settings->is_active = $request->has('status') ? 1 : 0;
+            $settings->additional_data = json_encode($additionalData);
+            
+            $saved = $settings->save();
+
+            Log::info('Payment Config Saved', [
+                'gateway' => $request->gateway,
+                'mode' => $request->mode,
+                'saved' => $saved,
+                'live_values' => $liveValues,
+                'test_values' => $testValues
+            ]);
+
+            if (!$saved) {
+                throw new \Exception('Failed to save payment settings');
+            }
+
+            // Clear cache
+            \Artisan::call('cache:clear');
+            \Artisan::call('config:clear');
+
+            Toastr::success(translate('Payment gateway settings updated successfully!'));
+            return back();
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Toastr::error($e->getMessage());
+            return back()->withInput()->withErrors($e->errors());
+            
+        } catch (\Exception $e) {
+            Log::error('Payment Config Update Error', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            Toastr::error(translate('An error occurred: ') . $e->getMessage());
+            return back()->withInput();
+        }
+    }
+
+    public function payment_update(Request $request, string $payment_method): RedirectResponse
+    {
+        // Validate the payment method
+        if (!in_array($payment_method, ['stripe','qib'])) {
+            Toastr::error(translate('Invalid payment method!'));
+            return back();
         }
 
-        // Perform validation once and get validated data
-        $validated = $request->validate(array_merge($validation, $additionalData));
+        $data = Setting::where(['key_name' => $payment_method])->first();
+        
+        if (!$data) {
+            Toastr::error(translate('Payment method not found!'));
+            return back();
+        }
 
-        $settings = Setting::where('key_name', $request['gateway'])->where('settings_type', 'payment_config')->first();
-
-        // Update only the values for the selected mode
-        $live_values = $settings ? $settings->live_values : null;
-        $test_values = $settings ? $settings->test_values : null;
-
-        if ($request['mode'] == 'live') {
-            $live_values = $validated;
+        // Get the mode (live or test)
+        $mode = $request->input('mode', 'live');
+        
+        // Prepare the configuration data
+        $config = [];
+        
+        // Get all input except _token, _method, mode, status
+        $inputs = $request->except(['_token', '_method', 'mode', 'status']);
+        
+        foreach ($inputs as $key => $value) {
+            $config[$key] = $value;
+        }
+        
+        $config['mode'] = $mode;
+        
+        // Update based on mode
+        if ($mode == 'live') {
+            $data->live_values = json_encode($config);
         } else {
-            $test_values = $validated;
+            $data->test_values = json_encode($config);
         }
-
-        $additionalDataImage = $settings && $settings['additional_data'] ? json_decode($settings['additional_data']) : null;
-
-        if ($request->has('gateway_image')) {
-            $gatewayImage = Helpers::upload('payment_modules/gateway_image/', 'png', $request->file('gateway_image'));
-        } else {
-            $gatewayImage = $additionalDataImage ? $additionalDataImage->gateway_image : '';
+        
+        // Update status if provided
+        if ($request->has('status')) {
+            $data->is_active = $request->status == 'on' ? 1 : 0;
         }
+        
+        $data->mode = $mode;
+        $data->save();
 
-
-        $paymentAdditionalData = [
-            'gateway_title' => $request['gateway_title'],
-            'gateway_image' => $gatewayImage,
-        ];
-
-        Setting::updateOrCreate(['key_name' => $request['gateway'], 'settings_type' => 'payment_config'], [
-            'key_name' => $request['gateway'],
-            'live_values' => $live_values,
-            'test_values' => $test_values,
-            'settings_type' => 'payment_config',
-            'mode' => $request['mode'],
-            'is_active' => $request['status'],
-            'additional_data' => json_encode($paymentAdditionalData),
-        ]);
-
-        Toastr::success(GATEWAYS_DEFAULT_UPDATE_200['message']);
+        Toastr::success(translate('Payment method updated successfully!'));
         return back();
     }
 

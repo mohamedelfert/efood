@@ -185,6 +185,154 @@
                     @endif
                 </div>
             </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h4 class="card-header-title d-flex gap-2 align-items-center">
+                        <span class="tio-qr-code"></span> 
+                        {{translate('Wallet QR Code')}}
+                    </h4>
+                </div>
+
+                @if($customer)
+                    <div class="card-body text-center">
+                        @if($customer->qr_code_image)
+                            <!-- Display QR Code Image -->
+                            <div class="mb-3">
+                                <img src="{{ $customer->qr_code_image_url }}" 
+                                    alt="Customer QR Code" 
+                                    class="border rounded p-2 bg-white"
+                                    style="max-width: 250px; width: 100%;"
+                                    onerror="this.onerror=null; this.src='{{asset('public/assets/admin/img/160x160/img2.jpg')}}';">
+                            </div>
+                            
+                            <!-- QR Code Info -->
+                            <div class="text-left mb-3">
+                                <div class="mb-2">
+                                    <small class="text-muted">{{translate('QR Code ID')}}:</small>
+                                    <div class="font-weight-bold" style="word-break: break-all; font-size: 12px;">
+                                        {{ $customer->qr_code }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 flex-wrap justify-content-center">
+                                <!-- Download QR Code -->
+                                <a href="{{ $customer->qr_code_image_url }}" 
+                                download="customer_{{ $customer->id }}_qr.png"
+                                class="btn btn-sm btn-primary">
+                                    <i class="tio-download"></i> {{translate('Download')}}
+                                </a>
+
+                                <!-- Print QR Code -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-info"
+                                        onclick="printQRCode()">
+                                    <i class="tio-print"></i> {{translate('Print')}}
+                                </button>
+
+                                <!-- Regenerate QR Code -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-warning"
+                                        onclick="regenerateQRCode({{ $customer->id }})">
+                                    <i class="tio-refresh"></i> {{translate('Regenerate')}}
+                                </button>
+
+                                <!-- View Full Size -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-success"
+                                        data-toggle="modal" 
+                                        data-target="#qrCodeModal">
+                                    <i class="tio-visible"></i> {{translate('View Full')}}
+                                </button>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div class="alert alert-soft-info mt-3 text-left" role="alert">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="tio-info-outined"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ml-2">
+                                        <small>
+                                            {{translate('This QR code can be used to receive money transfers from other users.')}}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <!-- No QR Code -->
+                            <div class="text-center py-4">
+                                <i class="tio-qr-code" style="font-size: 48px; color: #ddd;"></i>
+                                <p class="text-muted mt-2">{{translate('No QR code available')}}</p>
+                                <button type="button" 
+                                        class="btn btn-sm btn-primary"
+                                        onclick="generateQRCode({{ $customer->id }})">
+                                    <i class="tio-add"></i> {{translate('Generate QR Code')}}
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            </div>
+
+            <!-- QR Code Modal for Full View -->
+            <div class="modal fade" id="qrCodeModal" tabindex="-1" role="dialog" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="qrCodeModalLabel">
+                                {{translate('Customer Wallet QR Code')}}
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body text-center">
+                            @if($customer->qr_code_image)
+                                <img src="{{ $customer->qr_code_image_url }}" 
+                                    alt="Customer QR Code" 
+                                    class="img-fluid border rounded p-3 bg-white"
+                                    style="max-width: 400px;">
+                                
+                                <div class="mt-3">
+                                    <h6>{{ $customer->name }}</h6>
+                                    <p class="text-muted mb-0">{{ $customer->phone }}</p>
+                                    <small class="text-muted" style="word-break: break-all;">
+                                        {{ $customer->qr_code }}
+                                    </small>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{{ $customer->qr_code_image_url ?? '#' }}" 
+                            download="customer_{{ $customer->id }}_qr.png"
+                            class="btn btn-primary">
+                                <i class="tio-download"></i> {{translate('Download')}}
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                {{translate('Close')}}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden print area -->
+            <div id="qrCodePrintArea" style="display: none;">
+                <div style="text-align: center; padding: 20px;">
+                    <h2>{{ $customer->name }}</h2>
+                    <p>{{ $customer->phone }}</p>
+                    <img src="{{ $customer->qr_code_image_url ?? '' }}" 
+                        alt="QR Code" 
+                        style="max-width: 400px; margin: 20px auto;">
+                    <p style="font-size: 12px; word-break: break-all;">{{ $customer->qr_code ?? '' }}</p>
+                    <p style="margin-top: 20px; color: #666;">
+                        {{translate('Scan this QR code to send money to this customer')}}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
     <div class="modal fade point-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"

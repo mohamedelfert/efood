@@ -81,6 +81,16 @@ class CustomerAuthController extends Controller
         $user->is_phone_verified = 1;
         $user->save();
 
+        // Generate QR code for new user
+        try {
+            $user->generateQRCode();
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code for new user', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
         $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
         return response()->json(['token' => $token], 200);
     }
@@ -825,6 +835,16 @@ class CustomerAuthController extends Controller
         $user->login_medium = 'OTP';
         $user->save();
 
+        // Generate QR code for new user
+        try {
+            $user->generateQRCode();
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code for new user', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
         $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
         return response()->json(['token' => $token], 200);
 
@@ -1023,6 +1043,16 @@ class CustomerAuthController extends Controller
         $phoneVerificationStatus = (int) $this->loginSetup->where(['key' => 'phone_verification'])?->first()->value ?? 0;
         if ($phoneVerificationStatus){
             return response()->json(['temp_token' => $temporaryToken, 'status' => false], 200);
+        }
+
+        // Generate QR code for new user
+        try {
+            $user->generateQRCode();
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code for new user', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
         }
 
         $token = $user->createToken('RestaurantCustomerAuth')->accessToken;

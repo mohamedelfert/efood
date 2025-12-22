@@ -9,6 +9,7 @@ use App\Model\WalletBonus;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Model\BusinessSetting;
+use App\Services\QRCodeHelper;
 use App\Model\WalletTransaction;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
@@ -795,6 +796,223 @@ class CustomerWalletController extends Controller
             
             return response()->json([
                 'errors' => [['code' => 'server_error', 'message' => translate('Transfer failed')]]
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user's QR code for receiving money
+     */
+    public function getMyQRCode(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Generate QR code if not exists
+        if (!$user->hasQRCode()) {
+            $generated = $user->generateQRCode();
+            
+            if (!$generated) {
+                return response()->json([
+                    'errors' => [['code' => 'qr_generation_failed', 'message' => translate('Failed to generate QR code')]]
+                ], 500);
+            }
+            
+            $user->refresh();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'qr_code' => $user->qr_code,
+            'qr_code_image' => $user->qr_code_image_url,
+            'user_name' => $user->name,
+            'user_phone' => $user->phone,
+            'message' => translate('Share this QR code to receive money')
+        ], 200);
+    }
+
+    /**
+     * Regenerate user's QR code
+     */
+    public function regenerateQRCode(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        $generated = $user->regenerateQRCode();
+        
+        if (!$generated) {
+            return response()->json([
+                'errors' => [['code' => 'qr_generation_failed', 'message' => translate('Failed to regenerate QR code')]]
+            ], 500);
+        }
+        
+        $user->refresh();
+        
+        return response()->json([
+            'success' => true,
+            'qr_code' => $user->qr_code,
+            'qr_code_image' => $user->qr_code_image_url,
+            'message' => translate('QR code regenerated successfully')
+        ], 200);
+    }
+
+    /**
+     * Scan QR code and get receiver information
+     */
+    public function scanQRCode(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'qr_data' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sender = $request->user();
+        
+        // Validate QR code
+        $validation = QRCodeHelper::validateQRCode($request->qr_data);
+        
+        if (!$validation['valid']) {
+            return response()->json([
+                'errors' => [['code' => 'invalid_qr', 'message' => $validation['message']]]
+            ], 400);
+        }
+        
+        $receiver = $validation['user'];
+        
+        // Check if user is trying to send to themselves
+        if ($receiver->id === $sender->id) {
+            return response()->json([
+                'errors' => [['code' => 'self_transfer', 'message' => translate('You cannot transfer money to yourself')]]
+            ], 400);
+        }
+        
+        // Check if receiver is active
+        if (!$receiver->is_active) {
+            return response()->json([
+                'errors' => [['code' => 'inactive_user', 'message' => translate('Receiver account is not active')]]
+            ], 400);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'receiver' => [
+                'id' => $receiver->id,
+                'name' => $receiver->name,
+                'phone' => $receiver->phone,
+                'image' => $receiver->image_full_path,
+            ],
+            'sender_balance' => $sender->wallet_balance,
+            'message' => translate('Receiver verified successfully')
+        ], 200);
+    }
+
+    /**
+     * Send OTP for QR code transfer
+     */
+    public function sendQRTransferOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'qr_data' => 'required|string',
+            'amount' => 'required|numeric|min:1',
+            'note' => 'nullable|string|max:255',
+            'pin' => 'required|string|min:4',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sender = $request->user();
+        
+        // Validate QR code
+        $validation = QRCodeHelper::validateQRCode($request->qr_data);
+        
+        if (!$validation['valid']) {
+            return response()->json([
+                'errors' => [['code' => 'invalid_qr', 'message' => $validation['message']]]
+            ], 400);
+        }
+        
+        $receiver = $validation['user'];
+        $amount = $request->amount;
+        
+        // Check if user is trying to send to themselves
+        if ($receiver->id === $sender->id) {
+            return response()->json([
+                'errors' => [['code' => 'self_transfer', 'message' => translate('You cannot transfer money to yourself')]]
+            ], 400);
+        }
+        
+        // Verify PIN
+        if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
+            return response()->json([
+                'errors' => [['code' => 'invalid_pin', 'message' => translate('Invalid PIN')]]
+            ], 401);
+        }
+
+        // Check balance
+        if ($sender->wallet_balance < $amount) {
+            return response()->json([
+                'errors' => [['code' => 'insufficient_balance', 'message' => translate('Insufficient wallet balance')]]
+            ], 400);
+        }
+
+        // Check daily transfer limit
+        $dailyTransferLimit = Helpers::get_business_settings('wallet_daily_transfer_limit')['value'] ?? 25000;
+        $todayTransfers = $this->walletTransaction
+            ->where('user_id', $sender->id)
+            ->where('transaction_type', 'transfer_sent')
+            ->whereDate('created_at', today())
+            ->sum('debit');
+
+        if (($todayTransfers + $amount) > $dailyTransferLimit) {
+            return response()->json([
+                'errors' => [['code' => 'limit_exceeded', 'message' => translate('Daily transfer limit exceeded')]]
+            ], 400);
+        }
+
+        try {
+            $otp = mt_rand(100000, 999999);
+            $otpExpiry = now()->addMinutes(5);
+
+            $sender->update([
+                'transfer_otp' => Hash::make($otp),
+                'transfer_otp_expires_at' => $otpExpiry,
+                'pending_transfer_data' => json_encode([
+                    'receiver_id' => $receiver->id,
+                    'receiver_phone' => $receiver->phone,
+                    'amount' => $amount,
+                    'note' => $request->note,
+                    'receiver_name' => trim($receiver->name),
+                    'transfer_method' => 'qr_code'
+                ])
+            ]);
+
+            // Send OTP notification
+            $this->sendTransferOTPNotification($sender, $otp, $amount, $receiver);
+
+            return response()->json([
+                'success' => true,
+                'message' => translate('OTP sent successfully'),
+                'otp_expires_in' => 5,
+                'receiver_name' => trim($receiver->name),
+                'receiver_phone' => $receiver->phone,
+                'amount' => $amount,
+                'transfer_method' => 'qr_code',
+                'sent_at' => now()->toDateTimeString(),
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('QR Transfer OTP failed', [
+                'sender_id' => $sender->id,
+                'receiver_id' => $receiver->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'errors' => [['code' => 'server_error', 'message' => translate('Failed to send OTP')]]
             ], 500);
         }
     }
