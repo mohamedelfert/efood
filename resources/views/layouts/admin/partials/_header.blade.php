@@ -5,13 +5,14 @@
                 <!-- Logo -->
                 @php($restaurant_logo=\App\Model\BusinessSetting::where(['key'=>'logo'])->first()->value)
                 <a class="navbar-brand" href="{{route('admin.dashboard')}}" aria-label="">
-                    <img class="navbar-brand-logo" style="object-fit: contain;"
-                         onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'"
-                         src="{{asset('storage/app/public/restaurant/'.$restaurant_logo)}}" alt="Logo">
-                    <img class="navbar-brand-logo-mini" style="object-fit: contain;"
-                         onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'"
-                         src="{{asset('storage/app/public/restaurant/'.$restaurant_logo)}}"
-                         alt="Logo">
+                    <img class="navbar-brand-logo" 
+                        onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'"
+                        src="{{asset('storage/restaurant/'.$restaurant_logo)}}" 
+                        alt="Logo">
+                    <img class="navbar-brand-logo" 
+                        onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'"
+                        src="{{asset('storage/restaurant/'.$restaurant_logo)}}" 
+                        alt="Logo">
                 </a>
                 <!-- End Logo -->
             </div>
