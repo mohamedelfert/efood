@@ -38,6 +38,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Set default locale to Arabic if not already set in session
+        if (!session()->has('local')) {
+            session()->put('local', 'ar');
+            session()->put('direction', 'rtl');
+            app()->setLocale('ar');
+        } else {
+            $local = session('local');
+            app()->setLocale($local);
+            
+            // Set direction based on language
+            $language = Helpers::get_business_settings('language');
+            if ($language) {
+                foreach ($language as $lang) {
+                    if ($lang['code'] == $local) {
+                        session()->put('direction', $lang['direction'] ?? 'ltr');
+                        break;
+                    }
+                }
+            }
+        }
+
         BusinessSetting::observe(BusinessSettingObserver::class);
         LoginSetup::observe(LoginSetupObserver::class);
         Category::observe(CategoryObserver::class);

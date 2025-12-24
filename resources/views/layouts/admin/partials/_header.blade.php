@@ -36,7 +36,7 @@
                     <li class="nav-item d-none d-sm-inline-block">
                         <div class="hs-unfold">
                             <div class="bg-white p-1 rounded">
-                                @php( $local = session()->has('local')?session('local'):'en')
+                                @php( $local = session()->has('local')?session('local'):'ar')
 {{--                                @php($lang = \App\CentralLogics\Helpers::get_business_settings('language')??null)--}}
                                 <?php
                                 $languages = \App\Model\BusinessSetting::where('key', 'language')->first();

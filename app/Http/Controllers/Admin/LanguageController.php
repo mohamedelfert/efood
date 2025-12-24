@@ -45,7 +45,7 @@ class LanguageController extends Controller
 
         if (!isset($language)) {
             $this->InsertOrUpdateBusinessData(['key' => 'language'], [
-                'value' => '[{"id":"1","name":"english","direction":"ltr","code":"en","status":1,"default":true}]'
+                'value' => '[{"id":"1","name":"arabic","direction":"rtl","code":"ar","status":1,"default":true},{"id":"2","name":"english","direction":"ltr","code":"en","status":1,"default":false}]'
             ]);
             $language = Helpers::get_business_settings('language');
         }

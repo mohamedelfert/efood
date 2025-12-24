@@ -943,7 +943,7 @@ class Helpers
     public static function get_default_language()
     {
         $data = self::get_business_settings('language');
-        $default_lang = 'en';
+        $default_lang = 'ar';
         if ($data && array_key_exists('code', $data)) {
             foreach ($data as $lang) {
                 if ($lang['default'] == true) {
@@ -1147,7 +1147,7 @@ class Helpers
 
 function translate($key)
 {
-    $local = session()->has('local') ? session('local') : 'en';
+    $local = session()->has('local') ? session('local') : 'ar';
     App::setLocale($local);
 
     $langFile = base_path("resources/lang/{$local}/messages.php");
