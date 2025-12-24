@@ -2,16 +2,18 @@
 
 namespace App\Model;
 
-use App\Models\OfflinePayment;
+use App\User;
 use App\Models\GuestUser;
+use App\Models\OrderArea;
+use App\Models\BranchReview;
+use App\Models\ServiceReview;
+use App\Models\OfflinePayment;
 use App\Models\OrderChangeAmount;
 use App\Models\OrderPartialPayment;
-use App\User;
-use App\Models\OrderArea;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Order extends Model
 {
@@ -149,4 +151,68 @@ class Order extends Model
     {
         return $this->hasOne(OrderChangeAmount::class, 'order_id');
     }
+
+    /**
+     * Get branch review for this order
+     */
+    public function branchReview()
+    {
+        return $this->hasOne(BranchReview::class);
+    }
+
+    /**
+     * Get service review for this order
+     */
+    public function serviceReview()
+    {
+        return $this->hasOne(ServiceReview::class);
+    }
+
+    /**
+     * Check if order has been reviewed for branch
+     */
+    public function hasBranchReview()
+    {
+        return $this->branchReview()->exists();
+    }
+
+    /**
+     * Check if order has been reviewed for service
+     */
+    public function hasServiceReview()
+    {
+        return $this->serviceReview()->exists();
+    }
+
+    /**
+     * Check if order has been reviewed for product
+     */
+    public function hasProductReviews()
+    {
+        return $this->details()->whereHas('product.reviews', function ($query) {
+            $query->where('order_id', $this->id);
+        })->exists();
+    }
+
+    /**
+     * Check if order has been reviewed for delivery man
+     */
+    public function hasDeliveryManReview()
+    {
+        return DMReview::where('order_id', $this->id)->exists();
+    }
+
+    /**
+     * Get all review statuses for this order
+     */
+    public function getReviewStatusAttribute()
+    {
+        return [
+            'branch_reviewed' => $this->hasBranchReview(),
+            'service_reviewed' => $this->hasServiceReview(),
+            'products_reviewed' => $this->hasProductReviews(),
+            'delivery_man_reviewed' => $this->hasDeliveryManReview(),
+        ];
+    }
+
 }

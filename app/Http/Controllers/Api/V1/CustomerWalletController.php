@@ -801,33 +801,85 @@ class CustomerWalletController extends Controller
     }
 
     /**
-     * Get user's QR code for receiving money
+     * Get user's QR code for receiving money (Enhanced version)
      */
     public function getMyQRCode(Request $request): JsonResponse
     {
         $user = $request->user();
         
+        Log::info('Getting QR code', [
+            'user_id' => $user->id,
+            'has_qr_code' => $user->hasQRCode()
+        ]);
+        
         // Generate QR code if not exists
         if (!$user->hasQRCode()) {
+            Log::info('QR code missing, generating new one', ['user_id' => $user->id]);
+            
             $generated = $user->generateQRCode();
             
             if (!$generated) {
+                Log::error('QR code generation failed', [
+                    'user_id' => $user->id,
+                    'hint' => 'Check logs for detailed error'
+                ]);
+                
                 return response()->json([
-                    'errors' => [['code' => 'qr_generation_failed', 'message' => translate('Failed to generate QR code')]]
+                    'success' => false,
+                    'errors' => [[
+                        'code' => 'qr_generation_failed',
+                        'message' => translate('Failed to generate QR code. Please contact support.')
+                    ]]
                 ], 500);
             }
             
             $user->refresh();
         }
         
-        return response()->json([
+        // Prepare response
+        $response = [
             'success' => true,
             'qr_code' => $user->qr_code,
-            'qr_code_image' => $user->qr_code_image_url,
             'user_name' => $user->name,
             'user_phone' => $user->phone,
             'message' => translate('Share this QR code to receive money')
-        ], 200);
+        ];
+        
+        // Try to get image URL first
+        $imageUrl = $user->qr_code_image_url;
+        
+        if ($imageUrl) {
+            $response['qr_code_image'] = $imageUrl;
+            $response['qr_code_type'] = 'url';
+        } else {
+            // Fallback to base64 if URL doesn't work
+            $base64 = $user->qr_code_base64;
+            
+            if ($base64) {
+                $response['qr_code_image'] = $base64;
+                $response['qr_code_type'] = 'base64';
+                
+                Log::info('Using base64 QR code (storage link may be missing)', [
+                    'user_id' => $user->id
+                ]);
+            } else {
+                Log::error('Both URL and base64 failed for QR code', [
+                    'user_id' => $user->id,
+                    'qr_code_image' => $user->qr_code_image
+                ]);
+                
+                $response['qr_code_image'] = null;
+                $response['qr_code_type'] = 'none';
+                $response['warning'] = 'QR code image not accessible';
+            }
+        }
+        
+        Log::info('QR code retrieved successfully', [
+            'user_id' => $user->id,
+            'type' => $response['qr_code_type']
+        ]);
+        
+        return response()->json($response, 200);
     }
 
     /**

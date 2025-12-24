@@ -4,10 +4,14 @@ namespace App;
 
 use App\Model\Order;
 use App\Model\Branch;
+use App\Model\Review;
+use App\Model\DMReview;
 use App\Model\Wishlist;
 use App\Model\ChefBranch;
+use App\Models\BranchReview;
 use App\Model\Notification;
 use Illuminate\Support\Str;
+use App\Models\ServiceReview;
 use App\Models\PaymentMethod;
 use App\Model\CustomerAddress;
 use App\Models\WalletBonusUser;
@@ -467,16 +471,30 @@ class User extends Authenticatable
     }
 
     /**
-     * Generate unique QR code for user (GD Library version)
+     * Generate unique QR code for user (Enhanced with detailed logging)
      */
     public function generateQRCode(): bool
     {
         try {
-            // Check if GD is installed
+            Log::info('Starting QR code generation', [
+                'user_id' => $this->id,
+                'user_name' => $this->name
+            ]);
+
+            // Check if GD extension is loaded
             if (!extension_loaded('gd')) {
                 Log::error('GD extension not installed', [
                     'user_id' => $this->id,
-                    'hint' => 'Install GD: sudo apt-get install php-gd'
+                    'hint' => 'Install: sudo apt-get install php-gd && sudo systemctl restart apache2'
+                ]);
+                return false;
+            }
+
+            // Check if QrCode class exists
+            if (!class_exists('\SimpleSoftwareIO\QrCode\Facades\QrCode')) {
+                Log::error('QrCode package not installed', [
+                    'user_id' => $this->id,
+                    'hint' => 'Install: composer require simplesoftwareio/simple-qrcode'
                 ]);
                 return false;
             }
@@ -484,97 +502,157 @@ class User extends Authenticatable
             // Generate unique QR code string
             $qrCode = 'WALLET_' . strtoupper(Str::random(20)) . '_' . $this->id;
             
-            // Create QR code image filename
+            // Create filename
             $qrCodeImage = 'qr_' . $this->id . '_' . time() . '.png';
             $directory = storage_path('app/public/qr_codes');
-            $path = $directory . '/' . $qrCodeImage;
+            $fullPath = $directory . '/' . $qrCodeImage;
             
-            // Ensure directory exists with proper permissions
+            Log::info('QR code paths', [
+                'user_id' => $this->id,
+                'directory' => $directory,
+                'filename' => $qrCodeImage,
+                'full_path' => $fullPath
+            ]);
+
+            // Check and create directory
             if (!file_exists($directory)) {
-                if (!mkdir($directory, 0755, true)) {
-                    Log::error('Failed to create QR codes directory', [
+                Log::info('Creating QR codes directory', ['directory' => $directory]);
+                
+                if (!mkdir($directory, 0775, true)) {
+                    Log::error('Failed to create directory', [
                         'user_id' => $this->id,
-                        'directory' => $directory
+                        'directory' => $directory,
+                        'parent_exists' => file_exists(dirname($directory)),
+                        'parent_writable' => is_writable(dirname($directory))
                     ]);
                     return false;
                 }
+                
+                // Set permissions immediately after creation
+                chmod($directory, 0775);
+                Log::info('Directory created successfully', ['directory' => $directory]);
             }
-            
-            // Check directory is writable
+
+            // Verify directory is writable
             if (!is_writable($directory)) {
-                Log::error('QR codes directory is not writable', [
+                $perms = substr(sprintf('%o', fileperms($directory)), -4);
+                Log::error('Directory not writable', [
                     'user_id' => $this->id,
                     'directory' => $directory,
-                    'permissions' => substr(sprintf('%o', fileperms($directory)), -4)
+                    'permissions' => $perms,
+                    'owner' => posix_getpwuid(fileowner($directory))['name'] ?? 'unknown',
+                    'group' => posix_getgrgid(filegroup($directory))['name'] ?? 'unknown'
                 ]);
                 return false;
             }
-            
+
             // Generate QR code data
             $qrData = json_encode([
                 'user_id' => $this->id,
                 'qr_code' => $qrCode,
                 'phone' => $this->phone,
                 'name' => $this->name,
-                'type' => 'wallet_transfer'
+                'type' => 'wallet_transfer',
+                'generated_at' => now()->toDateTimeString()
             ]);
-            
-            // Generate QR code using GD (returns PNG binary data)
+
+            Log::info('Generating QR code image', [
+                'user_id' => $this->id,
+                'data_length' => strlen($qrData)
+            ]);
+
+            // Generate QR code using Simple QrCode
             try {
-                $qrCodeBinary = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                $qrCodeBinary = QrCode::format('png')
                     ->size(300)
                     ->margin(1)
                     ->errorCorrection('H')
                     ->generate($qrData);
-                
+
                 // Save to file
-                file_put_contents($path, $qrCodeBinary);
+                $bytesWritten = file_put_contents($fullPath, $qrCodeBinary);
                 
+                Log::info('QR code file written', [
+                    'user_id' => $this->id,
+                    'bytes_written' => $bytesWritten,
+                    'path' => $fullPath
+                ]);
+
             } catch (\Exception $qrException) {
-                Log::error('QR code generation failed', [
+                Log::error('QR code generation exception', [
                     'user_id' => $this->id,
                     'error' => $qrException->getMessage(),
                     'trace' => $qrException->getTraceAsString()
                 ]);
                 return false;
             }
-            
-            // Verify file was created
-            if (!file_exists($path) || filesize($path) == 0) {
-                Log::error('QR code file was not created or is empty', [
+
+            // Verify file exists and has content
+            if (!file_exists($fullPath)) {
+                Log::error('QR code file was not created', [
                     'user_id' => $this->id,
-                    'path' => $path,
-                    'exists' => file_exists($path),
-                    'size' => file_exists($path) ? filesize($path) : 0
+                    'path' => $fullPath,
+                    'directory_writable' => is_writable($directory)
                 ]);
                 return false;
             }
-            
+
+            $fileSize = filesize($fullPath);
+            if ($fileSize == 0) {
+                Log::error('QR code file is empty', [
+                    'user_id' => $this->id,
+                    'path' => $fullPath
+                ]);
+                @unlink($fullPath);
+                return false;
+            }
+
+            // Set file permissions
+            chmod($fullPath, 0664);
+
+            Log::info('QR code file created successfully', [
+                'user_id' => $this->id,
+                'file_size' => $fileSize,
+                'path' => $fullPath,
+                'permissions' => substr(sprintf('%o', fileperms($fullPath)), -4)
+            ]);
+
             // Delete old QR code image if exists
-            if ($this->qr_code_image) {
-                $oldPath = storage_path('app/public/qr_codes/' . $this->qr_code_image);
+            if ($this->qr_code_image && $this->qr_code_image !== $qrCodeImage) {
+                $oldPath = $directory . '/' . $this->qr_code_image;
                 if (file_exists($oldPath)) {
                     @unlink($oldPath);
+                    Log::info('Old QR code deleted', [
+                        'user_id' => $this->id,
+                        'old_file' => $this->qr_code_image
+                    ]);
                 }
             }
-            
+
             // Update user record
             $this->qr_code = $qrCode;
             $this->qr_code_image = $qrCodeImage;
-            $this->save();
-            
-            Log::info('QR code generated successfully', [
-                'user_id' => $this->id,
-                'qr_code' => $qrCode,
-                'file_size' => filesize($path)
-            ]);
-            
-            return true;
-            
+            $saved = $this->save();
+
+            if ($saved) {
+                Log::info('QR code generation completed successfully', [
+                    'user_id' => $this->id,
+                    'qr_code' => $qrCode,
+                    'qr_code_image' => $qrCodeImage,
+                    'file_size' => $fileSize
+                ]);
+                return true;
+            } else {
+                Log::error('Failed to save user record', ['user_id' => $this->id]);
+                return false;
+            }
+
         } catch (\Exception $e) {
-            Log::error('QR code generation failed', [
+            Log::error('QR code generation failed with exception', [
                 'user_id' => $this->id,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             return false;
@@ -582,28 +660,53 @@ class User extends Authenticatable
     }
 
     /**
-     * Get QR code image URL
+     * Get QR code image URL (Multiple fallback methods)
      */
-    public function getQRCodeImageUrlAttribute(): ?string
+    public function getQrCodeImageUrlAttribute(): ?string
     {
         if (!$this->qr_code_image) {
             return null;
         }
-        
-        $path = storage_path('app/public/qr_codes/' . $this->qr_code_image);
-        
-        if (file_exists($path)) {
-            // Try both URL formats for compatibility
-            $url = asset('storage/qr_codes/' . $this->qr_code_image);
-            
-            // Check if storage link exists, if not use full path
-            if (!file_exists(public_path('storage'))) {
-                $url = asset('storage/app/public/qr_codes/' . $this->qr_code_image);
-            }
-            
-            return $url;
+
+        $filename = $this->qr_code_image;
+        $fullPath = storage_path('app/public/qr_codes/' . $filename);
+
+        // Verify file exists
+        if (!file_exists($fullPath)) {
+            Log::warning('QR code file not found', [
+                'user_id' => $this->id,
+                'filename' => $filename,
+                'expected_path' => $fullPath
+            ]);
+            return null;
         }
-        
+
+        // Method 1: Try standard storage URL (preferred)
+        if (file_exists(public_path('storage/qr_codes/' . $filename))) {
+            return asset('storage/qr_codes/' . $filename);
+        }
+
+        // Method 2: Direct storage path (fallback)
+        return url('storage/qr_codes/' . $filename);
+    }
+
+    /**
+     * Get QR code as base64 (works even without storage link)
+     */
+    public function getQrCodeBase64Attribute(): ?string
+    {
+        if (!$this->qr_code_image) {
+            return null;
+        }
+
+        $path = storage_path('app/public/qr_codes/' . $this->qr_code_image);
+
+        if (file_exists($path)) {
+            $imageData = file_get_contents($path);
+            $base64 = base64_encode($imageData);
+            return 'data:image/png;base64,' . $base64;
+        }
+
         return null;
     }
 
@@ -624,22 +727,34 @@ class User extends Authenticatable
     }
 
     /**
-     * Get QR code as base64 data URL (works without storage link)
+     * Get branch reviews by this user
      */
-    public function getQRCodeBase64Attribute(): ?string
+    public function branchReviews()
     {
-        if (!$this->qr_code_image) {
-            return null;
-        }
-        
-        $path = storage_path('app/public/qr_codes/' . $this->qr_code_image);
-        
-        if (file_exists($path)) {
-            $imageData = file_get_contents($path);
-            $base64 = base64_encode($imageData);
-            return 'data:image/png;base64,' . $base64;
-        }
-        
-        return null;
+        return $this->hasMany(BranchReview::class);
+    }
+
+    /**
+     * Get service reviews by this user
+     */
+    public function serviceReviews()
+    {
+        return $this->hasMany(ServiceReview::class);
+    }
+
+    /**
+     * Get product reviews by this user
+     */
+    public function productReviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get delivery man reviews by this user
+     */
+    public function deliveryManReviews()
+    {
+        return $this->hasMany(DMReview::class);
     }
 }

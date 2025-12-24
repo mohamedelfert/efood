@@ -20,10 +20,12 @@ use App\Http\Controllers\Api\V1\WishlistController;
 use App\Http\Controllers\Api\V1\GuestUserController;
 use App\Http\Controllers\Api\V1\DeliverymanController;
 use App\Http\Controllers\Api\V1\TableConfigController;
+use App\Http\Controllers\Api\V1\BranchReviewController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\LoyaltyPointController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Services\Payment\Gateways\PaymobPaymentGateway;
+use App\Http\Controllers\Api\V1\ServiceReviewController;
 use App\Http\Controllers\Api\V1\CustomerWalletController;
 use App\Http\Controllers\Api\V1\Auth\CustomerAuthController;
 use App\Http\Controllers\Api\V1\Auth\KitchenLoginController;
@@ -89,6 +91,21 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::group(['prefix' => 'reviews', 'middleware' => ['auth:api']], function () {
             Route::get('/{delivery_man_id}', [DeliveryManReviewController::class, 'getReviews']); //not used
             Route::get('rating/{delivery_man_id}', [DeliveryManReviewController::class, 'getRating']); //not used
+        });
+    });
+
+    // Service Review Routes
+    Route::group(['prefix' => 'service'], function () {
+        // Service reviews (public access)
+        Route::get('{service_type}/reviews', [ServiceReviewController::class, 'getReviews']);
+        Route::get('{service_type}/rating', [ServiceReviewController::class, 'getRating']);
+        Route::get('statistics', [ServiceReviewController::class, 'getServiceStatistics']);
+        
+        // Service reviews (authenticated)
+        Route::group(['middleware' => ['auth:api']], function () {
+            Route::post('reviews/submit', [ServiceReviewController::class, 'submitReview']);
+            Route::get('reviews/my-reviews', [ServiceReviewController::class, 'getMyReviews']);
+            Route::delete('reviews/{review_id}', [ServiceReviewController::class, 'deleteReview']);
         });
     });
 
@@ -346,6 +363,17 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::get('list', [BranchController::class, 'list']);
         Route::get('products', [BranchController::class, 'products']);
         Route::get('categories', [BranchController::class, 'categories']);
+        
+        // Branch reviews (public access)
+        Route::get('{branch_id}/reviews', [BranchReviewController::class, 'getReviews']);
+        Route::get('{branch_id}/rating', [BranchReviewController::class, 'getRating']);
+        
+        // Branch reviews (authenticated)
+        Route::group(['middleware' => ['auth:api']], function () {
+            Route::post('reviews/submit', [BranchReviewController::class, 'submitReview']);
+            Route::get('reviews/my-reviews', [BranchReviewController::class, 'getMyReviews']);
+            Route::delete('reviews/{review_id}', [BranchReviewController::class, 'deleteReview']);
+        });
     });
 
     Route::group(['prefix' => 'payment'], function () {

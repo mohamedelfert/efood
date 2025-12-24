@@ -1,84 +1,18 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Banner list'))
+@section('title', translate('banner_list'))
 
 @section('content')
     <div class="content container-fluid">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
             <h2 class="h1 mb-0 d-flex align-items-center gap-2">
                 <img width="20" class="avatar-img" src="{{asset('public/assets/admin/img/icons/banner.png')}}" alt="">
-                <span class="page-header-title">
-                    {{translate('Banner_Setup')}}
-                </span>
+                <span class="page-header-title">{{translate('banner_list')}}</span>
+                <span class="badge badge-soft-dark rounded-50 fz-12">{{ $banners->total() }}</span>
             </h2>
-        </div>
-
-        <div class="row g-2">
-            <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
-                <form action="{{route('admin.banner.store')}}" method="post" enctype="multipart/form-data">
-                    @csrf
-                    <div class="card banner-form">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="form-group">
-                                        <label class="input-label">{{translate('title')}}<span class="text-danger ml-1">*</span></label>
-                                        <input type="text" name="title" class="form-control" placeholder="{{translate('New banner')}}" required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="input-label">{{translate('item_Type')}}<span class="text-danger ml-1">*</span></label>
-                                        <select name="item_type" class="custom-select js-select2-custom">
-                                            <option selected disabled>{{translate('select_item_type')}}</option>
-                                            <option value="product">{{translate('product')}}</option>
-                                            <option value="category">{{translate('category')}}</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" id="type-product">
-                                        <label class="input-label">{{translate('product')}} <span class="text-danger ml-1">*</span></label>
-                                        <select name="product_id" class="custom-select js-select2-custom">
-                                            <option selected disabled>{{translate('select_a_product')}}</option>
-                                            @foreach(\App\Model\Product::all() as $product)
-                                                <option value="{{$product['id']}}">{{$product['name']}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group type-category" id="type-category">
-                                        <label class="input-label">{{translate('category')}} <span class="text-danger ml-1">*</span></label>
-                                        <select name="category_id" class="custom-select js-select2-custom">
-                                            <option selected disabled>{{translate('select_a_category')}}</option>
-                                            @foreach(\App\Model\Category::where('parent_id', 0)->get() as $category)
-                                                <option value="{{$category['id']}}">{{$category['name']}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="form-group">
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                            <label class="mb-0">{{translate('banner_Image')}}</label>
-                                            <small class="text-danger">* ( {{translate('ratio 2:1')}} )</small>
-                                        </div>
-                                        <div class="d-flex justify-content-center mt-4">
-                                            <div class="upload-file">
-                                                <input type="file" name="image" accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" class="upload-file__input">
-                                                <div class="upload-file__img_drag upload-file__img max-h-200px overflow-hidden">
-                                                    <img width="465" id="viewer" src="{{asset('public/assets/admin/img/icons/upload_img2.png')}}" alt="">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-3 mt-4">
-                                <button type="reset" id="reset" class="btn btn-secondary">{{translate('reset')}}</button>
-                                <button type="submit" class="btn btn-primary">{{translate('submit')}}</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+            <a href="{{route('admin.banner.add-new')}}" class="btn btn-primary">
+                <i class="tio-add"></i> {{translate('add_new_banner')}}
+            </a>
         </div>
 
         <div class="row g-2">
@@ -86,20 +20,12 @@
                 <div class="card">
                     <div class="card-top px-card pt-4">
                         <div class="row align-items-center gy-2">
-                            <div class="col-sm-4 col-md-6 col-lg-8">
-                                <h5 class="d-flex align-items-center gap-2 mb-0">
-                                    {{translate('Banner_List')}}
-                                    <span class="badge badge-soft-dark rounded-50 fz-12">{{ $banners->total() }}</span>
-                                </h5>
-                            </div>
-                            <div class="col-sm-8 col-md-6 col-lg-4">
+                            <div class="col-sm-8 col-md-6 col-lg-8">
                                 <form action="{{ url()->current() }}" method="GET">
                                     <div class="input-group">
-                                        <input id="datatableSearch_" type="search" name="search" value="{{ $search }}" class="form-control" placeholder="{{translate('Search_by_Title')}}" aria-label="Search" required="" autocomplete="off">
+                                        <input type="search" name="search" value="{{ $search }}" class="form-control" placeholder="{{translate('search_by_title')}}" autocomplete="off">
                                         <div class="input-group-append">
-                                            <button type="submit" class="btn btn-primary">
-                                                {{translate('Search')}}
-                                            </button>
+                                            <button type="submit" class="btn btn-primary">{{translate('search')}}</button>
                                         </div>
                                     </div>
                                 </form>
@@ -112,10 +38,13 @@
                             <table class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
                                 <thead class="thead-light">
                                 <tr>
-                                    <th>{{translate('SL')}}</th>
-                                    <th>{{translate('Banner_Image')}}</th>
-                                    <th>{{translate('Title')}}</th>
-                                    <th>{{translate('Banner_Type')}}</th>
+                                    <th>{{translate('sl')}}</th>
+                                    <th>{{translate('banner_image')}}</th>
+                                    <th>{{translate('title')}}</th>
+                                    <th>{{translate('type')}}</th>
+                                    <th>{{translate('products/category')}}</th>
+                                    <th>{{translate('pricing')}}</th>
+                                    <th>{{translate('dates')}}</th>
                                     <th>{{translate('status')}}</th>
                                     <th class="text-center">{{translate('action')}}</th>
                                 </tr>
@@ -129,20 +58,94 @@
                                             <img class="img-vertical-150" src="{{$banner->imageFullPath}}" alt="{{ translate('banner image') }}">
                                         </td>
                                         <td>
-                                            <div class="max-w300 text-wrap">
-                                                {{$banner['title']}}
-                                            </div>
+                                            <div class="max-w300 text-wrap">{{$banner['title']}}</div>
                                         </td>
-                                        @if(isset($banner->category_id))
-                                            <td>{{translate('category')}}: {{substr(\App\Model\Category::find($banner->category_id)?->name, 0, 15)}}</td>
-                                        @elseif(isset($banner->product_id))
-                                            <td>{{translate('product')}}: {{ substr(\App\Model\Product::find($banner->product_id)?->name,0, 15) }}...</td>
-                                        @else
-                                            <td></td>
-                                        @endif
+                                        <td>
+                                            @if($banner->banner_type == 'single_product')
+                                                <span class="badge badge-soft-primary">{{translate('single_product')}}</span>
+                                            @elseif($banner->banner_type == 'multiple_products')
+                                                <span class="badge badge-soft-info">{{translate('multiple_products')}}</span>
+                                            @else
+                                                <span class="badge badge-soft-success">{{translate('category')}}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($banner->banner_type == 'category' && $banner->category)
+                                                <small>{{substr($banner->category->name, 0, 30)}}</small>
+                                            @elseif($banner->banner_type == 'single_product' && $banner->product)
+                                                <small>{{substr($banner->product->name, 0, 30)}}</small>
+                                            @elseif($banner->banner_type == 'multiple_products')
+                                                <small>{{$banner->products->count()}} {{translate('products')}}</small>
+                                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-toggle="modal" 
+                                                    data-target="#productsModal{{$banner->id}}">
+                                                    <i class="tio-visible"></i> {{translate('view')}}
+                                                </button>
+                                                
+                                                <!-- Products Modal -->
+                                                <div class="modal fade" id="productsModal{{$banner->id}}" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">{{translate('products_in_offer')}}</h5>
+                                                                <button type="button" class="close" data-dismiss="modal">
+                                                                    <span>&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <ul class="list-group">
+                                                                    @foreach($banner->products as $product)
+                                                                        <li class="list-group-item">
+                                                                            {{$product->name}} 
+                                                                            <span class="badge badge-primary float-right">{{$product->price}}</span>
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                                $originalPrice = $banner->calculateOriginalPrice();
+                                                $finalPrice = $banner->calculateFinalPrice();
+                                                $savings = $banner->getDiscountAmount();
+                                            @endphp
+                                            
+                                            @if($banner->banner_type != 'category' && $originalPrice > 0)
+                                                <small class="d-block">
+                                                    <strong>{{translate('original')}}:</strong> {{$originalPrice}}
+                                                </small>
+                                                <small class="d-block text-success">
+                                                    <strong>{{translate('offer')}}:</strong> {{$finalPrice}}
+                                                </small>
+                                                <small class="d-block text-danger">
+                                                    <strong>{{translate('save')}}:</strong> {{$savings}}
+                                                </small>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($banner->start_date && $banner->end_date)
+                                                <small class="d-block">{{translate('from')}}: {{$banner->start_date->format('Y-m-d')}}</small>
+                                                <small class="d-block">{{translate('to')}}: {{$banner->end_date->format('Y-m-d')}}</small>
+                                                @if($banner->isOfferActive())
+                                                    <span class="badge badge-success">{{translate('active')}}</span>
+                                                @else
+                                                    <span class="badge badge-secondary">{{translate('expired')}}</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">{{translate('no_date_limit')}}</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             <label class="switcher">
-                                                <input class="switcher_input status-change" type="checkbox" {{$banner['status']==1 ? 'checked' : ''}} id="{{$banner['id']}}"
+                                                <input class="switcher_input status-change" type="checkbox" 
+                                                    {{$banner['status']==1 ? 'checked' : ''}} 
+                                                    id="{{$banner['id']}}"
                                                     data-url="{{route('admin.banner.status',[$banner['id'],0])}}">
                                                 <span class="switcher_control"></span>
                                             </label>
@@ -150,11 +153,16 @@
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
                                                 <a class="btn btn-outline-info btn-sm edit square-btn"
-                                                    href="{{route('admin.banner.edit',[$banner['id']])}}"><i class="tio-edit"></i></a>
-                                                <button type="button" class="btn btn-outline-danger btn-sm delete square-btn form-alert" data-id="banner-{{$banner['id']}}" data-message="{{translate('Want to delete this banner')}}"
-                                                    ><i class="tio-delete"></i></button>
+                                                    href="{{route('admin.banner.edit',[$banner['id']])}}">
+                                                    <i class="tio-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger btn-sm delete square-btn form-alert" 
+                                                    data-id="banner-{{$banner['id']}}" 
+                                                    data-message="{{translate('want_to_delete_banner')}}">
+                                                    <i class="tio-delete"></i>
+                                                </button>
                                             </div>
-                                            <form action="{{route('admin.banner.delete',[$banner['id']])}}"
+                                            <form action="{{route('admin.banner.delete',[$banner['id']])}}" 
                                                 method="post" id="banner-{{$banner['id']}}">
                                                 @csrf @method('delete')
                                             </form>
@@ -177,55 +185,3 @@
     </div>
 
 @endsection
-
-@push('script_2')
-    <script>
-        "use strict";
-
-        $('.js-select2-custom').each(function () {
-            var select2 = $.HSCore.components.HSSelect2.init($(this));
-        });
-
-        $("select[name='item_type']").change(function() {
-            var selectedValue = $(this).val();
-            show_item(selectedValue);
-        });
-
-        $(".status-change").change(function() {
-            var selectedValue = $(this).val();
-            status_change(selectedValue);
-        });
-
-        function readURL(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-
-                reader.onload = function (e) {
-                    $('#viewer').attr('src', e.target.result);
-                }
-
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        $("#customFileEg1").change(function () {
-            readURL(this);
-        });
-
-
-        function show_item(type) {
-            if (type === 'product') {
-                $("#type-product").show();
-                $("#type-category").hide();
-            } else {
-                $("#type-product").hide();
-                $("#type-category").show();
-            }
-        }
-
-        $(".js-select2-custom").select2({
-            placeholder: "Select a item",
-            allowClear: true
-        });
-    </script>
-@endpush

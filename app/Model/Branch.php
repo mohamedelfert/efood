@@ -104,4 +104,36 @@ class Branch extends Authenticatable
     {
         return $this->status === 1;
     }
+
+    /**
+     * Get reviews for this branch
+     */
+    public function reviews()
+    {
+        return $this->hasMany(BranchReview::class);
+    }
+
+    /**
+     * Get active reviews for this branch
+     */
+    public function activeReviews()
+    {
+        return $this->hasMany(BranchReview::class)->where('is_active', true);
+    }
+
+    /**
+     * Get average rating
+     */
+    public function getAverageRatingAttribute()
+    {
+        return round($this->reviews()->avg('rating'), 2);
+    }
+
+    /**
+     * Get total reviews count
+     */
+    public function getTotalReviewsAttribute()
+    {
+        return $this->reviews()->count();
+    }
 }
