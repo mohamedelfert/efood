@@ -297,7 +297,7 @@
                                     @elseif($order['order_type'] == 'in_car')
                                         <span class="badge-soft-warning px-2 py-1 rounded">{{translate('in_car')}}</span>
                                     @elseif($order['order_type'] == 'dine_in')
-                                        <span class="badge-soft-primary px-2 py-1 rounded">{{translate('dine_in')}}</span>
+                                        <span class="badge-soft-danger px-2 py-1 rounded">{{translate('dine_in')}}</span>
                                     @else
                                         <span class="badge-soft-info px-2 py-1 rounded">{{translate($order['order_type'])}}</span>
                                     @endif
