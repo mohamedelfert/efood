@@ -115,7 +115,7 @@
                                     @endif
                                 </div>
                                 <div class="text-capitalize d-flex gap-3 justify-content-sm-end mb-3">
-                                    <span>{{translate('payment')}} {{translate('method')}} :</span>
+                                    <span>{{translate('payment_method')}} :</span>
                                     <span class="text-dark">{{translate($order['payment_method'])}}</span>
                                 </div>
                                 @if(!in_array($order['payment_method'], ['cash_on_delivery', 'wallet_payment', 'offline_payment']))
