@@ -275,7 +275,7 @@ class OrderController extends Controller
 
     public function details($id)
     {
-        $order = $this->order->with(['details', 'customer', 'branch', 'delivery_man', 'order_partial_payments'])
+        $order = $this->order->with(['details', 'customer', 'branch', 'delivery_man', 'order_partial_payments', 'table', 'table_order'])
             ->where(['id' => $id])
             ->first();
 
@@ -287,6 +287,7 @@ class OrderController extends Controller
         $address = $order->delivery_address ?? CustomerAddress::find($order->delivery_address_id);
         $order->address = $address;
 
+        // Get deliverymen for assignment
         $deliverymen = $this->delivery_man->where(['is_active'=>1])
             ->where(function($query) use ($order) {
                 $query->where('branch_id', $order->branch_id)
@@ -294,12 +295,79 @@ class OrderController extends Controller
             })
             ->get();
 
+        // Calculate remaining preparation time
         $deliveryDateTime = $order['delivery_date'] . ' ' . $order['delivery_time'];
         $orderedTime = Carbon::createFromFormat('Y-m-d H:i:s', date("Y-m-d H:i:s", strtotime($deliveryDateTime)));
         $remainingTime = $orderedTime->add($order['preparation_time'], 'minute')->format('Y-m-d H:i:s');
         $order['remaining_time'] = $remainingTime;
 
-        return view('admin-views.order.order-view', compact('order', 'deliverymen'));
+        // Get order type specific information
+        $orderTypeInfo = $this->getOrderTypeInfo($order);
+        
+        return view('admin-views.order.order-view', compact('order', 'deliverymen', 'orderTypeInfo'));
+    }
+
+    /**
+     * Get order type specific information
+     */
+    private function getOrderTypeInfo($order)
+    {
+        $info = [
+            'type' => $order->order_type,
+            'icon' => 'tio-shopping-basket',
+            'badge_class' => 'badge-soft-primary',
+            'title' => translate('Standard Order'),
+            'description' => '',
+            'show_delivery_man' => false,
+            'show_car_details' => false,
+            'show_table_details' => false,
+        ];
+
+        switch ($order->order_type) {
+            case 'delivery':
+                $info['icon'] = 'tio-shopping-basket';
+                $info['badge_class'] = 'badge-soft-primary';
+                $info['title'] = translate('Delivery Order');
+                $info['description'] = translate('Order will be delivered to customer address');
+                $info['show_delivery_man'] = true;
+                break;
+
+            case 'in_car':
+                $info['icon'] = 'tio-car';
+                $info['badge_class'] = 'badge-soft-danger';
+                $info['title'] = translate('In Car Service');
+                $info['description'] = translate('Order will be served to customer in their car');
+                $info['show_car_details'] = true;
+                $info['car_registration'] = $order->car_registration_number;
+                $info['car_color'] = $order->car_color;
+                break;
+
+            case 'take_away':
+                $info['icon'] = 'tio-checkmark-circle';
+                $info['badge_class'] = 'badge-soft-success';
+                $info['title'] = translate('Take Away');
+                $info['description'] = translate('Customer will pick up the order');
+                break;
+
+            case 'dine_in':
+                $info['icon'] = 'tio-table';
+                $info['badge_class'] = 'badge-soft-warning';
+                $info['title'] = translate('Dine In');
+                $info['description'] = translate('Customer dining in at restaurant');
+                $info['show_table_details'] = true;
+                $info['table_number'] = $order->table ? $order->table->number : null;
+                $info['number_of_people'] = $order->number_of_people;
+                break;
+
+            case 'pos':
+                $info['icon'] = 'tio-money';
+                $info['badge_class'] = 'badge-soft-info';
+                $info['title'] = translate('POS Order');
+                $info['description'] = translate('Order placed from Point of Sale');
+                break;
+        }
+
+        return $info;
     }
 
     /**
