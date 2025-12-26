@@ -285,12 +285,22 @@
                                         <span class="badge-soft-success px-2 py-1 rounded">{{translate('delivered')}}</span>
                                     @elseif($order['order_status']=='failed')
                                         <span class="badge-soft-danger px-2 py-1 rounded">{{translate("failed_to_deliver")}}</span>
+                                    @elseif($order['order_status']=='canceled')
+                                        <span class="badge-soft-danger px-2 py-1 rounded">{{translate("canceled")}}</span>
                                     @else
                                         <span class="badge-soft-danger px-2 py-1 rounded">{{str_replace('_',' ',$order['order_status'])}}</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <span class="badge-soft-success px-2 py-1 rounded">{{translate($order['order_type'])}}</span>
+                               <td>
+                                    @if($order['order_type'] == 'delivery')
+                                        <span class="badge-soft-success px-2 py-1 rounded">{{translate('delivery')}}</span>
+                                    @elseif($order['order_type'] == 'in_car')
+                                        <span class="badge-soft-warning px-2 py-1 rounded">{{translate('in_car')}}</span>
+                                    @elseif($order['order_type'] == 'dine_in')
+                                        <span class="badge-soft-primary px-2 py-1 rounded">{{translate('dine_in')}}</span>
+                                    @else
+                                        <span class="badge-soft-info px-2 py-1 rounded">{{translate($order['order_type'])}}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <div class="d-flex justify-content-center gap-2">
