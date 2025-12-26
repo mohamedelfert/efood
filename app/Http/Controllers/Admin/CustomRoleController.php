@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Model\Admin;
+use App\Model\Branch;
 use App\Model\AdminRole;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Rap2hpoutre\FastExcel\FastExcel;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Contracts\Support\Renderable;
 
 class CustomRoleController extends Controller
 {
@@ -23,81 +24,92 @@ class CustomRoleController extends Controller
 
     public function create(Request $request): Renderable
     {
-        $search = $request['search'];
-        $roles = $this->adminRole
-            ->whereNotIn('id', [1])
-            ->when($search, function ($query) use ($search) {
-                $params = explode(' ', $search);
-                foreach ($params as $param) {
-                    $query->where('name', 'like', "%" . $param . "%");
-                }
-            })
-            ->latest()->get();
+        // تعريف $search دائمًا، حتى لو كان فارغًا
+        $search = $request->get('search', '');
 
-        return view('admin-views.custom-role.create', compact('roles', 'search'));
+        $user = auth('admin')->user();
+
+        $query = $this->adminRole->with('branch')->whereNotIn('id', [1]);
+
+        // إذا لم يكن Master Admin → فلترة حسب الفرع
+        if ($user->admin_role_id != 1) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        // تطبيق البحث إذا وجد
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                foreach (explode(' ', $search) as $term) {
+                    $q->where('name', 'like', "%{$term}%");
+                }
+            });
+        }
+
+        $roles = $query->latest()->get();
+
+        $branches = Branch::active()->get();
+
+        // الآن $search معرف دائمًا
+        return view('admin-views.custom-role.create', compact('roles', 'search', 'branches'));
     }
 
-    /**
-     * @param Request $request
-     * @return RedirectResponse
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|unique:admin_roles',
-        ], [
-            'name.required' => translate('Role name is required!')
+            'name' => 'required|unique:admin_roles,name',
+            'modules' => 'required|array|min:1',
         ]);
 
-        if ($request['modules'] == null) {
-            Toastr::error(translate('Select at least one module permission'));
+        $user = auth('admin')->user();
+
+        $branchId = $request->branch_id;
+
+        // مدير الفرع لا يمكنه اختيار فرع آخر
+        if ($user->admin_role_id != 1 && $branchId != $user->branch_id) {
+            Toastr::error('غير مسموح لك بإنشاء دور لفرع آخر!');
             return back();
         }
 
-        $this->adminRole->insert([
+        // أو اجبره على فرعه تلقائيًا
+        if ($user->admin_role_id != 1) {
+            $branchId = $user->branch_id;
+        }
+
+        $this->adminRole->create([
             'name' => $request->name,
-            'module_access' => json_encode($request['modules']),
+            'branch_id' => $branchId,
+            'module_access' => json_encode($request->modules),
             'status' => 1,
-            'created_at' => now(),
-            'updated_at' => now()
         ]);
 
         Toastr::success(translate('Role added successfully!'));
         return back();
     }
 
-    /**
-     * @param $id
-     * @return Renderable
-     */
     public function edit($id): Renderable
     {
-        $role = $this->adminRole->where(['id' => $id])->first(['id', 'name', 'module_access']);
-        return view('admin-views.custom-role.edit', compact('role'));
+        $role = $this->adminRole->with('branch')->findOrFail($id);
+        $branches = Branch::active()->get();
+
+        return view('admin-views.custom-role.edit', compact('role', 'branches'));
     }
 
-    /**
-     * @param Request $request
-     * @param $id
-     * @return RedirectResponse
-     */
     public function update(Request $request, $id): RedirectResponse
     {
         $request->validate([
             'name' => 'required',
-        ], [
-            'name.required' => translate('Role name is required!')
+            'branch_id' => 'required|exists:branches,id',
+            'modules' => 'required|array|min:1',
         ]);
 
-        $this->adminRole->where(['id' => $id])->update([
+        $this->adminRole->findOrFail($id)->update([
             'name' => $request->name,
-            'module_access' => json_encode($request['modules']),
-            'status' => 1,
-            'updated_at' => now()
+            'branch_id' => $request->branch_id,
+            'module_access' => json_encode($request->modules),
         ]);
 
         Toastr::success(translate('Role updated successfully!'));
-        return redirect(route('admin.custom-role.create'));
+        return redirect()->route('admin.custom-role.create');
     }
 
     /**

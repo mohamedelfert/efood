@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Model\Admin;
+use App\Model\Branch;
+use App\Model\AdminRole;
+use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
-use App\Model\Admin;
-use App\Model\AdminRole;
-use Box\Spout\Common\Exception\InvalidArgumentException;
-use Box\Spout\Common\Exception\IOException;
-use Box\Spout\Common\Exception\UnsupportedTypeException;
-use Box\Spout\Writer\Exception\WriterNotOpenedException;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Http\Request;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Http\RedirectResponse;
+use Box\Spout\Common\Exception\IOException;
 use Illuminate\Contracts\Support\Renderable;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Box\Spout\Common\Exception\InvalidArgumentException;
+use Box\Spout\Common\Exception\UnsupportedTypeException;
+use Box\Spout\Writer\Exception\WriterNotOpenedException;
 
 
 class EmployeeController extends Controller
@@ -25,66 +26,60 @@ class EmployeeController extends Controller
         private AdminRole $admin_role
     ){}
 
-    /**
-     * @return Renderable
-     */
-    public function index(): Renderable
+    // دالة لجلب الفروع المتاحة (الجديدة)
+    private function getAvailableBranches()
     {
-        $roles = $this->admin_role->whereNotIn('id', [1])->get();
-        return view('admin-views.employee.add-new', compact('roles'));
+        $user = auth('admin')->user();
+
+        if ($user->admin_role_id == 1) {
+            return Branch::active()->get();
+        }
+
+        return Branch::where('id', $user->branch_id)->get();
     }
 
-    /**
-     * @param Request $request
-     * @return RedirectResponse
-     */
+    public function index(): Renderable
+    {
+        $roles = $this->getAvailableRoles();
+        $branches = $this->getAvailableBranches();
+
+        return view('admin-views.employee.add-new', compact('roles', 'branches'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => 'required',
-            'role_id' => 'required',
-            'image' => 'nullable|image',
-            'email' => 'required|email|unique:admins',
-            'password' => 'required',
+            'role_id' => 'required|exists:admin_roles,id',
+            'branch_id' => 'required|exists:branches,id',
+            'email' => 'required|email|unique:admins,email',
+            'password' => 'required|min:8',
             'phone' => 'required',
-            'identity_image' => 'nullable',
-            'identity_type' => 'nullable',
-            'identity_number' => 'nullable',
-            'confirm_password' => 'same:password'
-        ], [
-            'name.required' => translate('Role name is required!'),
-            'role_name.required' => translate('Role id is Required'),
-            'email.required' => translate('Email id is Required'),
-            'image.nullable' => translate('Image is Required'),
-
         ]);
 
-        if ($request->role_id == 1) {
+        $role = $this->admin_role->findOrFail($request->role_id);
+
+        if ($role->id == 1) {
             Toastr::warning(translate('Access Denied!'));
             return back();
         }
 
-        $identityImageNames = [];
-        if (!empty($request->file('identity_image'))) {
-            foreach ($request->identity_image as $img) {
-                $identityImageNames[] = Helpers::upload('admin/', 'png', $img);
-            }
-            $identityImage = json_encode($identityImageNames);
-        } else {
-            $identityImage = json_encode([]);
+        $user = auth('admin')->user();
+
+        // تقييد مدير الفرع: لا يمكنه إضافة موظف في فرع آخر
+        if ($user->admin_role_id != 1 && $request->branch_id != $user->branch_id) {
+            Toastr::error(translate('You are not allowed to add employee in another branch!'));
+            return back();
         }
 
-        $this->admin->insert([
+        $this->admin->create([
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
-            'identity_number' => $request->identity_number,
-            'identity_type' => $request->identity_type,
-            'identity_image' => $identityImage,
+            'branch_id' => $request->branch_id,
             'password' => bcrypt($request->password),
             'status' => 1,
-            'image' => Helpers::upload('admin/', 'png', $request->file('image')),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -93,106 +88,81 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employee.list');
     }
 
-    /**
-     * @param Request $request
-     * @return Renderable
-     */
-    function list(Request $request): Renderable
+    public function list(Request $request): Renderable
     {
-        $search = $request['search'];
-        $key = explode(' ', $request['search']);
+        $search = $request->get('search');
 
-        $query = $this->admin->with(['role'])
-            ->when($search != null, function ($query) use ($key) {
-                $query->whereNotIn('id', [1])->where(function ($query) use ($key) {
-                    foreach ($key as $value) {
-                        $query->where('name', 'like', "%{$value}%")
-                            ->orWhere('phone', 'like', "%{$value}%")
-                            ->orWhere('email', 'like', "%{$value}%");
-                    }
-                });
-            }, function ($query) {
-                $query->whereNotIn('id', [1]);
+        $query = $this->admin->with(['role', 'branch'])
+            ->whereNotIn('id', [1]);
+
+        $user = auth('admin')->user();
+
+        if ($user->admin_role_id != 1) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
             });
+        }
 
-        $employees = $query->paginate(Helpers::getPagination());
+        $employees = $query->latest()->paginate(Helpers::getPagination());
 
         return view('admin-views.employee.list', compact('employees', 'search'));
     }
 
-    /**
-     * @param $id
-     * @return Renderable
-     */
     public function edit($id): Renderable
     {
-        $employee = $this->admin->where(['id' => $id])->first();
-        $roles = $this->admin_role->whereNotIn('id', [1])->get();
-        return view('admin-views.employee.edit', compact('roles', 'employee'));
+        $employee = $this->admin->findOrFail($id);
+
+        $user = auth('admin')->user();
+
+        if ($user->admin_role_id != 1 && $employee->branch_id != $user->branch_id) {
+            abort(403);
+        }
+
+        $roles = $this->getAvailableRoles();
+        $branches = $this->getAvailableBranches();
+
+        return view('admin-views.employee.edit', compact('employee', 'roles', 'branches'));
     }
 
-    /**
-     * @param Request $request
-     * @param $id
-     * @return RedirectResponse
-     */
     public function update(Request $request, $id): RedirectResponse
     {
+        $employee = $this->admin->findOrFail($id);
+
+        $user = auth('admin')->user();
+
+        if ($user->admin_role_id != 1 && $employee->branch_id != $user->branch_id) {
+            abort(403);
+        }
+
         $request->validate([
             'name' => 'required',
-            'role_id' => 'required',
-            'email' => 'required|email|unique:admins,email,' . $id,
+            'role_id' => 'required|exists:admin_roles,id',
+            'branch_id' => 'required|exists:branches,id',
+            'email' => 'required|email|unique:admins,email,'.$id,
             'phone' => 'required',
-            'identity_type' => 'nullable',
-            'identity_number' => 'nullable',
-        ], [
-            'name.required' => translate('Role name is required!'),
         ]);
 
-        if ($request->role_id == 1) {
-            Toastr::warning(translate('Access Denied!'));
+        if ($user->admin_role_id != 1 && $request->branch_id != $user->branch_id) {
+            Toastr::error(translate('You are not allowed to change branch!'));
             return back();
         }
 
-        $employee = $this->admin->find($id);
-        $identityImage = $employee['identity_image'];
+        $password = $request->filled('password') ? bcrypt($request->password) : $employee->password;
 
-        if ($request['password'] == null) {
-            $password = $employee['password'];
-        } else {
-            $request->validate([
-                'confirm_password' => 'same:password'
-            ]);
-            if (strlen($request['password']) < 7) {
-                Toastr::warning(translate('Password length must be 8 character.'));
-                return back();
-            }
-            $password = bcrypt($request['password']);
-        }
-
-        if ($request->has('image')) {
-            $employee['image'] = Helpers::update('admin/', $employee['image'], 'png', $request->file('image'));
-        }
-
-        $identityImageNames = [];
-        if (!empty($request->file('identity_image'))) {
-            foreach ($request->identity_image as $img) {
-                $identityImageNames[] = Helpers::upload('admin/', 'png', $img);
-            }
-            $identityImage = json_encode($identityImageNames);
-        }
-
-        $this->admin->where(['id' => $id])->update([
+        $employee->update([
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
+            'branch_id' => $request->branch_id,
             'password' => $password,
-            'image' => $employee['image'],
             'updated_at' => now(),
-            'identity_number' => $request->identity_number,
-            'identity_type' => $request->identity_type,
-            'identity_image' => $identityImage,
         ]);
 
         Toastr::success(translate('Employee updated successfully!'));
@@ -247,5 +217,31 @@ class EmployeeController extends Controller
             ->get(['id', 'name', 'email', 'admin_role_id', 'status']);
 
         return (new FastExcel($employees))->download('employees.xlsx');
+    }
+
+    private function getAvailableRoles()
+    {
+        $user = auth('admin')->user();
+
+        // Master Admin (role_id = 1) يرى كل الأدوار عدا نفسه
+        if ($user->admin_role_id == 1) {
+            return $this->admin_role->whereNotIn('id', [1])->get();
+        }
+
+        // مدير فرع يرى فقط أدوار فرعه
+        return $this->admin_role
+            ->where('branch_id', $user->branch_id)
+            ->whereNotIn('id', [1])
+            ->get();
+    }
+
+    private function handleIdentityImages($request)
+    {
+        if ($request->hasFile('identity_image')) {
+            return json_encode(array_map(function($img) {
+                return Helpers::upload('admin/', 'png', $img);
+            }, $request->file('identity_image')));
+        }
+        return json_encode([]);
     }
 }

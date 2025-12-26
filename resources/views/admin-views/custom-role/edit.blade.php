@@ -26,6 +26,17 @@
                                        placeholder="{{translate('Ex')}} : {{translate('Store')}}">
                             </div>
 
+                            <div class="form-group">
+                                <label>{{translate('branch')}}</label>
+                                <select name="branch_id" class="form-control" required>
+                                    @foreach($branches as $branch)
+                                        <option value="{{$branch->id}}" {{$role->branch_id == $branch->id ? 'selected' : ''}}>
+                                            {{$branch->name}}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div class="mb-5 d-flex flex-wrap align-items-center gap-3">
                                 <h5 class="mb-0">{{translate('Module_Permission')}} : </h5>
                                 <div class="form-check">

@@ -31,6 +31,16 @@
                                 placeholder="{{translate('Ex')}} : {{translate('Store')}}" required>
                     </div>
 
+                    <div class="form-group">
+                        <label>{{translate('branch')}}</label>
+                        <select name="branch_id" class="form-control" required>
+                            <option value="">{{translate('Select Branch')}}</option>
+                            @foreach($branches as $branch)
+                                <option value="{{$branch->id}}">{{$branch->name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="mb-5 d-flex flex-wrap align-items-center gap-3">
                         <h5 class="mb-0">{{translate('Module_Permission')}} : </h5>
                         <div class="form-check">
@@ -101,6 +111,7 @@
                         <tr>
                             <th>{{translate('SL')}}</th>
                             <th>{{translate('role_name')}}</th>
+                            <th>{{translate('branch')}}</th>
                             <th>{{translate('modules')}}</th>
                             <th>{{translate('created_at')}}</th>
                             <th>{{translate('status')}}</th>
@@ -112,6 +123,7 @@
                             <tr>
                                 <td>{{$loop->iteration}}</td>
                                 <td>{{$role['name']}}</td>
+                                <td>{{$role->branch?->name ?? '-'}}</td>
                                 <td class="text-capitalize">
                                     <div class="max-w300 text-wrap">
                                         @if($role['module_access']!=null)

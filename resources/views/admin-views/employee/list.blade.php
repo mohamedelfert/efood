@@ -64,6 +64,7 @@
                                     <th>{{translate('Name')}}</th>
                                     <th>{{translate('Contact_Info')}}</th>
                                     <th>{{translate('Role')}}</th>
+                                    <th>{{translate('branch')}}</th>
                                     <th>{{translate('Status')}}</th>
                                     <th class="text-center">{{translate('action')}}</th>
                                 </tr>
@@ -93,6 +94,11 @@
                                                    class="toggle-switch-input" {{$employee->status?'checked':''}}>
                                             <span class="switcher_control"></span>
                                         </label>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-soft-primary py-1 px-2">
+                                            {{$employee->branch?->name ?? translate('No Branch')}}
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">

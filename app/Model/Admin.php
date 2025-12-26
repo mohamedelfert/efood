@@ -2,16 +2,18 @@
 
 namespace App\Model;
 
+use App\Model\Branch;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 
 class Admin extends Authenticatable
 {
     use Notifiable;
 
-    protected $fillable = ['admin_role_id'];
+    // protected $fillable = ['admin_role_id'];
+    protected $guarded = [];
 
     public function role(): BelongsTo
     {
@@ -43,5 +45,10 @@ class Admin extends Authenticatable
             }
         }
         return $imageUrlArray;
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
     }
 }
