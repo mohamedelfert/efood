@@ -108,6 +108,8 @@
                                     <span class="badge-soft-success px-2 rounded text-capitalize">{{translate('delivered')}}</span>
                                     @elseif($order['order_status']=='failed')
                                     <span class="badge-soft-danger px-2 rounded text-capitalize">{{translate('failed_to_deliver')}}</span>
+                                    @elseif($order['order_status']=='canceled')
+                                    <span class="badge-soft-danger px-2 rounded text-capitalize">{{translate('canceled')}}</span>
                                     @else
                                     <span class="badge-soft-danger px-2 rounded text-capitalize">{{str_replace('_',' ',$order['order_status'])}}</span>
                                     @endif
