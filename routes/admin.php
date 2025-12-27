@@ -513,6 +513,26 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::post('add-fund', [CustomerWalletController::class, 'addFund'])->name('add-fund-store');
                 Route::get('report', [CustomerWalletController::class, 'report'])->name('report');
 
+                // Balance Summary Routes
+                Route::get('balance-summary', [CustomerWalletController::class, 'balanceSummary'])
+                    ->name('balance-summary');
+                
+                Route::get('balance-summary/print', [CustomerWalletController::class, 'printBalanceSummary'])
+                    ->name('balance-summary.print');
+                
+                Route::get('balance-summary/export', [CustomerWalletController::class, 'exportBalanceSummary'])
+                    ->name('balance-summary.export');
+                
+                // Customer Statement Routes
+                Route::get('statement/{customer_id}', [CustomerWalletController::class, 'customerStatement'])
+                    ->name('statement');
+                
+                Route::get('statement/{customer_id}/print', [CustomerWalletController::class, 'printCustomerStatement'])
+                    ->name('statement.print');
+                
+                Route::get('statement/{customer_id}/export', [CustomerWalletController::class, 'exportCustomerStatement'])
+                    ->name('statement.export');
+
                 Route::group(['prefix' => 'bonus', 'as' => 'bonus.'], function () {
                     Route::get('index', [WalletBonusController::class, 'index'])->name('index');
                     Route::post('store', [WalletBonusController::class, 'store'])->name('store');

@@ -64,8 +64,8 @@
                                     <th>{{translate('Name')}}</th>
                                     <th>{{translate('Contact_Info')}}</th>
                                     <th>{{translate('Role')}}</th>
-                                    <th>{{translate('branch')}}</th>
                                     <th>{{translate('Status')}}</th>
+                                    <th>{{translate('branch')}}</th>
                                     <th class="text-center">{{translate('action')}}</th>
                                 </tr>
                             </thead>

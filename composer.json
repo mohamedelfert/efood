@@ -32,7 +32,7 @@
         "nwidart/laravel-modules": "^9.0",
         "paypal/rest-api-sdk-php": "^1.6",
         "phonepe/phonepe-pg-php-sdk": "^1.0",
-        "rap2hpoutre/fast-excel": "^5.3",
+        "rap2hpoutre/fast-excel": "^5.6",
         "razorpay/razorpay": "^2.5",
         "simplesoftwareio/simple-qrcode": "~4",
         "stripe/stripe-php": "^7.61",

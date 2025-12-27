@@ -215,4 +215,10 @@ class Order extends Model
         ];
     }
 
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class, 'reference', 'id')
+                    ->where('transaction_type', 'order_place');
+    }
+
 }

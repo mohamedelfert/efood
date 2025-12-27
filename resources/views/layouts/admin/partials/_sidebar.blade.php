@@ -285,6 +285,7 @@
                                 </ul>
                             </li>
 
+                            <!-- Customer Wallet Section -->
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/customer/wallet*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                     <i class="tio-wallet nav-icon"></i>
@@ -292,7 +293,7 @@
                                         {{translate('customer wallet')}}
                                     </span>
                                 </a>
-                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/customer/wallet/add-fund') || Request::is('admin/customer/wallet/report') || Request::is('admin/customer/wallet/bonus*')?'block':''}}">
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/customer/wallet*')?'block':''}}">
                                     <li class="nav-item {{Request::is('admin/customer/wallet/add-fund')?'active':''}}">
                                         <a class="nav-link" href="{{route('admin.customer.wallet.add-fund')}}">
                                             <span class="tio-circle nav-indicator-icon"></span>
@@ -303,6 +304,15 @@
                                         <a class="nav-link" href="{{route('admin.customer.wallet.report')}}">
                                             <span class="tio-circle nav-indicator-icon"></span>
                                             <span class="text-truncate">{{translate('report')}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{Request::is('admin/customer/wallet/balance-summary*')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.customer.wallet.balance-summary')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">
+                                                <i class="tio-table"></i>
+                                                {{translate('Balance Summary')}}
+                                            </span>
                                         </a>
                                     </li>
                                     <li class="nav-item {{Request::is('admin/customer/wallet/bonus*')?'active':''}}">

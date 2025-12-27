@@ -757,4 +757,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(DMReview::class);
     }
+
+    /**
+     * Scope to get only customers (users without user_type)
+     */
+    public function scopeCustomers($query)
+    {
+        return $query->whereNull('user_type');
+    }
 }

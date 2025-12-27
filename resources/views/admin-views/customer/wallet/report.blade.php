@@ -8,7 +8,7 @@
             <h2 class="h1 mb-0 d-flex align-items-center gap-2">
                 <img src="{{asset('/public/assets/admin/img/wallet.png')}}" alt="{{translate('public')}}" class="width-24">
                 <span>
-                    {{translate('customer')}} {{translate('wallet')}} {{translate('report')}}
+                    {{translate('customer_wallet_report')}}
                 </span>
             </h2>
         </div>

@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use PDF;
 
 class CustomerWalletController extends Controller
 {
@@ -118,5 +120,437 @@ class CustomerWalletController extends Controller
         if ($request->all) $data[] = (object)['id' => false, 'text' => translate('all')];
 
         return response()->json($data);
+    }
+
+    /**
+     * Customer Balance Summary Report
+     * Shows all customers with their wallet balances
+     * 
+     * @param Request $request
+     * @return Renderable
+     */
+    public function balanceSummary(Request $request): Renderable
+    {
+        $query = $this->user->where('user_type', null)
+            ->withCount('orders')
+            ->with(['walletTransactions' => function($q) {
+                $q->latest()->limit(1);
+            }]); // Eager load orders count
+
+        // Search functionality
+        if ($request->search) {
+            $key = explode(' ', $request->search);
+            $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('name', 'like', "%{$value}%")
+                      ->orWhere('phone', 'like', "%{$value}%")
+                      ->orWhere('email', 'like', "%{$value}%");
+                }
+            });
+        }
+
+        // Filter by balance
+        if ($request->balance_filter) {
+            switch ($request->balance_filter) {
+                case 'positive':
+                    $query->where('wallet_balance', '>', 0);
+                    break;
+                case 'zero':
+                    $query->where('wallet_balance', '=', 0);
+                    break;
+                case 'negative':
+                    $query->where('wallet_balance', '<', 0);
+                    break;
+            }
+        }
+
+        // Filter by minimum balance
+        if ($request->min_balance !== null && $request->min_balance !== '') {
+            $query->where('wallet_balance', '>=', $request->min_balance);
+        }
+
+        // Filter by maximum balance
+        if ($request->max_balance !== null && $request->max_balance !== '') {
+            $query->where('wallet_balance', '<=', $request->max_balance);
+        }
+
+        // Sorting
+        $sortBy = $request->sort_by ?? 'name';
+        $sortOrder = $request->sort_order ?? 'asc';
+        
+        if ($sortBy === 'balance') {
+            $query->orderBy('wallet_balance', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $customers = $query->paginate(Helpers::getPagination());
+
+        // Calculate summary statistics
+        $allCustomers = $this->user->where('user_type', null);
+        
+        $statistics = [
+            'total_customers' => $allCustomers->count(),
+            'total_balance' => $allCustomers->sum('wallet_balance') ?? 0,
+            'positive_balance_count' => $allCustomers->where('wallet_balance', '>', 0)->count(),
+            'positive_balance_sum' => $allCustomers->where('wallet_balance', '>', 0)->sum('wallet_balance') ?? 0,
+            'zero_balance_count' => $allCustomers->where('wallet_balance', '=', 0)->count(),
+            'negative_balance_count' => $allCustomers->where('wallet_balance', '<', 0)->count(),
+            'negative_balance_sum' => $allCustomers->where('wallet_balance', '<', 0)->sum('wallet_balance') ?? 0,
+            'average_balance' => round($allCustomers->avg('wallet_balance') ?? 0, 2),
+            'max_balance' => $allCustomers->max('wallet_balance') ?? 0,
+            'min_balance' => $allCustomers->min('wallet_balance') ?? 0,
+        ];
+
+        return view('admin-views.customer.wallet.balance-summary', compact('customers', 'statistics'));
+    }
+
+    /**
+     * Print Balance Summary Report (FIXED VERSION)
+     * 
+     * @param Request $request
+     * @return mixed
+     */
+    public function printBalanceSummary(Request $request)
+    {
+        $query = $this->user->where('user_type', null)
+            ->withCount('orders')
+            ->with(['walletTransactions' => function($q) {
+                $q->latest()->limit(1);
+            }]);
+
+        // Apply same filters as balance summary
+        if ($request->search) {
+            $key = explode(' ', $request->search);
+            $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('name', 'like', "%{$value}%")
+                      ->orWhere('phone', 'like', "%{$value}%")
+                      ->orWhere('email', 'like', "%{$value}%");
+                }
+            });
+        }
+
+        if ($request->balance_filter) {
+            switch ($request->balance_filter) {
+                case 'positive':
+                    $query->where('wallet_balance', '>', 0);
+                    break;
+                case 'zero':
+                    $query->where('wallet_balance', '=', 0);
+                    break;
+                case 'negative':
+                    $query->where('wallet_balance', '<', 0);
+                    break;
+            }
+        }
+
+        if ($request->min_balance !== null && $request->min_balance !== '') {
+            $query->where('wallet_balance', '>=', $request->min_balance);
+        }
+
+        if ($request->max_balance !== null && $request->max_balance !== '') {
+            $query->where('wallet_balance', '<=', $request->max_balance);
+        }
+
+        $sortBy = $request->sort_by ?? 'name';
+        $sortOrder = $request->sort_order ?? 'asc';
+        
+        if ($sortBy === 'balance') {
+            $query->orderBy('wallet_balance', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $customers = $query->get();
+
+        $statistics = [
+            'total_customers' => $customers->count(),
+            'total_balance' => $customers->sum('wallet_balance') ?? 0,
+            'positive_balance_count' => $customers->where('wallet_balance', '>', 0)->count(),
+            'positive_balance_sum' => $customers->where('wallet_balance', '>', 0)->sum('wallet_balance') ?? 0,
+            'zero_balance_count' => $customers->where('wallet_balance', '=', 0)->count(),
+            'negative_balance_count' => $customers->where('wallet_balance', '<', 0)->count(),
+            'negative_balance_sum' => $customers->where('wallet_balance', '<', 0)->sum('wallet_balance') ?? 0,
+            'average_balance' => round($customers->avg('wallet_balance') ?? 0, 2),
+        ];
+
+        $businessInfo = BusinessSetting::whereIn('key', ['restaurant_name', 'restaurant_phone', 'restaurant_email', 'restaurant_address'])
+            ->pluck('value', 'key')
+            ->toArray();
+
+        return view('admin-views.customer.wallet.print-balance-summary', compact('customers', 'statistics', 'businessInfo'));
+    }
+
+    /**
+     * Customer Wallet Statement (FIXED VERSION)
+     * Shows detailed transaction history for a specific customer
+     * 
+     * @param Request $request
+     * @param int $customer_id
+     * @return Renderable
+     */
+    public function customerStatement(Request $request, $customer_id): Renderable
+    {
+        $customer = $this->user->withCount('orders')->findOrFail($customer_id);
+
+        $query = $this->walletTransaction->where('user_id', $customer_id);
+
+        // Date range filter
+        $fromDate = null;
+        $toDate = null;
+        
+        if ($request->from && $request->to) {
+            $fromDate = Carbon::parse($request->from)->startOfDay();
+            $toDate = Carbon::parse($request->to)->endOfDay();
+            
+            $query->whereBetween('created_at', [$fromDate, $toDate]);
+        }
+
+        // Transaction type filter
+        if ($request->transaction_type) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')
+                              ->paginate(Helpers::getPagination());
+
+        // Calculate period statistics
+        $periodQuery = $this->walletTransaction->where('user_id', $customer_id);
+        
+        if ($fromDate && $toDate) {
+            $periodQuery->whereBetween('created_at', [$fromDate, $toDate]);
+        }
+        
+        $periodTransactions = $periodQuery->get();
+        
+        $periodStats = [
+            'opening_balance' => $this->calculateOpeningBalance($customer_id, $fromDate),
+            'total_credit' => $periodTransactions->sum('credit') ?? 0,
+            'total_debit' => $periodTransactions->sum('debit') ?? 0,
+            'closing_balance' => $customer->wallet_balance ?? 0,
+            'transaction_count' => $transactions->total(),
+        ];
+
+        // Transaction type breakdown
+        $transactionBreakdown = $this->walletTransaction
+            ->where('user_id', $customer_id)
+            ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('created_at', [$fromDate, $toDate]);
+            })
+            ->select('transaction_type', 
+                     DB::raw('SUM(credit) as total_credit'),
+                     DB::raw('SUM(debit) as total_debit'),
+                     DB::raw('COUNT(*) as count'))
+            ->groupBy('transaction_type')
+            ->get();
+
+        return view('admin-views.customer.wallet.customer-statement', compact(
+            'customer', 
+            'transactions', 
+            'periodStats', 
+            'transactionBreakdown',
+            'fromDate',
+            'toDate'
+        ));
+    }
+
+    /**
+     * Print Customer Statement (FIXED VERSION)
+     * 
+     * @param Request $request
+     * @param int $customer_id
+     * @return mixed
+     */
+    public function printCustomerStatement(Request $request, $customer_id)
+    {
+        $customer = $this->user->withCount('orders')->findOrFail($customer_id);
+
+        $query = $this->walletTransaction->where('user_id', $customer_id);
+
+        $fromDate = null;
+        $toDate = null;
+        
+        if ($request->from && $request->to) {
+            $fromDate = Carbon::parse($request->from)->startOfDay();
+            $toDate = Carbon::parse($request->to)->endOfDay();
+            
+            $query->whereBetween('created_at', [$fromDate, $toDate]);
+        }
+
+        if ($request->transaction_type) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')->get();
+
+        $periodStats = [
+            'opening_balance' => $this->calculateOpeningBalance($customer_id, $fromDate),
+            'total_credit' => $transactions->sum('credit') ?? 0,
+            'total_debit' => $transactions->sum('debit') ?? 0,
+            'closing_balance' => $customer->wallet_balance ?? 0,
+            'transaction_count' => $transactions->count(),
+        ];
+
+        $transactionBreakdown = $transactions
+            ->groupBy('transaction_type')
+            ->map(function ($group) {
+                return [
+                    'type' => $group->first()->transaction_type,
+                    'total_credit' => $group->sum('credit'),
+                    'total_debit' => $group->sum('debit'),
+                    'count' => $group->count(),
+                ];
+            });
+
+        $businessInfo = BusinessSetting::whereIn('key', ['restaurant_name', 'restaurant_phone', 'restaurant_email', 'restaurant_address'])
+            ->pluck('value', 'key')
+            ->toArray();
+
+        return view('admin-views.customer.wallet.print-customer-statement', compact(
+            'customer', 
+            'transactions', 
+            'periodStats', 
+            'transactionBreakdown',
+            'businessInfo',
+            'fromDate',
+            'toDate'
+        ));
+    }
+
+    /**
+     * Calculate opening balance for a customer at a specific date (FIXED VERSION)
+     * 
+     * @param int $customer_id
+     * @param Carbon|null $date
+     * @return float
+     */
+    private function calculateOpeningBalance($customer_id, $date = null): float
+    {
+        if (!$date) {
+            return 0;
+        }
+
+        $transactions = $this->walletTransaction
+            ->where('user_id', $customer_id)
+            ->where('created_at', '<', $date)
+            ->selectRaw('SUM(credit) as total_credit, SUM(debit) as total_debit')
+            ->first();
+
+        $credit = $transactions->total_credit ?? 0;
+        $debit = $transactions->total_debit ?? 0;
+
+        return $credit - $debit;
+    }
+
+    /**
+     * Export balance summary to Excel (FIXED VERSION)
+     * 
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function exportBalanceSummary(Request $request)
+    {
+        $query = $this->user->where('user_type', null)
+            ->withCount('orders');
+
+        // Apply filters
+        if ($request->search) {
+            $key = explode(' ', $request->search);
+            $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('name', 'like', "%{$value}%")
+                      ->orWhere('phone', 'like', "%{$value}%")
+                      ->orWhere('email', 'like', "%{$value}%");
+                }
+            });
+        }
+
+        if ($request->balance_filter) {
+            switch ($request->balance_filter) {
+                case 'positive':
+                    $query->where('wallet_balance', '>', 0);
+                    break;
+                case 'zero':
+                    $query->where('wallet_balance', '=', 0);
+                    break;
+                case 'negative':
+                    $query->where('wallet_balance', '<', 0);
+                    break;
+            }
+        }
+
+        if ($request->min_balance !== null && $request->min_balance !== '') {
+            $query->where('wallet_balance', '>=', $request->min_balance);
+        }
+
+        if ($request->max_balance !== null && $request->max_balance !== '') {
+            $query->where('wallet_balance', '<=', $request->max_balance);
+        }
+
+        $customers = $query->orderBy('name')->get();
+
+        $data = [];
+        foreach ($customers as $index => $customer) {
+            $lastTransaction = $customer->walletTransactions()->latest()->first();
+            
+            $data[] = [
+                'SL' => $index + 1,
+                'Name' => $customer->name,
+                'Phone' => $customer->phone,
+                'Email' => $customer->email ?? 'N/A',
+                'Wallet Balance' => number_format($customer->wallet_balance ?? 0, 2),
+                'Total Orders' => $customer->orders_count ?? 0,
+                'Last Transaction' => $lastTransaction ? 
+                    date('Y-m-d H:i:s', strtotime($lastTransaction->created_at)) : 'N/A',
+            ];
+        }
+
+        return (new \Rap2hpoutre\FastExcel\FastExcel($data))
+            ->download('wallet_balance_summary_' . date('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Export customer statement to Excel (FIXED VERSION)
+     * 
+     * @param Request $request
+     * @param int $customer_id
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function exportCustomerStatement(Request $request, $customer_id)
+    {
+        $customer = $this->user->findOrFail($customer_id);
+
+        $query = $this->walletTransaction->where('user_id', $customer_id);
+
+        if ($request->from && $request->to) {
+            $fromDate = Carbon::parse($request->from)->startOfDay();
+            $toDate = Carbon::parse($request->to)->endOfDay();
+            
+            $query->whereBetween('created_at', [$fromDate, $toDate]);
+        }
+
+        if ($request->transaction_type) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')->get();
+
+        $data = [];
+        foreach ($transactions as $index => $transaction) {
+            $data[] = [
+                'SL' => $index + 1,
+                'Transaction ID' => $transaction->transaction_id,
+                'Date' => date('Y-m-d H:i:s', strtotime($transaction->created_at)),
+                'Type' => translate($transaction->transaction_type),
+                'Reference' => $transaction->reference ?? 'N/A',
+                'Credit' => number_format($transaction->credit ?? 0, 2),
+                'Debit' => number_format($transaction->debit ?? 0, 2),
+                'Balance' => number_format($transaction->balance ?? 0, 2),
+            ];
+        }
+
+        return (new \Rap2hpoutre\FastExcel\FastExcel($data))
+            ->download('wallet_statement_' . str_replace(' ', '_', $customer->name) . '_' . date('Y-m-d') . '.xlsx');
     }
 }
