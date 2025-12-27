@@ -439,6 +439,7 @@
                         $transaction->transaction_type == 'add_fund_by_admin' ? 'success' :
                         ($transaction->transaction_type == 'order_place' ? 'info' :
                         ($transaction->transaction_type == 'loyalty_point_to_wallet' ? 'warning' : 'primary'))
+                        ($transaction->transaction_type == 'Order payment' ? 'danger' : 'warning'))
                     }}">
                         {{translate($transaction->transaction_type)}}
                     </span>
