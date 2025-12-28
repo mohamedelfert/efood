@@ -315,10 +315,36 @@
                                             </span>
                                         </a>
                                     </li>
+                                    <!--
                                     <li class="nav-item {{Request::is('admin/customer/wallet/bonus*')?'active':''}}">
                                         <a class="nav-link" href="{{route('admin.customer.wallet.bonus.index')}}">
                                             <span class="tio-circle nav-indicator-icon"></span>
                                             <span class="text-truncate">{{translate('wallet_bonus_setup')}}</span>
+                                        </a>
+                                    </li>
+                                    -->
+                                </ul>
+                            </li>
+
+                            <!-- Customer Cashback Section -->
+                            <li class="navbar-vertical-aside-has-menu {{Request::is('admin/customer/cashback*')?'active':''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
+                                    <i class="tio-gift nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                        {{translate('cashback_management')}}
+                                    </span>
+                                </a>
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/customer/cashback*')?'block':''}}">
+                                    <li class="nav-item {{Request::is('admin/customer/cashback') || Request::is('admin/customer/cashback/index')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.customer.cashback.index')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('cashback_settings')}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{Request::is('admin/customer/cashback/statistics')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.customer.cashback.statistics')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('statistics')}}</span>
                                         </a>
                                     </li>
                                 </ul>

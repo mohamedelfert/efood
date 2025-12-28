@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\TimeScheduleController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\BranchPromotionController;
+use App\Http\Controllers\Admin\CashbackSettingController;
 use App\Http\Controllers\Admin\BusinessSettingsController;
 use App\Http\Controllers\Admin\DatabaseSettingsController;
 use App\Http\Controllers\Admin\LocationSettingsController;
@@ -541,6 +542,17 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                     Route::get('status/{id}/{status}', [WalletBonusController::class, 'status'])->name('status');
                     Route::delete('delete/{id}', [WalletBonusController::class, 'delete'])->name('delete');
                 });
+            });
+
+            // Cashback Management Routes
+            Route::group(['prefix' => 'cashback', 'as' => 'cashback.'], function () {
+                Route::get('/', [CashbackSettingController::class, 'index'])->name('index');
+                Route::post('store', [CashbackSettingController::class, 'store'])->name('store');
+                Route::get('edit/{id}', [CashbackSettingController::class, 'edit'])->name('edit');
+                Route::post('update/{id}', [CashbackSettingController::class, 'update'])->name('update');
+                Route::post('status', [CashbackSettingController::class, 'status'])->name('status');
+                Route::delete('delete/{id}', [CashbackSettingController::class, 'delete'])->name('delete');
+                Route::get('statistics', [CashbackSettingController::class, 'statistics'])->name('statistics');
             });
         });
 
