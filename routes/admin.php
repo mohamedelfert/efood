@@ -372,6 +372,8 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
                     Route::get('db-index', [DatabaseSettingsController::class, 'databaseIndex'])->name('db-index');
                     Route::post('db-clean', [DatabaseSettingsController::class, 'cleanDatabase'])->name('clean-db');
+                    Route::get('db-backup', [DatabaseSettingsController::class, 'backupIndex'])->name('db-backup-index');
+                    Route::post('db-backup', [DatabaseSettingsController::class, 'backupDatabase'])->name('db-backup');
 
                     Route::get('firebase-message-config', [BusinessSettingsController::class, 'firebaseMessageConfigIndex'])->name('firebase_message_config_index');
 

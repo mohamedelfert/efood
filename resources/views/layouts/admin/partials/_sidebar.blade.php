@@ -723,12 +723,33 @@
                                 </ul>
                             </li>
 
-                            <!-- System Setup -->
+                            <!-- System Setup Dropdown -->
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/web-app/system-setup*')?'active':''}}">
-                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.business-settings.web-app.system-setup.language.index')}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
                                     <i class="tio-security-on-outlined nav-icon"></i>
-                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('System Setup')}}</span>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                        {{ translate('System Setup') }}
+                                    </span>
                                 </a>
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
+                                    style="display: {{Request::is('admin/business-settings/web-app/system-setup*')?'block':'none'}}">
+
+                                    <li class="navbar-vertical-aside-has-menu {{Request::is('admin/business-settings/web-app/system-setup*')?'active':''}}">
+                                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{route('admin.business-settings.web-app.system-setup.language.index')}}">
+                                            <i class="tio-security-on-outlined nav-icon"></i>
+                                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('System Setup')}}</span>
+                                        </a>
+                                    </li>
+
+                                    <!-- Database Backup (NEW) -->
+                                    <li class="nav-item {{Request::is('admin/business-settings/web-app/system-setup/db-backup*')?'active':''}}">
+                                        <a class="nav-link" href="{{route('admin.business-settings.web-app.system-setup.db-backup-index')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{ translate('Database Backup') }}</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
                             </li>
 
                             @if(count(config('addon_admin_routes'))>0)

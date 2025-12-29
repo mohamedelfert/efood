@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use File;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
-use File;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Contracts\Support\Renderable;
 
 class DatabaseSettingsController extends Controller
@@ -55,6 +56,31 @@ class DatabaseSettingsController extends Controller
         }
 
         Toastr::success(translate('Updated successfully!'));
+        return back();
+    }
+
+    /**
+     * Show the database backup page
+     */
+    public function backupIndex(): Renderable
+    {
+        // You can later pass backup list here
+        return view('admin-views.business-settings.db-backup');
+    }
+
+    /**
+     * Trigger manual database backup
+     */
+    public function backupDatabase(): RedirectResponse
+    {
+        try {
+            Artisan::call('backup:run', ['--only-db' => true]);
+
+            Toastr::success(translate('Database backup created successfully!'));
+        } catch (\Exception $e) {
+            Toastr::error(translate('Backup failed: ') . $e->getMessage());
+        }
+
         return back();
     }
 }

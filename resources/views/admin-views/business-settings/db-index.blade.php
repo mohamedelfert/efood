@@ -56,6 +56,39 @@
                 </form>
             </div>
         </div>
+
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="tio-download-to"></i> {{ translate('Database Backup') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        {{ translate('Create a secure, compressed backup of your entire database.') }}
+                        <br>
+                        <small>{{ translate('Backups are automatically cleaned up after 7 days.') }}</small>
+                    </p>
+
+                    <form action="{{ route('admin.business-settings.web-app.system-setup.db-backup') }}" 
+                        method="POST"
+                        onsubmit="return confirm('{{ translate('Create database backup now? This may take a few minutes depending on database size.') }}');">
+                        @csrf
+                        <button type="submit" class="btn btn-success">
+                            <i class="tio-cloud-download"></i> {{ translate('Backup Database Now') }}
+                        </button>
+                    </form>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            {{ translate('Backup files are stored in:') }}
+                            <code>storage/app/backup-laravel/</code>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
