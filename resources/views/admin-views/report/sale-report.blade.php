@@ -53,7 +53,7 @@
                         <div class="col-sm-6 col-md-4">
                             <select class="custom-select custom-select" name="branch_id" id="branch_id" required>
                                 <option  disabled>{{translate('Select Branch')}}</option>
-                                <option value="all">All</option>
+                                <option value="all">{{ translate('All') }}</option>
                                 @foreach(\App\Model\Branch::all() as $branch)
                                     <option value="{{$branch['id']}}" {{session('branch_filter')==$branch['id']?'selected':''}}>{{$branch['name']}}</option>
                                 @endforeach

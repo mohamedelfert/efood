@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Driver Report'))
+@section('title', translate('Delivery_Man_Report'))
 
 @section('content')
     <div class="content container-fluid">
@@ -22,7 +22,7 @@
                         <div class="row align-items-end g-2 mb-3">
                             <div class="col-sm-6 col-md-5">
                                 <div class="form-group mb-0">
-                                    <label class="input-label">Deliveryman Joining Date</label>
+                                    <label class="input-label">{{ translate('Deliveryman Joining Date') }}</label>
                                     <input type="text" name="date" id="js-daterangepicker-predefined"
                                         class="form-control" required>
                                     <div class="js-daterangepicker-predefined-preview"></div>
@@ -31,12 +31,12 @@
                             </div>
                             <div class="col-sm-6 col-md-5">
                                 <div class="form-group mb-0">
-                                    <label class="input-label">Deliveryman Status</label>
+                                    <label class="input-label">{{ translate('Deliveryman Status') }}</label>
                                     <select class="custom-select" name="delivery_man_id" id="delivery_man">
-                                        <option value="0">Select Status</option>
-                                        <option value="1">All</option>
-                                        <option value="2">Active</option>
-                                        <option value="3">Inctive</option>
+                                        <option value="0">{{ translate('Select Status') }}</option>
+                                        <option value="1">{{ translate('All') }}</option>
+                                        <option value="2">{{ translate('Active') }}</option>
+                                        <option value="3">{{ translate('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -54,8 +54,8 @@
                 <div class="row justify-content-between align-items-center gy-2">
                     <div class="col-md-4 col-lg-6">
                         <h5 class="d-flex gap-1 mb-0">
-                            Customer list
-                            <span class="badge badge-soft-dark rounded-50 fz-12">203</span>
+                            {{ translate('Delivery_Man_List') }}
+                            <span class="badge badge-soft-dark rounded-50 fz-12"></span>
                         </h5>
                     </div>
                     <div class="col-md-8 col-lg-6">
@@ -63,10 +63,10 @@
                             <form action="#" method="GET" class="flex-grow-1">
                                 <div class="input-group">
                                     <input id="datatableSearch_" type="search" name="search" class="form-control"
-                                        placeholder="Search by mail title, ID or customer type" aria-label="Search"
+                                        placeholder="{{ translate('Search by mail title, ID or customer type') }}" aria-label="Search"
                                         value="" required="" autocomplete="off">
                                     <div class="input-group-append">
-                                        <button type="submit" class="btn btn-primary">Search</button>
+                                        <button type="submit" class="btn btn-primary">{{ translate('Search') }}</button>
                                     </div>
                                 </div>
                             </form>
@@ -74,7 +74,7 @@
                                 <button type="button" class="btn btn-outline-primary text-nowrap" data-toggle="dropdown"
                                     aria-expanded="false">
                                     <i class="tio-download-to"></i>
-                                    Export
+                                    {{ translate('Export') }}
                                     <i class="tio-chevron-down"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-right">
@@ -100,16 +100,16 @@
                         class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table w-100">
                         <thead class="thead-light">
                             <tr>
-                                <th>SL</th>
-                                <th>Deliveryman Info</th>
-                                <th>Joining Date</th>
-                                <th class="text-center">Total Orders</th>
-                                <th class="text-center">Ongoing</th>
-                                <th class="text-center">Cancel</th>
-                                <th class="text-center">Completed</th>
-                                <th class="text-center">Total Order Amount</th>
-                                <th class="text-center">Active/Inactive</th>
-                                <th class="text-center">Action</th>
+                                <th>{{ translate('SL') }}</th>
+                                <th>{{ translate('Deliveryman Info') }}</th>
+                                <th>{{ translate('Joining Date') }}</th>
+                                <th class="text-center">{{ translate('Total Orders') }}</th>
+                                <th class="text-center">{{ translate('Ongoing') }}</th>
+                                <th class="text-center">{{ translate('Cancel') }}</th>
+                                <th class="text-center">{{ translate('Completed') }}</th>
+                                <th class="text-center">{{ translate('Total Order Amount') }}</th>
+                                <th class="text-center">{{ translate('Active/Inactive') }}</th>
+                                <th class="text-center">{{ translate('Action') }}</th>
                             </tr>
                         </thead>
 
@@ -407,12 +407,12 @@
                 startDate: start,
                 endDate: end,
                 ranges: {
-                    'Today': [moment(), moment()],
-                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1,
+                    '{{ translate('Today') }}': [moment(), moment()],
+                    '{{ translate('Yesterday') }}': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '{{ translate('Last 7 Days') }}': [moment().subtract(6, 'days'), moment()],
+                    '{{ translate('Last 30 Days') }}': [moment().subtract(29, 'days'), moment()],
+                    '{{ translate('This Month') }}': [moment().startOf('month'), moment().endOf('month')],
+                    '{{ translate('Last Month') }}': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1,
                         'month').endOf('month')]
                 },
                 locale: {

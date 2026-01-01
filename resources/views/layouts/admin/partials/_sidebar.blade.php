@@ -551,54 +551,49 @@
                                 </a>
                             </li>
                         @endif
-
+                        
                         @if(Helpers::module_permission_check(MANAGEMENT_SECTION['report_and_analytics_management']))
-                            <li class="nav-item">
-                                <small class="nav-subtitle" title="{{translate('report and analytics')}}">{{translate('report_and_analytics')}}</small>
-                                <small class="tio-more-horizontal nav-subtitle-replacer"></small>
-                            </li>
+                        <li class="nav-item">
+                            <small class="nav-subtitle" title="{{translate('report and analytics')}}">{{translate('report_and_analytics')}}</small>
+                            <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                        </li>
 
-                            <li class="navbar-vertical-aside-has-menu {{Request::is('admin/report/*')?'active':''}}">
-                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
-                                    <i class="tio-chart-pie-1 nav-icon"></i>
-                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('reports')}}</span>
-                                </a>
-                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/report/*')?'block':'none'}}">
-                                    <!--
-                                    <li class="nav-item {{Request::is('admin/report/earning')?'active':''}}">
-                                        <a class="nav-link" href="{{route('admin.report.earning')}}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{translate('earning_report')}}</span>
-                                        </a>
-                                    </li>
-                                    -->
-                                    <li class="nav-item {{Request::is('admin/report/order')?'active':''}}">
-                                        <a class="nav-link" href="{{route('admin.report.order')}}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{translate('orders_report')}}</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item {{Request::is('admin/report/deliveryman-report')?'active':''}}">
-                                        <a class="nav-link" href="{{route('admin.report.deliveryman_report')}}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{translate('DeliveryMan Report')}}</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item {{Request::is('admin/report/product-report')?'active':''}}">
-                                        <a class="nav-link" href="{{route('admin.report.product-report')}}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{translate('products_report')}}</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item {{Request::is('admin/report/sale-report')?'active':''}}">
-                                        <a class="nav-link" href="{{route('admin.report.sale-report')}}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{translate('sales_report')}}</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
+                        <li class="navbar-vertical-aside-has-menu {{Request::is('admin/report/*')?'active':''}}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
+                                <i class="tio-chart-pie-1 nav-icon"></i>
+                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{translate('reports')}}</span>
+                            </a>
+                            <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{Request::is('admin/report/*')?'block':'none'}}">
+                                <li class="nav-item {{Request::is('admin/report/branch-reports')?'active':''}}">
+                                    <a class="nav-link" href="{{route('admin.report.branch-reports')}}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{translate('Branch Reports')}}</span>
+                                    </a>
+                                </li>
+                                
+                                <li class="nav-item {{Request::is('admin/report/deliveryman-report')?'active':''}}">
+                                    <a class="nav-link" href="{{route('admin.report.deliveryman_report')}}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{translate('DeliveryMan Report')}}</span>
+                                    </a>
+                                </li>
+                                
+                                <li class="nav-item {{Request::is('admin/report/product-report')?'active':''}}">
+                                    <a class="nav-link" href="{{route('admin.report.product-report')}}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{translate('products_report')}}</span>
+                                    </a>
+                                </li>
+                                
+                                <li class="nav-item {{Request::is('admin/report/sale-report')?'active':''}}">
+                                    <a class="nav-link" href="{{route('admin.report.sale-report')}}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{translate('sales_report')}}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endif
 
                         @if(Helpers::module_permission_check(MANAGEMENT_SECTION['system_management']))
                             <li class="nav-item">
