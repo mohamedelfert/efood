@@ -145,4 +145,28 @@ class NotificationController extends Controller
         Toastr::success(translate('Notification removed!'));
         return back();
     }
+
+    public function getNotificationCount(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $messageCount = \App\Model\Conversation::where('checked', 0)
+                ->distinct('user_id')
+                ->count();
+            
+            $orderCount = \App\Model\Order::where('order_status', 'pending')
+                ->whereDate('created_at', '>=', now()->subDays(7))
+                ->count();
+            
+            return response()->json([
+                'success' => true,
+                'message_count' => $messageCount,
+                'order_count' => $orderCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching notification counts'
+            ], 500);
+        }
+    }
 }

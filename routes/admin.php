@@ -196,6 +196,10 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::delete('delete/{id}', [NotificationController::class, 'delete'])->name('delete');
         });
 
+        Route::get('/get-notification-count', [NotificationController::class, 'getNotificationCount'])
+            ->name('get-notification-count')
+            ->middleware(['module:promotion_management']);
+
         Route::group(['prefix' => 'product', 'as' => 'product.', 'middleware' => ['module:product_management']], function () {
             Route::get('add-new', [ProductController::class, 'index'])->name('add-new');
             Route::post('variant-combination', [ProductController::class, 'variantCombination'])->name('variant-combination');
