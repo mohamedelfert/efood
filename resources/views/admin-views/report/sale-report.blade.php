@@ -13,7 +13,7 @@
             </h2>
         </div>
 
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-body">
                 <div class="media flex-column flex-sm-row flex-wrap align-items-sm-center gap-4">
                     <div class="avatar avatar-xl">
@@ -26,15 +26,13 @@
                             <div class="">
                                 <h2 class="page-header-title">{{translate('sale')}} {{translate('report')}} {{translate('overview')}}</h2>
 
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <span>{{translate('admin')}}:</span>
-                                        <a href="#">{{auth('admin')->user()->name}}</a>
-                                    </div>
+                                <div class="">
+                                    <span>{{translate('admin')}}:</span>
+                                    <a href="#">{{auth('admin')->user()->name}}</a>
                                 </div>
                             </div>
 
-                            <div class="d-flex">
+                            <div class="d-flex gap-2">
                                 <a class="btn btn-icon btn-primary rounded-circle px-2" href="{{route('admin.dashboard')}}">
                                     <i class="tio-home-outlined"></i>
                                 </a>
@@ -49,54 +47,102 @@
             <div class="card-body">
                 <form action="javascript:" id="search-form" method="POST">
                     @csrf
-                    <div class="row g-2">
+                    <div class="row g-3">
                         <div class="col-sm-6 col-md-4">
-                            <select class="custom-select custom-select" name="branch_id" id="branch_id" required>
-                                <option  disabled>{{translate('Select Branch')}}</option>
-                                <option value="all">{{ translate('All') }}</option>
+                            <label class="form-label">{{translate('branch')}}</label>
+                            <select class="form-control" name="branch_id" id="branch_id" required>
+                                <option value="all">{{ translate('all_branches') }}</option>
                                 @foreach(\App\Model\Branch::all() as $branch)
-                                    <option value="{{$branch['id']}}" {{session('branch_filter')==$branch['id']?'selected':''}}>{{$branch['name']}}</option>
+                                    <option value="{{$branch['id']}}" {{session('branch_filter')==$branch['id']?'selected':''}}>
+                                        {{$branch['name']}}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div class="col-sm-6 col-md-3">
+                            <label class="form-label">{{translate('from')}}</label>
                             <input type="date" name="from" id="from_date" class="form-control" required>
                         </div>
+
                         <div class="col-sm-6 col-md-3">
+                            <label class="form-label">{{translate('to')}}</label>
                             <input type="date" name="to" id="to_date" class="form-control" required>
                         </div>
-                        <div class="col-sm-6 col-md-2">
-                            <button type="submit" class="btn btn-primary btn-block">{{translate('show')}}</button>
-                        </div>
 
-                        <div class="col-md-6 d-flex flex-column gap-2">
-                            <div>
-                                <strong>
-                                    {{translate('total_Orders')}} :
-                                    <span id="order_count"> </span>
-                                </strong>
-                            </div>
-                            <div>
-                                <strong>
-                                    {{translate('total_Item_Qty')}}
-                                    : <span
-                                        id="item_count"> </span>
-                                </strong>
-                            </div>
-                            <div>
-                                <strong>{{translate('total')}}  {{translate('amount')}} : <span
-                                        id="order_amount"></span>
-                                </strong>
+                        <div class="col-sm-6 col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="tio-filter-list"></i>
+                                {{translate('filter')}}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card border-0 bg-soft-success">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-primary text-white me-3">
+                                                    <i class="tio-shopping-cart"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_orders')}}</h6>
+                                                    <h4 class="mb-0" id="order_count">0</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-warning text-white me-3">
+                                                    <i class="tio-category"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_Item_Qty')}}</h6>
+                                                    <h4 class="mb-0" id="item_count">0</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-success text-white me-3">
+                                                    <i class="tio-dollar"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_amount')}}</h6>
+                                                    <h4 class="mb-0" id="order_amount">{{\App\CentralLogics\Helpers::set_symbol(0)}}</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </form>
 
-                <hr>
-
-                <div class="table-responsive datatable_wrapper_row mt-5" id="set-rows">
-                    @include('admin-views.report.partials._table',['data'=>[]])
+                <div class="card mt-3">
+                    <div class="card-header border-0">
+                        <h5 class="card-title">
+                            <i class="tio-receipt"></i>
+                            {{translate('sales_details')}}
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                                <i class="tio-print"></i> {{translate('print')}}
+                            </button>
+                            <a href="{{route('admin.report.export-sale-report')}}" class="btn btn-outline-success btn-sm">
+                                <i class="tio-download"></i> {{translate('export')}}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" id="set-rows">
+                            @include('admin-views.report.partials._table',['data'=>[]])
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -105,11 +151,57 @@
 
 @push('script_2')
     <script>
-        $('#search-form').on('submit', function () {
+        $(document).ready(function () {
+            var datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'copy',
+                        className: 'd-none'
+                    },
+                    {
+                        extend: 'excel',
+                        className: 'd-none'
+                    },
+                    {
+                        extend: 'csv',
+                        className: 'd-none'
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'd-none'
+                    },
+                    {
+                        extend: 'print',
+                        className: 'd-none'
+                    },
+                ],
+                language: {
+                    zeroRecords: '<div class="text-center p-4">' +
+                        '<img class="mb-3" src="{{asset('public/assets/admin')}}/svg/illustrations/sorry.svg" alt="Image Description" style="width: 7rem;">' +
+                        '<p class="mb-0">{{translate('No data to show')}}</p>' +
+                        '</div>'
+                }
+            });
+        });
+
+        $('#search-form').on('submit', function (e) {
+            e.preventDefault();
+            
+            let fromDate = $('#from_date').val();
+            let toDate = $('#to_date').val();
+
+            if (!fromDate || !toDate) {
+                toastr.error('{{translate('Please select date range')}}', {
+                    CloseButton: true,
+                    ProgressBar: true
+                });
+                return;
+            }
+
             $.post({
                 url: "{{route('admin.report.sale-report-filter')}}",
                 data: $('#search-form').serialize(),
-
                 beforeSend: function () {
                     $('#loading').show();
                 },
@@ -118,7 +210,20 @@
                     $('#order_amount').html(data.order_sum);
                     $('#item_count').html(data.item_qty);
                     $('#set-rows').html(data.view);
-                    $('.card-footer').hide();
+                    
+                    // Store data in session for export
+                    sessionStorage.setItem('sale_report_data', JSON.stringify(data));
+                    
+                    toastr.success('{{translate('Report generated successfully')}}', {
+                        CloseButton: true,
+                        ProgressBar: true
+                    });
+                },
+                error: function(xhr) {
+                    toastr.error('{{translate('Something went wrong')}}', {
+                        CloseButton: true,
+                        ProgressBar: true
+                    });
                 },
                 complete: function () {
                     $('#loading').hide();
@@ -133,7 +238,7 @@
                 if (fr > to) {
                     $('#from_date').val('');
                     $('#to_date').val('');
-                    toastr.error('Invalid date range!', Error, {
+                    toastr.error('{{translate('Invalid date range!')}}', 'Error', {
                         CloseButton: true,
                         ProgressBar: true
                     });
@@ -141,20 +246,31 @@
             }
         });
     </script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('input').addClass('form-control');
-        });
 
-
-        var datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
-            dom: 'Bfrtip',
-            language: {
-                zeroRecords: '<div class="text-center p-4">' +
-                    '<img class="mb-3" src="{{asset('public/assets/admin')}}/svg/illustrations/sorry.svg" alt="Image Description" style="width: 7rem;">' +
-                    '<p class="mb-0">{{translate('No data to show')}}</p>' +
-                    '</div>'
+    <style>
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .bg-soft-success {
+            background-color: rgba(0, 201, 167, 0.1) !important;
+        }
+        
+        @media print {
+            .card-header button,
+            .card-header a,
+            .btn,
+            .navbar,
+            .sidebar,
+            form {
+                display: none !important;
             }
-        });
-    </script>
+        }
+    </style>
 @endpush

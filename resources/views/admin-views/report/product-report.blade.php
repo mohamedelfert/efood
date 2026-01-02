@@ -32,7 +32,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex">
+                            <div class="d-flex gap-2">
                                 <a class="btn btn-icon btn-primary px-2 rounded-circle" href="{{route('admin.dashboard')}}">
                                     <i class="tio-home-outlined"></i>
                                 </a>
@@ -47,65 +47,114 @@
             <div class="card-body">
                 <form action="javascript:" id="search-form" method="POST">
                     @csrf
-                    <div class="row g-2">
-                        <div class="col-sm-6">
-                            <select class="custom-select" name="branch_id" id="branch_id"
-                                    required>
-                                <option selected value="all">{{translate('all')}}</option>
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label">{{translate('branch')}}</label>
+                            <select class="form-control" name="branch_id" id="branch_id" required>
+                                <option value="all">{{translate('all_branches')}}</option>
                                 @foreach(\App\Model\Branch::all() as $branch)
-                                    <option
-                                        value="{{$branch['id']}}" {{session('branch_filter')==$branch['id']?'selected':''}}>{{$branch['name']}}</option>
+                                    <option value="{{$branch['id']}}" {{session('branch_filter')==$branch['id']?'selected':''}}>
+                                        {{$branch['name']}}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="col-sm-6">
-                            <select class="form-control js-select2-custom" name="product_id"
-                                    id="product_id" required>
-                                <option disabled>---{{translate('select')}} {{translate('product')}}---</option>
-                                <option selected value="all">{{translate('all')}}</option>
-
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label">{{translate('product')}}</label>
+                            <select class="form-control js-select2-custom" name="product_id" id="product_id" required>
+                                <option value="all">{{translate('all_products')}}</option>
                                 @foreach(\App\Model\Product::all() as $product)
-                                    <option
-                                        value="{{$product['id']}}">
+                                    <option value="{{$product['id']}}">
                                         {{$product['name']}}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="col-sm-6 col-md-5">
-                            <input type="date" name="from" id="from_date"
-                                    class="form-control" required>
+                        <div class="col-sm-6 col-md-2">
+                            <label class="form-label">{{translate('from')}}</label>
+                            <input type="date" name="from" id="from_date" class="form-control" required>
                         </div>
-                        <div class="col-sm-6 col-md-5">
-                            <input type="date" name="to" id="to_date"
-                                    class="form-control" required>
+
+                        <div class="col-sm-6 col-md-2">
+                            <label class="form-label">{{translate('to')}}</label>
+                            <input type="date" name="to" id="to_date" class="form-control" required>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit"
-                                    class="btn btn-primary btn-block">{{translate('show')}}</button>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="tio-filter-list"></i>
+                                {{translate('filter')}}
+                            </button>
                         </div>
                     </div>
-                    <div class="row g-2 mt-3">
-                        <div class="col-md-6 d-flex flex-column gap-2">
-                            <strong>
-                                {{translate('total')}} {{translate('orders')}} : <span id="order_count"> </span>
-                            </strong>
-                            <strong>
-                                {{translate('total')}} {{translate('item')}} {{translate('qty')}}:<span id="item_count"></span>
-                            </strong>
-                            <strong>
-                                {{translate('total')}}  {{translate('amount')}} : <span id="order_amount"></span>
-                            </strong>
-                        </div>
-                        <div class="col-md-6 d-flex justify-content-md-end">
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card border-0 bg-soft-primary">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-primary text-white me-3">
+                                                    <i class="tio-shopping-cart"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_orders')}}</h6>
+                                                    <h4 class="mb-0" id="order_count">0</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-success text-white me-3">
+                                                    <i class="tio-checkmark-circle"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_item_qty')}}</h6>
+                                                    <h4 class="mb-0" id="item_count">0</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-info text-white me-3">
+                                                    <i class="tio-dollar"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{translate('total_amount')}}</h6>
+                                                    <h4 class="mb-0" id="order_amount">{{\App\CentralLogics\Helpers::set_symbol(0)}}</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
 
-                <div class="table-responsive mt-3" id="set-rows">
-                    @include('admin-views.report.partials._table',['data'=>[]])
+                <div class="card mt-3">
+                    <div class="card-header border-0">
+                        <h5 class="card-title">
+                            <i class="tio-list"></i>
+                            {{translate('report_details')}}
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                                <i class="tio-print"></i> {{translate('print')}}
+                            </button>
+                            <a href="{{route('admin.report.export-product-report')}}" class="btn btn-outline-success btn-sm">
+                                <i class="tio-download"></i> {{translate('export')}}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" id="set-rows">
+                            @include('admin-views.report.partials._table',['data'=>[]])
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,11 +164,6 @@
 @push('script_2')
     <script>
         $(document).on('ready', function () {
-
-            $('.js-nav-scroller').each(function () {
-                new HsNavScroller($(this)).init()
-            });
-
             $('.js-select2-custom').each(function () {
                 var select2 = $.HSCore.components.HSSelect2.init($(this));
             });
@@ -148,15 +192,6 @@
                         className: 'd-none'
                     },
                 ],
-                select: {
-                    style: 'multi',
-                    selector: 'td:first-child input[type="checkbox"]',
-                    classMap: {
-                        checkAll: '#datatableCheckAll',
-                        counter: '#datatableCounter',
-                        counterInfo: '#datatableCounterInfo'
-                    }
-                },
                 language: {
                     zeroRecords: '<div class="text-center p-4">' +
                         '<img class="mb-3" src="{{asset('public/assets/admin')}}/svg/illustrations/sorry.svg" alt="Image Description" style="width: 7rem;">' +
@@ -164,21 +199,25 @@
                         '</div>'
                 }
             });
-
-            $('.js-tagify').each(function () {
-                var tagify = $.HSCore.components.HSTagify.init($(this));
-            });
         });
 
-        function filter_branch_orders(id) {
-            location.href = '{{url('/')}}/admin/orders/branch-filter/' + id;
-        }
+        $('#search-form').on('submit', function (e) {
+            e.preventDefault();
+            
+            let fromDate = $('#from_date').val();
+            let toDate = $('#to_date').val();
 
-        $('#search-form').on('submit', function () {
+            if (!fromDate || !toDate) {
+                toastr.error('{{translate('Please select date range')}}', {
+                    CloseButton: true,
+                    ProgressBar: true
+                });
+                return;
+            }
+
             $.post({
                 url: "{{route('admin.report.product-report-filter')}}",
                 data: $('#search-form').serialize(),
-
                 beforeSend: function () {
                     $('#loading').show();
                 },
@@ -187,7 +226,17 @@
                     $('#order_amount').html(data.order_sum);
                     $('#item_count').html(data.item_qty);
                     $('#set-rows').html(data.view);
-                    $('.card-footer').hide();
+                    
+                    toastr.success('{{translate('Report generated successfully')}}', {
+                        CloseButton: true,
+                        ProgressBar: true
+                    });
+                },
+                error: function(xhr) {
+                    toastr.error('{{translate('Something went wrong')}}', {
+                        CloseButton: true,
+                        ProgressBar: true
+                    });
                 },
                 complete: function () {
                     $('#loading').hide();
@@ -202,7 +251,7 @@
                 if (fr > to) {
                     $('#from_date').val('');
                     $('#to_date').val('');
-                    toastr.error('{{translate('Invalid date range!')}}', Error, {
+                    toastr.error('{{translate('Invalid date range!')}}', 'Error', {
                         CloseButton: true,
                         ProgressBar: true
                     });
@@ -210,4 +259,31 @@
             }
         });
     </script>
+
+    <style>
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .bg-soft-primary {
+            background-color: rgba(55, 125, 255, 0.1) !important;
+        }
+        
+        @media print {
+            .card-header button,
+            .card-header a,
+            .btn,
+            .navbar,
+            .sidebar,
+            form {
+                display: none !important;
+            }
+        }
+    </style>
 @endpush
