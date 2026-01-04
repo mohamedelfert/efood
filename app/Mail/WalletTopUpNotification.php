@@ -25,17 +25,24 @@ class WalletTopUpNotification extends Mailable
     public function build()
     {
         $data = $this->notificationData;
-        
+
         $emailTemplate = EmailTemplate::with('translations')
             ->where('type', 'user')
             ->where('email_type', 'wallet_topup')
             ->first();
-            
+
         $local = $this->language_code ?? 'en';
+
+        // Check if added by admin
+        $isAdminAdded = isset($data['added_by']) && $data['added_by'] === 'admin';
+        
+        $defaultBody = $isAdminAdded 
+            ? 'Hello {user_name},<br><br>Your wallet has been credited with {amount} {currency} by our administrator.<br><br>Transaction ID: {transaction_id}<br>Gateway: {gateway}<br>Previous Balance: {previous_balance} {currency}<br>New Balance: {new_balance} {currency}<br>Date: {date} {time}'
+            : 'Hello {user_name},<br><br>Your wallet has been topped up with {amount} {currency}.<br><br>Transaction ID: {transaction_id}<br>Gateway: {gateway}<br>Previous Balance: {previous_balance} {currency}<br>New Balance: {new_balance} {currency}<br>Date: {date} {time}';
 
         $content = [
             'title' => $emailTemplate->title ?? 'Wallet Top-Up Successful',
-            'body' => $emailTemplate->body ?? 'Hello {user_name},<br><br>Your wallet has been topped up with {amount} {currency}.<br><br>Transaction ID: {transaction_id}<br>Previous Balance: {previous_balance} {currency}<br>New Balance: {new_balance} {currency}',
+            'body' => $emailTemplate->body ?? $defaultBody,
             'footer_text' => $emailTemplate->footer_text ?? 'Thank you for using our service',
             'copyright_text' => $emailTemplate->copyright_text ?? '© {year} All rights reserved',
         ];
@@ -64,6 +71,11 @@ class WalletTopUpNotification extends Mailable
             'year' => date('Y'),
         ];
 
+        // Add admin reference if available
+        if (isset($data['admin_reference']) && !empty($data['admin_reference'])) {
+            $variables['admin_reference'] = $data['admin_reference'];
+        }
+
         foreach ($content as $key => $text) {
             foreach ($variables as $varKey => $value) {
                 $text = str_replace('{' . $varKey . '}', $value, $text);
@@ -71,7 +83,11 @@ class WalletTopUpNotification extends Mailable
             $content[$key] = $text;
         }
 
-        return $this->subject(translate('Wallet Top-Up Successful'))
+        $subject = $isAdminAdded 
+            ? translate('Wallet Credited by Admin')
+            : translate('Wallet Top-Up Successful');
+
+        return $this->subject($subject)
             ->view('email-templates.new-email-format-' . $template, [
                 'company_name' => $company_name,
                 'data' => $emailTemplate,

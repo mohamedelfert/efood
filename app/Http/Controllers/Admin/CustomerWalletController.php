@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
+use PDF;
+use App\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use App\CentralLogics\CustomerLogic;
-use App\Http\Controllers\Controller;
 use App\Model\BusinessSetting;
 use App\Model\WalletTransaction;
-use App\User;
-use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Support\Facades\Log;
+use App\CentralLogics\CustomerLogic;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use PDF;
+use Illuminate\Contracts\Support\Renderable;
 
 class CustomerWalletController extends Controller
 {
@@ -46,23 +47,70 @@ class CustomerWalletController extends Controller
     public function addFund(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'customer_id' => 'exists:users,id',
-            'amount' => 'numeric|min:0|not_in:0',
+            'customer_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0|not_in:0',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
-        $walletTransaction = CustomerLogic::create_wallet_transaction($request->customer_id, $request->amount, 'add_fund_by_admin', $request->referance);
+        try {
+            // Get the customer
+            $customer = User::findOrFail($request->customer_id);
+            
+            // Store previous balance before transaction
+            $previousBalance = $customer->wallet_balance;
+            
+            // Create wallet transaction
+            $walletTransaction = CustomerLogic::create_wallet_transaction(
+                $request->customer_id, 
+                $request->amount, 
+                'add_fund_by_admin', 
+                $request->referance
+            );
 
-        if ($walletTransaction) {
-            return response()->json([], 200);
+            if ($walletTransaction) {
+                // Refresh customer to get updated balance
+                $customer->refresh();
+                
+                // Send notifications via NotificationService
+                $notificationService = app(\App\Services\NotificationService::class);
+                
+                $notificationService->sendWalletTopUpNotification($customer, [
+                    'amount' => $request->amount,
+                    'currency' => 'YER',
+                    'transaction_id' => $walletTransaction->transaction_id ?? $walletTransaction->id,
+                    'gateway' => 'Admin Panel',
+                    'previous_balance' => $previousBalance,
+                    'added_by' => 'admin',
+                    'admin_reference' => $request->referance ?? null,
+                ]);
+
+                return response()->json([
+                    'message' => translate('Funds added successfully and notifications sent')
+                ], 200);
+            }
+
+            return response()->json([
+                'errors' => [
+                    'message' => translate('failed_to_create_transaction')
+                ]
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error('Admin add fund failed', [
+                'customer_id' => $request->customer_id,
+                'amount' => $request->amount,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'errors' => [
+                    'message' => translate('Something went wrong')
+                ]
+            ], 500);
         }
-
-        return response()->json(['errors' => [
-            'message' => translate('failed_to_create_transaction')
-        ]], 200);
     }
 
     /**
