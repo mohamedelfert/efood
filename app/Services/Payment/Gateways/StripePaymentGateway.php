@@ -21,135 +21,174 @@ class StripePaymentGateway implements PaymentGatewayInterface
         $this->mode = env('STRIPE_MODE', 'test');
     }
 
+    /**
+     * Request payment using Payment Intent (Pure API - No Redirect)
+     */
     public function requestPayment(array $data): array
     {
         try {
+            // Use Payment Intent for pure API flow (no redirect needed)
             $params = [
-                'mode' => 'payment',
-                'payment_method_types[]' => 'card',
-                'locale' => 'auto',
-                // 'billing_address_collection' => 'required',
-                'submit_type' => 'pay',
-                // 'line_items[0][price_data][currency]' => strtolower($data['currency'] ?? 'usd'),
-                'line_items[0][price_data][currency]' => 'usd',
-                'line_items[0][price_data][product_data][name]' => 'Payment for Invoice #' . ($data['invoice_id'] ?? 'N/A'),
-                'line_items[0][price_data][unit_amount]' => (int) ($data['amount'] * 100),
-                'line_items[0][quantity]' => 1,
-                'success_url' => env('APP_URL') . config('payment.callback_url') . '?session_id={CHECKOUT_SESSION_ID}&status=success',
-                'cancel_url' => env('APP_URL') . config('payment.callback_url') . '?session_id={CHECKOUT_SESSION_ID}&status=cancelled',
+                'amount' => (int) ($data['amount'] * 100), // Convert to cents
+                'currency' => strtolower($data['currency'] ?? 'usd'),
+                'description' => 'Payment for Invoice #' . ($data['invoice_id'] ?? 'N/A'),
+                'automatic_payment_methods[enabled]' => 'true',
             ];
 
-            if (isset($data['customer_data']['name'])) {
-                $params['customer_email'] = $data['customer_data']['email'] ?? null;
-            }
-
-            if (isset($data['invoice_id'])) {
-                $params['metadata[invoice_id]'] = (string) $data['invoice_id'];
-            }
-            if (isset($data['customer_id'])) {
-                $params['metadata[customer_id]'] = (string) $data['customer_id'];
-            }
-            if (isset($data['payment_CustomerNo'])) {
-                $params['metadata[payment_CustomerNo]'] = (string) $data['payment_CustomerNo'];
-            }
-            if (isset($data['payment_DestNation'])) {
-                $params['metadata[payment_DestNation]'] = (string) $data['payment_DestNation'];
-            }
-            if (isset($data['payment_Code'])) {
-                $params['metadata[payment_Code]'] = (string) $data['payment_Code'];
-            }
-
+            // Add customer email if provided
             if (isset($data['customer_data']['email'])) {
-                $params['customer_email'] = $data['customer_data']['email'];
+                $params['receipt_email'] = $data['customer_data']['email'];
             }
 
+            // Add metadata
+            $metadataFields = [
+                'invoice_id', 
+                'customer_id', 
+                'payment_CustomerNo', 
+                'payment_DestNation', 
+                'payment_Code',
+                'user_id',
+                'transaction_type',
+                'order_id'
+            ];
+
+            foreach ($metadataFields as $field) {
+                if (isset($data[$field])) {
+                    $params['metadata[' . $field . ']'] = (string) $data[$field];
+                }
+            }
+
+            // Create Payment Intent
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->secretKey,
-            ])->asForm()->post($this->baseUrl . '/checkout/sessions', $params);
+            ])->asForm()->post($this->baseUrl . '/payment_intents', $params);
 
             $responseData = $response->json();
 
             if ($response->successful() && isset($responseData['id'])) {
+                Log::info('Stripe Payment Intent Created', [
+                    'payment_intent_id' => $responseData['id'],
+                    'amount' => $data['amount'],
+                    'customer_id' => $data['customer_id'] ?? null
+                ]);
+
                 return [
                     'status' => true,
-                    'description' => 'Checkout session created successfully',
-                    'transaction_id' => $responseData['id'],
-                    'checkout_url' => $responseData['url'],
+                    'description' => 'Payment intent created successfully',
+                    'payment_intent_id' => $responseData['id'],
+                    'client_secret' => $responseData['client_secret'],
+                    'publishable_key' => $this->publishableKey,
                     'amount' => $data['amount'],
                     'currency' => strtoupper($data['currency'] ?? 'usd'),
+                    'requires_action' => $responseData['status'] === 'requires_action',
                 ];
             }
 
-            Log::error('Stripe Checkout Session Creation Failed', ['error' => $responseData['error'] ?? 'Unknown', 'data' => $data]);
-            return ['status' => false, 'error' => $responseData['error']['message'] ?? 'Checkout session creation failed'];
+            Log::error('Stripe Payment Intent Creation Failed', [
+                'error' => $responseData['error'] ?? 'Unknown', 
+                'data' => $data
+            ]);
+            
+            return [
+                'status' => false, 
+                'error' => $responseData['error']['message'] ?? 'Payment intent creation failed'
+            ];
 
         } catch (\Exception $e) {
-            Log::error('Stripe Payment Request Exception', ['error' => $e->getMessage(), 'data' => $data]);
-            return ['status' => false, 'error' => $e->getMessage()];
+            Log::error('Stripe Payment Request Exception', [
+                'error' => $e->getMessage(), 
+                'data' => $data
+            ]);
+            
+            return [
+                'status' => false, 
+                'error' => $e->getMessage()
+            ];
         }
     }
 
+    /**
+     * Confirm payment after client-side card processing
+     */
     public function confirmPayment(array $data): array
     {
         try {
-            $sessionId = $data['transaction_id'];
+            $paymentIntentId = $data['payment_intent_id'] ?? $data['transaction_id'];
+            
+            // Retrieve the Payment Intent to check its status
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->secretKey,
-            ])->get($this->baseUrl . '/checkout/sessions/' . $sessionId);
+            ])->get($this->baseUrl . '/payment_intents/' . $paymentIntentId);
 
             $json = $response->json();
 
-            if ($response->successful() && isset($json['payment_status']) && $json['payment_status'] === 'paid') {
+            if ($response->successful()) {
+                Log::info('Stripe Payment Intent Status', [
+                    'payment_intent_id' => $paymentIntentId,
+                    'status' => $json['status'] ?? 'unknown'
+                ]);
+
+                // Check if payment is successful
+                if (isset($json['status']) && $json['status'] === 'succeeded') {
+                    return [
+                        'status' => true, 
+                        'description' => 'Payment confirmed successfully', 
+                        'transaction' => $json,
+                        'payment_status' => 'succeeded',
+                        'payment_intent_id' => $paymentIntentId,
+                        'amount' => $json['amount'] / 100,
+                        'currency' => strtoupper($json['currency']),
+                        'metadata' => $json['metadata'] ?? []
+                    ];
+                }
+
+                // Handle other statuses
                 return [
-                    'status' => true, 
-                    'description' => 'Payment confirmed', 
-                    'transaction' => $json,
-                    'payment_status' => $json['payment_status']
+                    'status' => false,
+                    'payment_status' => $json['status'] ?? 'unknown',
+                    'error' => 'Payment not confirmed. Status: ' . ($json['status'] ?? 'unknown'),
+                    'requires_action' => $json['status'] === 'requires_action'
                 ];
             }
 
-            return ['status' => false, 'error' => 'Payment not confirmed or still pending'];
+            return [
+                'status' => false, 
+                'error' => 'Failed to retrieve payment status'
+            ];
+            
         } catch (\Exception $e) {
-            Log::error('Stripe Payment Confirmation Failed', ['error' => $e->getMessage()]);
-            return ['status' => false, 'error' => $e->getMessage()];
+            Log::error('Stripe Payment Confirmation Failed', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'status' => false, 
+                'error' => $e->getMessage()
+            ];
         }
     }
 
     public function resendOTP(array $data): array
     {
-        return ['status' => false, 'error' => 'Resend OTP not supported in Stripe'];
+        return [
+            'status' => false, 
+            'error' => 'Resend OTP not supported in Stripe'
+        ];
     }
 
+    /**
+     * Handle webhook callbacks (for automatic payment confirmation)
+     */
     public function handleCallback(array $data): array
     {
         try {
-            if (isset($data['session_id'])) {
-                $sessionId = $data['session_id'];
-                $status = $data['status'] ?? 'unknown';
-                
-                Log::info('Stripe Checkout Session Callback', ['session_id' => $sessionId, 'status' => $status]);
-                
-                if ($status === 'success') {
-                    return [
-                        'status' => 'success',
-                        'message' => 'Payment completed successfully',
-                        'transaction_id' => $sessionId,
-                        'stripe_transaction_id' => $sessionId,
-                    ];
-                } elseif ($status === 'cancelled') {
-                    return [
-                        'status' => 'failed',
-                        'error' => 'Payment was cancelled by user',
-                        'transaction_id' => $sessionId,
-                    ];
-                }
-            }
-
+            // Handle webhook events
             $payload = file_get_contents('php://input');
             $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
             $endpointSecret = env('STRIPE_WEBHOOK_SECRET');
 
-            if (!empty($endpointSecret)) {
+            // Verify webhook signature
+            if (!empty($endpointSecret) && !empty($sigHeader)) {
                 if (!$this->verifyWebhookSignature($payload, $sigHeader, $endpointSecret)) {
                     Log::warning('Stripe webhook signature validation failed');
                     if (env('APP_ENV') !== 'local') {
@@ -159,41 +198,71 @@ class StripePaymentGateway implements PaymentGatewayInterface
             }
 
             $event = json_decode($payload ?: '{}', true);
-            Log::info('Stripe Webhook Received', ['event_type' => $event['type'] ?? 'unknown']);
+            
+            Log::info('Stripe Webhook Received', [
+                'event_type' => $event['type'] ?? 'unknown',
+                'event_id' => $event['id'] ?? null
+            ]);
 
-            if (in_array($event['type'], ['checkout.session.completed'])) {
-                $session = $event['data']['object'];
+            // Handle Payment Intent succeeded
+            if ($event['type'] === 'payment_intent.succeeded') {
+                $paymentIntent = $event['data']['object'];
+                
                 return [
                     'status' => 'success',
-                    'message' => 'Payment processed via webhook',
-                    'transaction_id' => $session['id'],
-                    'stripe_transaction_id' => $session['id'],
+                    'message' => 'Payment completed successfully',
+                    'payment_intent_id' => $paymentIntent['id'],
+                    'transaction_id' => $paymentIntent['id'],
+                    'stripe_transaction_id' => $paymentIntent['id'],
+                    'amount' => $paymentIntent['amount'] / 100,
+                    'currency' => strtoupper($paymentIntent['currency']),
+                    'metadata' => $paymentIntent['metadata'] ?? [],
                 ];
             }
 
-            if (in_array($event['type'], ['payment_intent.succeeded', 'charge.succeeded'])) {
-                $object = $event['data']['object'];
-                return [
-                    'status' => 'success',
-                    'message' => 'Payment processed via webhook',
-                    'transaction_id' => $object['id'],
-                    'stripe_transaction_id' => $object['id'],
-                ];
-            }
-
-            if (in_array($event['type'], ['checkout.session.expired', 'payment_intent.payment_failed', 'charge.failed'])) {
-                $object = $event['data']['object'];
+            // Handle Payment Intent failed
+            if (in_array($event['type'], ['payment_intent.payment_failed', 'payment_intent.canceled'])) {
+                $paymentIntent = $event['data']['object'];
+                
                 return [
                     'status' => 'failed',
-                    'error' => $object['last_payment_error']['message'] ?? 'Payment failed',
-                    'transaction_id' => $object['id'],
+                    'error' => $paymentIntent['last_payment_error']['message'] ?? 'Payment failed',
+                    'payment_intent_id' => $paymentIntent['id'],
+                    'transaction_id' => $paymentIntent['id'],
                 ];
             }
 
-            return ['status' => 'ignored', 'message' => 'Event type not handled: ' . ($event['type'] ?? 'unknown')];
+            // Handle charge succeeded (alternative)
+            if ($event['type'] === 'charge.succeeded') {
+                $charge = $event['data']['object'];
+                
+                return [
+                    'status' => 'success',
+                    'message' => 'Payment completed successfully',
+                    'transaction_id' => $charge['id'],
+                    'stripe_transaction_id' => $charge['id'],
+                    'payment_intent_id' => $charge['payment_intent'] ?? null,
+                    'amount' => $charge['amount'] / 100,
+                    'currency' => strtoupper($charge['currency']),
+                    'metadata' => $charge['metadata'] ?? [],
+                ];
+            }
+
+            return [
+                'status' => 'ignored', 
+                'message' => 'Event type not handled: ' . ($event['type'] ?? 'unknown')
+            ];
+            
         } catch (\Exception $e) {
-            Log::error('Stripe Callback/Webhook Failed', ['error' => $e->getMessage()]);
-            return ['status' => 'failed', 'error' => $e->getMessage()];
+            Log::error('Stripe Webhook Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'status' => 'failed', 
+                'error' => $e->getMessage()
+            ];
         }
     }
 
@@ -228,7 +297,11 @@ class StripePaymentGateway implements PaymentGatewayInterface
     public function getPaymentMethods(): array
     {
         return [
-            ['id' => 'card', 'name' => 'Credit/Debit Card', 'description' => 'Visa, Mastercard, etc.'],
+            [
+                'id' => 'card', 
+                'name' => 'Credit/Debit Card', 
+                'description' => 'Visa, Mastercard, etc.'
+            ],
         ];
     }
 }
