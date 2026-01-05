@@ -22,7 +22,8 @@ class StripePaymentGateway implements PaymentGatewayInterface
         }
 
         $mode = $setting->mode ?? 'test';
-        $this->config = $mode === 'live' ? json_decode($setting->live_values, true) : json_decode($setting->test_values, true);
+        $values = $mode === 'live' ? $setting->live_values : $setting->test_values;
+        $this->config = is_string($values) ? json_decode($values, true) : (is_array($values) ? $values : []);
 
         if (empty($this->config['secret_key'])) {
             throw new Exception('Stripe API key not configured');
