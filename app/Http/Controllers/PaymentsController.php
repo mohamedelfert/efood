@@ -35,20 +35,255 @@ class PaymentsController extends Controller
         $this->receiptGenerator = $receiptGenerator;
     }
 
+    // public function handleCallback(Request $request): JsonResponse
+    // {
+    //     try {
+    //         $data = $request->all();
+    //         $transactionId = $data['transaction_id'] ?? $request->query('transaction_id');
+    //         $orderId = $data['order'] ?? $request->query('order'); // stripe order ID
+    //         $stripeTransactionId = $data['id'] ?? $request->query('id'); // Stripe transaction ID
+    //         $hmac = $data['hmac'] ?? $request->query('hmac');
+
+    //         // Log incoming callback data
+    //         Log::info('Callback Data Received', [
+    //             'transaction_id' => $transactionId,
+    //             'order_id' => $orderId,
+    //             'stripe_transaction_id' => $stripeTransactionId,
+    //             'hmac' => $hmac,
+    //             'query' => $request->query(),
+    //             'data' => $data
+    //         ]);
+
+    //         // Find transaction
+    //         $query = WalletTransaction::where('status', 'pending');
+    //         if ($transactionId) {
+    //             $query->where('transaction_id', $transactionId);
+    //         } elseif ($stripeTransactionId) {
+    //             $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_transaction_id")) = ?', [$stripeTransactionId]);
+    //         } elseif ($orderId) {
+    //             $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_order_id")) = ?', [$orderId]);
+    //         }
+    //         $transaction = $query->first();
+
+    //         if (!$transaction) {
+    //             // Debug: Log all pending transactions to check metadata
+    //             $pendingTransactions = WalletTransaction::where('status', 'pending')->get(['transaction_id', 'metadata'])->toArray();
+    //             Log::error('Callback: Transaction not found', [
+    //                 'transaction_id' => $transactionId,
+    //                 'order_id' => $orderId,
+    //                 'stripe_transaction_id' => $stripeTransactionId,
+    //                 'pending_transactions' => $pendingTransactions
+    //             ]);
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => translate('Invalid or completed transaction')
+    //             ], 400);
+    //         }
+
+    //         // Decode metadata
+    //         $metadata = is_string($transaction->metadata) ? json_decode($transaction->metadata, true) : $transaction->metadata;
+    //         if (!is_array($metadata)) {
+    //             Log::error('Callback: Invalid metadata format', [
+    //                 'transaction_id' => $transaction->transaction_id,
+    //                 'metadata' => $transaction->metadata
+    //             ]);
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => translate('Invalid transaction metadata')
+    //             ], 400);
+    //         }
+
+    //         // Use the gateway stored in the transaction
+    //         $gateway = $transaction->gateway;
+    //         if (!$gateway) {
+    //             Log::error('Callback: Gateway not specified', [
+    //                 'transaction_id' => $transaction->transaction_id,
+    //                 'stripe_order_id' => $orderId
+    //             ]);
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => translate('Gateway not specified for this transaction')
+    //             ], 400);
+    //         }
+
+    //         $this->gateway = PaymentGatewayFactory::create($gateway);
+    //         if (!$this->gateway) {
+    //             Log::error('Callback: Invalid gateway', ['gateway' => $gateway]);
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => translate('Invalid payment gateway')
+    //             ], 400);
+    //         }
+
+    //         // Update transaction with Stripe transaction ID if missing
+    //         if ($stripeTransactionId && empty($metadata['stripe_transaction_id'])) {
+    //             $metadata['stripe_transaction_id'] = $stripeTransactionId;
+    //             $transaction->update(['metadata' => json_encode($metadata)]);
+    //         }
+
+    //         $response = $this->gateway->handleCallback($data);
+
+    //         if (
+    //             isset($response['status']) && 
+    //             $response['status'] === 'success' && 
+    //             isset($response['stripe_transaction_id']) && 
+    //             $response['stripe_transaction_id'] === 
+    //             ($metadata['stripe_transaction_id'])
+    //         ) {
+    //             DB::beginTransaction();
+    //             try {
+    //                 if ($transaction->transaction_type === 'order_payment'){
+    //                     // Update WalletTransaction
+    //                     $transaction->update([
+    //                         'status' => 'completed',
+    //                         'balance' => $transaction->user->wallet_balance,
+    //                         'updated_at' => now(),
+    //                     ]);
+    //                 }else{
+    //                     $transaction->update([
+    //                         'status' => 'completed',
+    //                         'balance' => $transaction->user->wallet_balance + $transaction->credit,
+    //                         'updated_at' => now(),
+    //                     ]);
+
+    //                     // Increment user wallet balance
+    //                     $transaction->user->increment('wallet_balance', $transaction->credit);
+    //                 }
+
+    //                 // Update order status if this is an order payment
+    //                 if (isset($metadata['order_id'])) {
+    //                     Order::where('id', $metadata['order_id'])->update([
+    //                         'payment_status' => 'paid',
+    //                         'order_status' => 'confirmed',
+    //                         'updated_at' => now(),
+    //                     ]);
+
+    //                     // Update OrderPartialPayment if applicable
+    //                     OrderPartialPayment::where('order_id', $metadata['order_id'])
+    //                         ->where('paid_with', $gateway)
+    //                         ->update([
+    //                             'paid_amount' => $transaction->credit,
+    //                             'due_amount' => 0,
+    //                             'updated_at' => now(),
+    //                         ]);
+
+    //                     // Update existing OrderTransaction
+    //                     OrderTransaction::where('order_id', $metadata['order_id'])
+    //                         ->where('status', 'pending')
+    //                         ->update([
+    //                             'status' => 'completed',
+    //                             'balance' => $transaction->user->wallet_balance,
+    //                             'updated_at' => now(),
+    //                         ]);
+    //                 }
+
+    //                 DB::commit();
+
+    //                 Log::info('Callback: Payment processed successfully', [
+    //                     'transaction_id' => $transaction->transaction_id,
+    //                     'user_id' => $transaction->user_id,
+    //                     'order_id' => $metadata['order_id'] ?? null,
+    //                     'stripe_order_id' => $orderId,
+    //                     'stripe_transaction_id' => $stripeTransactionId,
+    //                     'new_balance' => $transaction->user->wallet_balance
+    //                 ]);
+
+    //                 $previousBalance = $transaction->balance - $transaction->credit;
+
+    //                 // Send WhatsApp notification with receipt for successful wallet top-up
+    //                 if ($transaction->transaction_type === 'order_payment' && isset($metadata['order_id'])) {
+    //                     // Send order payment notifications
+    //                     $order = Order::find($metadata['order_id']);
+    //                     if ($order) {
+    //                         $notificationService = app(\App\Services\NotificationService::class);
+    //                         $notificationService->sendOrderPlacedNotification(
+    //                             $transaction->user,
+    //                             $order,
+    //                             ['currency' => $metadata['currency'] ?? 'EGP']
+    //                         );
+    //                     }
+    //                 } else {
+    //                     // Send wallet top-up notifications (Email + WhatsApp + Push + In-App)
+    //                     $notificationService = app(\App\Services\NotificationService::class);
+    //                     $notificationService->sendWalletTopUpNotification(
+    //                         $transaction->user->fresh(),
+    //                         [
+    //                             'transaction_id' => $transaction->transaction_id,
+    //                             'amount' => $transaction->credit,
+    //                             'currency' => $metadata['currency'] ?? 'EGP',
+    //                             'gateway' => $gateway,
+    //                             'previous_balance' => $previousBalance,
+    //                         ]
+    //                     );
+    //                 }
+
+    //                 return response()->json([
+    //                     'success' => true,
+    //                     'message' => translate('Payment processed successfully'),
+    //                     'transaction_id' => $transaction->transaction_id,
+    //                     'order_id' => $metadata['order_id'] ?? null,
+    //                     'amount' => $transaction->credit,
+    //                     'currency' => $metadata['currency'] ?? 'EGP',
+    //                     'gateway' => $gateway,
+    //                     'new_balance' => $transaction->user->fresh()->wallet_balance,
+    //                     'transaction_type' => $transaction->transaction_type,
+    //                 ], 200);
+    //             } catch (Exception $e) {
+    //                 DB::rollBack();
+    //                 Log::error('Callback: Database update failed', [
+    //                     'error' => $e->getMessage(),
+    //                     'transaction_id' => $transaction->transaction_id,
+    //                     'trace' => $e->getTraceAsString()
+    //                 ]);
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => translate('Failed to update transaction')
+    //                 ], 500);
+    //             }
+    //         } else {
+    //             Log::error('Callback: Payment failed', [
+    //                 'transaction_id' => $transaction->transaction_id,
+    //                 'response' => $response
+    //             ]);
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => $response['error'] ?? translate('Payment failed')
+    //             ], 400);
+    //         }
+    //     } catch (Exception $e) {
+    //         Log::error('Callback handling failed', [
+    //             'error' => $e->getMessage(),
+    //             'transaction_id' => $transactionId,
+    //             'order_id' => $orderId,
+    //             'stripe_transaction_id' => $stripeTransactionId,
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors' => [['code' => 'server_error', 'message' => translate('Callback processing failed')]]
+    //         ], 500);
+    //     }
+    // }
+
+    /**
+     * Send WhatsApp notification with receipt using template
+     */
+    
     public function handleCallback(Request $request): JsonResponse
     {
         try {
             $data = $request->all();
             $transactionId = $data['transaction_id'] ?? $request->query('transaction_id');
-            $orderId = $data['order'] ?? $request->query('order'); // stripe order ID
-            $stripeTransactionId = $data['id'] ?? $request->query('id'); // Stripe transaction ID
+            $orderId = $data['order'] ?? $request->query('order');
+            $stripeTransactionId = $data['id'] ?? $request->query('id');
+            $sessionId = $data['session_id'] ?? $request->query('session_id');
             $hmac = $data['hmac'] ?? $request->query('hmac');
 
-            // Log incoming callback data
             Log::info('Callback Data Received', [
                 'transaction_id' => $transactionId,
                 'order_id' => $orderId,
                 'stripe_transaction_id' => $stripeTransactionId,
+                'session_id' => $sessionId,
                 'hmac' => $hmac,
                 'query' => $request->query(),
                 'data' => $data
@@ -58,6 +293,8 @@ class PaymentsController extends Controller
             $query = WalletTransaction::where('status', 'pending');
             if ($transactionId) {
                 $query->where('transaction_id', $transactionId);
+            } elseif ($sessionId) {
+                $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_transaction_id")) = ?', [$sessionId]);
             } elseif ($stripeTransactionId) {
                 $query->orWhereRaw('JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.stripe_transaction_id")) = ?', [$stripeTransactionId]);
             } elseif ($orderId) {
@@ -66,12 +303,12 @@ class PaymentsController extends Controller
             $transaction = $query->first();
 
             if (!$transaction) {
-                // Debug: Log all pending transactions to check metadata
                 $pendingTransactions = WalletTransaction::where('status', 'pending')->get(['transaction_id', 'metadata'])->toArray();
                 Log::error('Callback: Transaction not found', [
                     'transaction_id' => $transactionId,
                     'order_id' => $orderId,
                     'stripe_transaction_id' => $stripeTransactionId,
+                    'session_id' => $sessionId,
                     'pending_transactions' => $pendingTransactions
                 ]);
                 return response()->json([
@@ -80,7 +317,6 @@ class PaymentsController extends Controller
                 ], 400);
             }
 
-            // Decode metadata
             $metadata = is_string($transaction->metadata) ? json_decode($transaction->metadata, true) : $transaction->metadata;
             if (!is_array($metadata)) {
                 Log::error('Callback: Invalid metadata format', [
@@ -93,7 +329,6 @@ class PaymentsController extends Controller
                 ], 400);
             }
 
-            // Use the gateway stored in the transaction
             $gateway = $transaction->gateway;
             if (!$gateway) {
                 Log::error('Callback: Gateway not specified', [
@@ -115,9 +350,9 @@ class PaymentsController extends Controller
                 ], 400);
             }
 
-            // Update transaction with Stripe transaction ID if missing
-            if ($stripeTransactionId && empty($metadata['stripe_transaction_id'])) {
-                $metadata['stripe_transaction_id'] = $stripeTransactionId;
+            // Update transaction with session ID if missing
+            if ($sessionId && empty($metadata['stripe_transaction_id'])) {
+                $metadata['stripe_transaction_id'] = $sessionId;
                 $transaction->update(['metadata' => json_encode($metadata)]);
             }
 
@@ -126,31 +361,42 @@ class PaymentsController extends Controller
             if (
                 isset($response['status']) && 
                 $response['status'] === 'success' && 
-                isset($response['stripe_transaction_id']) && 
-                $response['stripe_transaction_id'] === 
-                ($metadata['stripe_transaction_id'])
+                isset($response['stripe_transaction_id'])
             ) {
                 DB::beginTransaction();
                 try {
+                    // Variables for cashback
+                    $walletTopupCashback = null;
+                    $orderCashback = null;
+
                     if ($transaction->transaction_type === 'order_payment'){
-                        // Update WalletTransaction
                         $transaction->update([
                             'status' => 'completed',
                             'balance' => $transaction->user->wallet_balance,
                             'updated_at' => now(),
                         ]);
-                    }else{
+                    } else {
                         $transaction->update([
                             'status' => 'completed',
                             'balance' => $transaction->user->wallet_balance + $transaction->credit,
                             'updated_at' => now(),
                         ]);
 
-                        // Increment user wallet balance
                         $transaction->user->increment('wallet_balance', $transaction->credit);
+
+                        // PROCESS WALLET TOP-UP CASHBACK
+                        try {
+                            $cashbackService = app(\App\Services\CashbackService::class);
+                            $walletTopupCashback = $cashbackService->processWalletTopupCashback(
+                                $transaction->user,
+                                $transaction->credit,
+                                $transaction->transaction_id
+                            );
+                        } catch (\Exception $e) {
+                            Log::error('Wallet cashback failed', ['error' => $e->getMessage()]);
+                        }
                     }
 
-                    // Update order status if this is an order payment
                     if (isset($metadata['order_id'])) {
                         Order::where('id', $metadata['order_id'])->update([
                             'payment_status' => 'paid',
@@ -158,7 +404,6 @@ class PaymentsController extends Controller
                             'updated_at' => now(),
                         ]);
 
-                        // Update OrderPartialPayment if applicable
                         OrderPartialPayment::where('order_id', $metadata['order_id'])
                             ->where('paid_with', $gateway)
                             ->update([
@@ -167,7 +412,6 @@ class PaymentsController extends Controller
                                 'updated_at' => now(),
                             ]);
 
-                        // Update existing OrderTransaction
                         OrderTransaction::where('order_id', $metadata['order_id'])
                             ->where('status', 'pending')
                             ->update([
@@ -175,6 +419,21 @@ class PaymentsController extends Controller
                                 'balance' => $transaction->user->wallet_balance,
                                 'updated_at' => now(),
                             ]);
+
+                        // PROCESS ORDER CASHBACK
+                        try {
+                            $order = Order::find($metadata['order_id']);
+                            if ($order) {
+                                $cashbackService = app(\App\Services\CashbackService::class);
+                                $orderCashback = $cashbackService->processOrderCashback(
+                                    $transaction->user,
+                                    $order->order_amount,
+                                    $metadata['order_id']
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Order cashback failed', ['error' => $e->getMessage()]);
+                        }
                     }
 
                     DB::commit();
@@ -184,15 +443,15 @@ class PaymentsController extends Controller
                         'user_id' => $transaction->user_id,
                         'order_id' => $metadata['order_id'] ?? null,
                         'stripe_order_id' => $orderId,
-                        'stripe_transaction_id' => $stripeTransactionId,
-                        'new_balance' => $transaction->user->wallet_balance
+                        'stripe_transaction_id' => $response['stripe_transaction_id'],
+                        'new_balance' => $transaction->user->wallet_balance,
+                        'wallet_topup_cashback' => $walletTopupCashback,
+                        'order_cashback' => $orderCashback
                     ]);
 
-                    $previousBalance = $transaction->balance - $transaction->credit;
+                    $previousBalance = $transaction->balance;
 
-                    // Send WhatsApp notification with receipt for successful wallet top-up
                     if ($transaction->transaction_type === 'order_payment' && isset($metadata['order_id'])) {
-                        // Send order payment notifications
                         $order = Order::find($metadata['order_id']);
                         if ($order) {
                             $notificationService = app(\App\Services\NotificationService::class);
@@ -203,7 +462,6 @@ class PaymentsController extends Controller
                             );
                         }
                     } else {
-                        // Send wallet top-up notifications (Email + WhatsApp + Push + In-App)
                         $notificationService = app(\App\Services\NotificationService::class);
                         $notificationService->sendWalletTopUpNotification(
                             $transaction->user->fresh(),
@@ -217,7 +475,8 @@ class PaymentsController extends Controller
                         );
                     }
 
-                    return response()->json([
+                    // BUILD RESPONSE WITH CASHBACK DATA
+                    $responseData = [
                         'success' => true,
                         'message' => translate('Payment processed successfully'),
                         'transaction_id' => $transaction->transaction_id,
@@ -227,7 +486,20 @@ class PaymentsController extends Controller
                         'gateway' => $gateway,
                         'new_balance' => $transaction->user->fresh()->wallet_balance,
                         'transaction_type' => $transaction->transaction_type,
-                    ], 200);
+                    ];
+
+                    // ADD CASHBACK TO RESPONSE IF ANY
+                    if ($walletTopupCashback || $orderCashback) {
+                        $responseData['cashback'] = [
+                            'earned' => true,
+                            'wallet_topup_cashback' => $walletTopupCashback ?? 0,
+                            'order_cashback' => $orderCashback ?? 0,
+                            'total_cashback' => ($walletTopupCashback ?? 0) + ($orderCashback ?? 0),
+                        ];
+                    }
+
+                    return response()->json($responseData, 200);
+
                 } catch (Exception $e) {
                     DB::rollBack();
                     Log::error('Callback: Database update failed', [
@@ -253,9 +525,6 @@ class PaymentsController extends Controller
         } catch (Exception $e) {
             Log::error('Callback handling failed', [
                 'error' => $e->getMessage(),
-                'transaction_id' => $transactionId,
-                'order_id' => $orderId,
-                'stripe_transaction_id' => $stripeTransactionId,
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
@@ -264,10 +533,7 @@ class PaymentsController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Send WhatsApp notification with receipt using template
-     */
+    
     private function sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance): void
     {
         try {

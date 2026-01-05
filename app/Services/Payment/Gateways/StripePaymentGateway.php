@@ -2,8 +2,8 @@
 
 namespace App\Services\Payment\Gateways;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Services\Payment\PaymentGatewayInterface;
 
 class StripePaymentGateway implements PaymentGatewayInterface

@@ -198,6 +198,12 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::delete('remove-account', [CustomerAuthController::class, 'remove_account']);
         });
 
+        // cash back
+        Route::get('cashback/preview', [CustomerWalletController::class,'getCashbackPreview']);
+        Route::get('cashback/offers', [CustomerWalletController::class,'getActiveCashbackOffers']);
+        Route::get('cashback/summary', [CustomerWalletController::class,'getCashbackSummary']);
+        Route::get('cashback/history', [CustomerWalletController::class,'getCashbackHistory']);
+
         Route::group(['prefix' => 'order'], function () {
             Route::get('track', [OrderController::class, 'trackOrder'])->withoutMiddleware(['auth:api', 'is_active']);
             // Route::post('place', [OrderController::class, 'placeOrder'])->withoutMiddleware(['auth:api', 'is_active']);
