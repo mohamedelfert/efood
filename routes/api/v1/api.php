@@ -269,6 +269,11 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             // Update wallet PIN
             Route::post('update-pin', [CustomerWalletController::class, 'updateWalletPin']);
             Route::post('verify-pin', [CustomerWalletController::class, 'verifyWalletPin']);
+
+            // Wallet PIN Reset Routes
+            Route::post('request-reset-otp', [CustomerWalletController::class, 'requestPinResetOTP']);
+            Route::post('verify-reset-otp', [CustomerWalletController::class, 'verifyPinResetOTP']);
+            Route::post('reset-with-otp', [CustomerWalletController::class, 'resetPinWithOTP']);
             
             // Top up wallet - Get available payment methods
             Route::get('payment-methods', [CustomerWalletController::class, 'getPaymentMethods']);

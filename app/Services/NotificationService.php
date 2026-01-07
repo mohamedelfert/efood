@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\User;
+use PinResetOTP;
 use App\Model\Order;
+use PinResetSuccess;
 use App\Model\Notification;
 use App\CentralLogics\Helpers;
 use App\Mail\EmailVerification;
@@ -569,6 +571,169 @@ class NotificationService
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to store in-app notification', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Send PIN Reset OTP via Email and WhatsApp
+     */
+    public function sendPinResetOTP(User $user, string $otp): array
+    {
+        $results = ['email' => false, 'whatsapp' => false];
+        
+        // Email OTP
+        if ($user->email) {
+            try {
+                $emailData = [
+                    'user_name' => $user->name,
+                    'otp' => $otp,
+                    'expiry_minutes' => '5',
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                    'purpose' => 'Wallet PIN Reset'
+                ];
+                
+                Mail::to($user->email)->send(new \App\Mail\PinResetOTP($emailData, $user->language_code ?? 'en'));
+                $results['email'] = true;
+                
+                Log::info('PIN Reset OTP email sent', [
+                    'user_id' => $user->id,
+                    'email' => $user->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('PIN Reset OTP email failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // WhatsApp OTP
+        if ($user->phone) {
+            try {
+                $whatsappData = [
+                    'user_name' => $user->name,
+                    'otp' => $otp,
+                    'expiry_minutes' => '5',
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                    'purpose' => 'Wallet PIN Reset'
+                ];
+                
+                Log::info('Preparing PIN Reset OTP WhatsApp', [
+                    'user_id' => $user->id,
+                    'phone' => $user->phone,
+                    'template_data' => $whatsappData
+                ]);
+                
+                $message = $this->whatsapp->sendTemplateMessage('pin_reset_otp', $whatsappData);
+                
+                Log::info('PIN Reset OTP template generated', [
+                    'message_length' => strlen($message),
+                    'message_preview' => substr($message, 0, 200)
+                ]);
+                
+                if ($message) {
+                    $response = $this->whatsapp->sendMessage($user->phone, $message);
+                    $results['whatsapp'] = $response['success'] ?? false;
+                    
+                    Log::info('PIN Reset OTP WhatsApp sent', [
+                        'user_id' => $user->id,
+                        'phone' => $user->phone,
+                        'success' => $results['whatsapp'],
+                        'response' => $response
+                    ]);
+                } else {
+                    Log::warning('PIN Reset OTP template returned empty message');
+                }
+                
+            } catch (\Exception $e) {
+                Log::error('PIN Reset OTP WhatsApp failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send PIN Reset Success Notification
+     */
+    public function sendPinResetSuccessNotification(User $user): void
+    {
+        try {
+            $notificationData = [
+                'user_name' => $user->name,
+                'timestamp' => now()->format('Y-m-d H:i:s'),
+                'date' => now()->format('d/m/Y'),
+                'time' => now()->format('h:i A'),
+            ];
+
+            // Email Notification
+            if ($user->email) {
+                try {
+                    Mail::to($user->email)->send(new \App\Mail\PinResetSuccess($notificationData, $user->language_code ?? 'en'));
+                    
+                    Log::info('PIN reset success email sent', [
+                        'user_id' => $user->id
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('PIN reset success email failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // WhatsApp Notification
+            if ($user->phone) {
+                try {
+                    $message = $this->whatsapp->sendTemplateMessage('pin_reset_success', $notificationData);
+                    $this->whatsapp->sendMessage($user->phone, $message);
+                    
+                    Log::info('PIN reset success WhatsApp sent', [
+                        'user_id' => $user->id
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('PIN reset success WhatsApp failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Push Notification
+            if ($user->cm_firebase_token) {
+                try {
+                    Helpers::send_push_notif_to_device($user->cm_firebase_token, [
+                        'title' => translate('Wallet PIN Reset'),
+                        'description' => translate('Your wallet PIN has been reset successfully'),
+                        'type' => 'pin_reset_success',
+                        'image' => '',
+                        'order_id' => '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('PIN reset success push failed', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // In-App Notification
+            $this->storeInAppNotification($user->id, [
+                'title' => 'Wallet PIN Reset',
+                'description' => 'Your wallet PIN has been reset successfully',
+                'type' => 'pin_reset_success',
+                'reference_id' => null,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('PIN reset success notification failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

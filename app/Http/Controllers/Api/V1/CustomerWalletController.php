@@ -1222,6 +1222,241 @@ class CustomerWalletController extends Controller
         ], 200);
     }
 
+     /**
+     * Request PIN Reset OTP
+     */
+    public function requestPinResetOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required_without:email|string',
+            'email' => 'required_without:phone|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => Helpers::error_processor($validator)
+            ], 403);
+        }
+
+        try {
+            // Find user by phone or email
+            $user = null;
+            if ($request->phone) {
+                $user = User::where('phone', $request->phone)->first();
+            } elseif ($request->email) {
+                $user = User::where('email', $request->email)->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'errors' => [[
+                        'code' => 'user_not_found',
+                        'message' => translate('No account found with this information')
+                    ]]
+                ], 404);
+            }
+
+            // Check if user has a wallet PIN set
+            if (!$user->wallet_pin) {
+                return response()->json([
+                    'errors' => [[
+                        'code' => 'no_pin_set',
+                        'message' => translate('No wallet PIN is set. Please create a new PIN instead.')
+                    ]]
+                ], 400);
+            }
+
+            // Generate 6-digit OTP
+            $otp = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+
+            // Store OTP in cache for 5 minutes
+            $cacheKey = "wallet_pin_reset_otp_{$user->id}";
+            \Illuminate\Support\Facades\Cache::put($cacheKey, [
+                'otp' => $otp,
+                'user_id' => $user->id,
+                'attempts' => 0,
+                'created_at' => now()
+            ], now()->addMinutes(5));
+
+            // Send OTP via Email and WhatsApp
+            $results = $this->notificationService->sendPinResetOTP($user, $otp);
+
+            // Check if at least one channel succeeded
+            $success = $results['email'] || $results['whatsapp'];
+
+            if (!$success) {
+                return response()->json([
+                    'errors' => [[
+                        'code' => 'notification_failed',
+                        'message' => translate('Failed to send OTP. Please try again.')
+                    ]]
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => translate('OTP sent successfully'),
+                'channels_sent' => [
+                    'email' => $results['email'],
+                    'whatsapp' => $results['whatsapp']
+                ],
+                'expires_in_minutes' => 5
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'errors' => [[
+                    'code' => 'server_error',
+                    'message' => translate('Failed to send OTP: ') . $e->getMessage()
+                ]]
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify PIN Reset OTP
+     */
+    public function verifyPinResetOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|string|size:6|regex:/^[0-9]+$/',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => Helpers::error_processor($validator)
+            ], 403);
+        }
+
+        $user = $request->user();
+        $cacheKey = "wallet_pin_reset_otp_{$user->id}";
+
+        // Get OTP data from cache
+        $otpData = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+        if (!$otpData) {
+            return response()->json([
+                'errors' => [[
+                    'code' => 'otp_expired',
+                    'message' => translate('OTP has expired. Please request a new one.')
+                ]]
+            ], 400);
+        }
+
+        // Check max attempts (5 attempts allowed)
+        if ($otpData['attempts'] >= 5) {
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
+            return response()->json([
+                'errors' => [[
+                    'code' => 'max_attempts_exceeded',
+                    'message' => translate('Maximum verification attempts exceeded. Please request a new OTP.')
+                ]]
+            ], 429);
+        }
+
+        // Verify OTP
+        if ($request->otp !== $otpData['otp']) {
+            // Increment attempt counter
+            $otpData['attempts']++;
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $otpData, now()->addMinutes(5));
+
+            return response()->json([
+                'errors' => [[
+                    'code' => 'invalid_otp',
+                    'message' => translate('Invalid OTP. Please try again.')
+                ]],
+                'attempts_remaining' => 5 - $otpData['attempts']
+            ], 401);
+        }
+
+        // OTP is valid - generate a reset token
+        $resetToken = bin2hex(random_bytes(32));
+        \Illuminate\Support\Facades\Cache::put("wallet_pin_reset_token_{$user->id}", [
+            'token' => $resetToken,
+            'verified_at' => now()
+        ], now()->addMinutes(10)); // Token valid for 10 minutes
+
+        // Remove OTP from cache
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
+
+        return response()->json([
+            'success' => true,
+            'message' => translate('OTP verified successfully'),
+            'reset_token' => $resetToken,
+            'expires_in_minutes' => 10
+        ], 200);
+    }
+
+    /**
+     * Reset PIN with OTP
+     */
+    public function resetPinWithOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'reset_token' => 'required|string',
+            'new_pin' => 'required|string|min:4|max:8|regex:/^[0-9]+$/',
+            'confirm_pin' => 'required|same:new_pin',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => Helpers::error_processor($validator)
+            ], 403);
+        }
+
+        $user = $request->user();
+        $tokenKey = "wallet_pin_reset_token_{$user->id}";
+
+        // Get reset token from cache
+        $tokenData = \Illuminate\Support\Facades\Cache::get($tokenKey);
+
+        if (!$tokenData) {
+            return response()->json([
+                'errors' => [[
+                    'code' => 'invalid_or_expired_token',
+                    'message' => translate('Reset token is invalid or expired. Please verify OTP again.')
+                ]]
+            ], 400);
+        }
+
+        // Verify token
+        if ($request->reset_token !== $tokenData['token']) {
+            return response()->json([
+                'errors' => [[
+                    'code' => 'invalid_token',
+                    'message' => translate('Invalid reset token')
+                ]]
+            ], 401);
+        }
+
+        try {
+            // Update wallet PIN
+            $user->update([
+                'wallet_pin' => Hash::make($request->new_pin),
+                'wallet_pin_updated_at' => now()
+            ]);
+
+            // Clear reset token
+            \Illuminate\Support\Facades\Cache::forget($tokenKey);
+
+            // Send confirmation notification
+            $this->notificationService->sendPinResetSuccessNotification($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => translate('Wallet PIN reset successfully')
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'errors' => [[
+                    'code' => 'server_error',
+                    'message' => translate('Failed to reset PIN: ') . $e->getMessage()
+                ]]
+            ], 500);
+        }
+    }
+
     /**
      * Get wallet summary with analytics
      */

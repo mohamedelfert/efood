@@ -117,7 +117,7 @@ class WhatsAppService
 
                 Log::info('WhatsApp: API Response', compact('status', 'body'));
 
-                // ✅ SNEFRU CLOUD SUCCESS CHECK (FIXED!)
+                // ✅ SNEFRU CLOUD SUCCESS CHECK
                 if ($status === 200 && 
                     isset($result['message_status']) && 
                     strtolower($result['message_status']) === 'success') {
@@ -194,15 +194,36 @@ class WhatsAppService
         ])->first();
 
         if (!$template) {
+            Log::warning('WhatsApp template not found', [
+                'type' => $type,
+                'available_data' => array_keys($data)
+            ]);
             return $this->getFallbackMessage($type, $data);
         }
+
+        Log::info('WhatsApp template found', [
+            'type' => $type,
+            'title' => $template->title,
+            'has_body' => !empty($template->body)
+        ]);
 
         $message = "*{$template->title}*\n\n";
         $body = $template->body;
 
+        // Replace variables with actual values
         foreach ($data as $k => $v) {
-            $body = str_replace(["{{$k}}", "{{{$k}}}", "{".$k."}"], $v, $body);
+            $body = str_replace([
+                "{{$k}}", 
+                "{{{$k}}}", 
+                "{".$k."}"
+            ], $v, $body);
         }
+
+        Log::info('WhatsApp variables replaced', [
+            'original_length' => strlen($template->body),
+            'replaced_length' => strlen($body),
+            'contains_otp' => strpos($body, '{otp}') === false
+        ]);
 
         $message .= $body . "\n\n";
 
