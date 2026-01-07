@@ -486,6 +486,7 @@
                                             </span>
                                         </a>
                                     </li>
+                                    <!--
                                     <li class="nav-item {{Request::is('admin/orders/list/schedule')?'active':''}}">
                                         <a class="nav-link" href="{{route('admin.orders.list',['schedule'])}}" title="">
                                             <span class="tio-circle nav-indicator-icon"></span>
@@ -497,6 +498,7 @@
                                             </span>
                                         </a>
                                     </li>
+                                    -->
                                 </ul>
                             </li>
                             <!-- End Pages -->
