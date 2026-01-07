@@ -34,8 +34,8 @@ $company_name = App\Model\BusinessSetting::where('key', 'restaurant_name')->firs
                                             </td>
                                             <td style="max-width:130px">
                                                 <h3 class="subtitle">{{ translate('Delivery_Address') }}</h3>
-                                                <span class="d-block">Munam Shahariar</span>
-                                                <span class="d-block" >4517 Washington Ave. Manchester, Kentucky 39495</span>
+                                                <span class="d-block">احمد صلاح</span>
+                                                <span class="d-block" >25 شارع صلاح الدين , مدينه نصر , القاهره</span>
                                             </td>
                                         </tr>
                                         <td colspan="2">
@@ -49,7 +49,7 @@ $company_name = App\Model\BusinessSetting::where('key', 'restaurant_name')->firs
                                                 <tbody>
                                                     <tr>
                                                         <td class="text-left p-2 px-3">
-                                                            1. The school of life - emotional baggage tote bag - canvas tote bag (navy) x 1
+                                                            1. {{ translate('The school of life - emotional baggage tote bag - canvas tote bag (navy) x 1') }}
                                                         </td>
                                                         <td class="text-right p-2 px-3">
                                                             <h4>
@@ -73,43 +73,43 @@ $company_name = App\Model\BusinessSetting::where('key', 'restaurant_name')->firs
                                                             <table class="w-100">
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Item Price</td>
+                                                                    <td class="p-1 px-3">{{ translate('Item Price') }}</td>
                                                                     <td class="text-right p-1 px-3">$85</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Addon</td>
+                                                                    <td class="p-1 px-3">{{ translate('Addon') }}</td>
                                                                     <td class="text-right p-1 px-3">$85</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Sub total</td>
+                                                                    <td class="p-1 px-3">{{ translate('Sub total') }}</td>
                                                                     <td class="text-right p-1 px-3">$90</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Discount</td>
+                                                                    <td class="p-1 px-3">{{ translate('Discount') }}</td>
                                                                     <td class="text-right p-1 px-3">$10</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Coupon Discount</td>
+                                                                    <td class="p-1 px-3">{{ translate('Coupon Discount') }}</td>
                                                                     <td class="text-right p-1 px-3">$00</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">VAT / Tax</td>
+                                                                    <td class="p-1 px-3">{{ translate('VAT / Tax') }}</td>
                                                                     <td class="text-right p-1 px-3">$15</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
-                                                                    <td class="p-1 px-3">Delivery Charge</td>
+                                                                    <td class="p-1 px-3">{{ translate('Delivery Charge') }}</td>
                                                                     <td class="text-right p-1 px-3">$20</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td style="width: 40%"></td>
                                                                     <td class="p-1 px-3">
-                                                                        <h4>Total</h4>
+                                                                        <h4>{{ translate('Total') }}</h4>
                                                                     </td>
                                                                     <td class="text-right p-1 px-3">
                                                                         <span class="text-base">$105</span>

@@ -392,6 +392,8 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!--
                         <div class="card mt-3">
                             <div class="card-header">
                                 <h4 class="mb-0 d-flex gap-2 align-items-center">
@@ -427,6 +429,8 @@
                                 </div>
                             </div>
                         </div>
+                        -->
+                        
                         <div class="d-flex justify-content-end gap-3 mt-4">
                             <button type="reset" class="btn btn-secondary">{{translate('reset')}}</button>
                             <button type="submit" class="btn btn-primary">{{translate('update')}}</button>

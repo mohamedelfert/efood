@@ -30,7 +30,7 @@
                 </li>
                 <li>
                     <label class="badge badge-soft-c1 font-weight-bold fz-12 mb-0">
-                        Software Version : {{ env('SOFTWARE_VERSION') }}
+                        {{ translate('Software Version:') }} {{ env('SOFTWARE_VERSION') }}
                     </label>
                 </li>
             </ul>

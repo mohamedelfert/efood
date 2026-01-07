@@ -644,7 +644,7 @@
                                             <label class="media align-items-center mb-0"
                                                    for="projectViewNewProjectTypeRadio2">
                                                     <span class="media-body">
-                                                        Right ({{\App\CentralLogics\Helpers::currency_symbol()}})
+                                                        ({{\App\CentralLogics\Helpers::currency_symbol()}}) {{translate('Right')}}
                                                     </span>
                                             </label>
                                         </div>

@@ -331,7 +331,7 @@
                                                 <div class="col-12">
                                                     <div class="">
                                                         <label class="input-label">{{translate('search_tag')}}</label>
-                                                        <input type="text" class="form-control" name="tags" placeholder="Enter tags" data-role="tagsinput">
+                                                        <input type="text" class="form-control" name="tags" placeholder="{{ translate('Enter tags') }}" data-role="tagsinput">
                                                     </div>
                                                 </div>
                                             </div>
@@ -383,6 +383,7 @@
                         </div>
                     </div>
 
+                    <!--
                     <div class="card mt-3">
                         <div class="card-header">
                             <h4 class="mb-0 d-flex gap-2 align-items-center">
@@ -405,6 +406,7 @@
                             </div>
                         </div>
                     </div>
+                    -->
 
                     <div class="d-flex justify-content-end gap-3 mt-4">
                         <button type="reset" class="btn btn-secondary">{{translate('reset')}}</button>
@@ -621,12 +623,12 @@
     <script>
         //Select 2
         $("#choose_addons").select2({
-            placeholder: "Select Addons",
+            placeholder: "{{ translate('Select_Addons') }}",
             allowClear: true
         });
 
         $("#choose_branch").select2({
-            placeholder: "Select Branch",
+            placeholder: "{{ translate('select branch') }}",
             allowClear: true
         });
 

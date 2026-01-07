@@ -104,7 +104,7 @@
 
                         </span>
                         <span>
-                            {{ translate('Customer Loyalty Point') }}{{ translate('Settings') }}
+                            {{ translate('Customer Loyalty Point Settings') }}
                         </span>
                     </h5>
                 </div>
@@ -142,7 +142,7 @@
 
                         </span>
                         <span>
-                            {{ translate('Customer Referrer') }}{{ translate('settings') }}
+                            {{ translate('Customer Referrer Settings') }}
                         </span>
                     </h5>
                 </div>
@@ -151,7 +151,7 @@
                         <div class="col-sm-6 col-12">
                             <div class="form-group m-0">
                                 <label class="input-label"
-                                       for="referrer_earning_exchange_rate">{{ translate('One Referrer Equal To How Much (' .\App\CentralLogics\Helpers::currency_code()) .')' }}</label>
+                                       for="referrer_earning_exchange_rate">{{ translate('One Referrer Equal To How Much (' . \App\CentralLogics\Helpers::currency_code() . ')') }}</label>
                                 <input type="number" step=0.01" class="form-control" name="ref_earning_exchange_rate"
                                        value="{{ $data['ref_earning_exchange_rate'] ?? '0' }}">
                             </div>

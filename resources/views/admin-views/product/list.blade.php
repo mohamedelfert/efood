@@ -39,7 +39,7 @@
                                     <div>
                                         <button type="button" class="btn btn-outline-primary" data-toggle="dropdown" aria-expanded="false">
                                             <i class="tio-download-to"></i>
-                                            Export
+                                            {{ translate('export') }}
                                             <i class="tio-chevron-down"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-right">

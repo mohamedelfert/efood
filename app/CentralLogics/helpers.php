@@ -275,11 +275,11 @@ class Helpers
         
         // Add proper null checking
         if (!$currency) {
-            return 'USD'; // Default fallback currency code
+            return 'YER'; // Default fallback currency code
         }
         
         if (!isset($currency->value)) {
-            return 'USD'; // Default fallback if value doesn't exist
+            return 'YER'; // Default fallback if value doesn't exist
         }
         
         return $currency->value;
@@ -292,11 +292,11 @@ class Helpers
         
         // Add proper null checking
         if (!$currency) {
-            return '$'; // Default fallback symbol
+            return 'ريال'; // Default fallback symbol
         }
         
         if (!isset($currency->currency_symbol)) {
-            return '$'; // Default fallback if symbol doesn't exist
+            return 'ريال'; // Default fallback if symbol doesn't exist
         }
         
         return $currency->currency_symbol;
