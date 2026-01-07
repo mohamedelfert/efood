@@ -155,6 +155,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::delete('delete/{id}', [BranchController::class, 'delete'])->name('delete');
             Route::get('status/{id}/{status}', [BranchController::class, 'status'])->name('status');
             Route::get('list', [BranchController::class, 'list'])->name('list');
+            Route::get('get-schedule', [BranchController::class, 'getSchedule'])->name('get-schedule');
         });
 
         Route::group(['prefix' => 'addon', 'as' => 'addon.', 'middleware' => ['module:product_management']], function () {
@@ -197,8 +198,16 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         });
 
         Route::get('/get-notification-count', [NotificationController::class, 'getNotificationCount'])
-            ->name('get-notification-count')
-            ->middleware(['module:promotion_management']);
+            ->name('get-notification-count');
+
+        Route::post('/mark-messages-read', [NotificationController::class, 'markMessagesAsRead'])
+            ->name('mark-messages-read');
+
+        Route::post('/mark-orders-read', [NotificationController::class, 'markOrdersAsRead'])
+            ->name('mark-orders-read');
+
+        Route::get('/get-notification-details', [NotificationController::class, 'getNotificationDetails'])
+            ->name('get-notification-details');
 
         Route::group(['prefix' => 'product', 'as' => 'product.', 'middleware' => ['module:product_management']], function () {
             Route::get('add-new', [ProductController::class, 'index'])->name('add-new');

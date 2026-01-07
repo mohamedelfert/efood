@@ -2,20 +2,21 @@
 
 namespace App\Model;
 
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
+use App\Models\BranchReview;
 use App\Models\DeliveryChargeSetup;
 use App\Models\DeliveryChargeByArea;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Branch extends Authenticatable
 {
     use Notifiable;
-    
+
     protected $guarded = [];
-    
+
     protected $casts = [
         'coverage' => 'integer',
         'status' => 'integer',
@@ -25,14 +26,12 @@ class Branch extends Authenticatable
         'preparation_time' => 'integer',
     ];
 
-
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'branch_product', 'branch_id', 'product_id')
             ->withTimestamps();
     }
-
-
+    
     public function product_details(): HasMany
     {
         return $this->hasMany(ProductByBranch::class, 'branch_id');
@@ -53,6 +52,14 @@ class Branch extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    // Time schedules relationship
+    public function timeSchedules(): HasMany
+    {
+        return $this->hasMany(TimeSchedule::class, 'branch_id', 'id')
+            ->orderBy('day')
+            ->orderBy('opening_time');
+    }
+
     public function getImageFullPathAttribute(): string
     {
         $image = $this->image ?? null;
@@ -61,6 +68,7 @@ class Branch extends Authenticatable
         if (!is_null($image) && Storage::disk('public')->exists('branch/' . $image)) {
             $path = asset('storage/app/public/branch/' . $image);
         }
+
         return $path;
     }
 
@@ -72,6 +80,7 @@ class Branch extends Authenticatable
         if (!is_null($image) && Storage::disk('public')->exists('branch/' . $image)) {
             $path = asset('storage/app/public/branch/' . $image);
         }
+
         return $path;
     }
 
@@ -79,7 +88,7 @@ class Branch extends Authenticatable
     {
         return $this->hasOne(DeliveryChargeSetup::class, 'branch_id', 'id');
     }
-    
+
     public function delivery_charge_by_area()
     {
         return $this->hasMany(DeliveryChargeByArea::class, 'branch_id', 'id')->latest();
