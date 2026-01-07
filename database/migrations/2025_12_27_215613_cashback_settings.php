@@ -14,27 +14,30 @@ return new class extends Migration
     {
         Schema::create('cashback_settings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
             $table->string('type'); // 'wallet_topup' or 'order'
             $table->string('cashback_type'); // 'percentage' or 'fixed'
             $table->decimal('cashback_value', 24, 3)->default(0);
             $table->decimal('min_amount', 24, 3)->default(0);
-            $table->decimal('max_cashback', 24, 3)->default(0);
             $table->boolean('status')->default(1);
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
+            
+            // Index for performance
+            $table->index(['branch_id', 'type', 'status']);
         });
 
         // Insert default settings
         DB::table('cashback_settings')->insert([
             [
+                'branch_id' => null, // Global setting
                 'type' => 'wallet_topup',
                 'cashback_type' => 'percentage',
                 'cashback_value' => 5,
                 'min_amount' => 100,
-                'max_cashback' => 50,
                 'status' => 1,
                 'start_date' => now(),
                 'end_date' => now()->addYear(),
@@ -44,11 +47,11 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
             [
+                'branch_id' => null, // Global setting
                 'type' => 'order',
                 'cashback_type' => 'percentage',
                 'cashback_value' => 2,
                 'min_amount' => 50,
-                'max_cashback' => 25,
                 'status' => 1,
                 'start_date' => now(),
                 'end_date' => now()->addYear(),

@@ -20,27 +20,49 @@
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
-                        <form action="{{route('admin.customer.cashback.store')}}" method="post">
+                        <form action="{{route('admin.customer.cashback.store')}}" method="post" id="cashback-form">
                             @csrf
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{ translate('Cashback Title') }}</label>
-                                        <input type="text" name="title" class="form-control" placeholder="{{ translate('Ex: Wallet Top-up Cashback') }}" required>
+                                        <input type="text" name="title" class="form-control" 
+                                               value="{{old('title')}}"
+                                               placeholder="{{ translate('Ex: Wallet Top-up Cashback') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{ translate('Description') }}</label>
-                                        <input type="text" name="description" class="form-control" placeholder="{{ translate('Ex: Get 5% cashback') }}">
+                                        <input type="text" name="description" class="form-control" 
+                                               value="{{old('description')}}"
+                                               placeholder="{{ translate('Ex: Get 5% cashback') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="input-label">{{translate('Branch')}}</label>
+                                        <select name="branch_id" class="form-control">
+                                            <option value="">{{translate('All Branches (Global)')}}</option>
+                                            @foreach(\App\Model\Branch::active()->get() as $branch)
+                                                <option value="{{$branch->id}}" {{old('branch_id') == $branch->id ? 'selected' : ''}}>
+                                                    {{$branch->name}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">{{translate('Leave empty for global cashback')}}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Cashback For')}}</label>
                                         <select name="type" class="form-control" required>
-                                            <option value="wallet_topup">{{translate('Wallet Top-up')}}</option>
-                                            <option value="order">{{translate('Orders')}}</option>
+                                            <option value="wallet_topup" {{old('type') == 'wallet_topup' ? 'selected' : ''}}>
+                                                {{translate('Wallet Top-up')}}
+                                            </option>
+                                            <option value="order" {{old('type') == 'order' ? 'selected' : ''}}>
+                                                {{translate('Orders')}}
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
@@ -48,8 +70,12 @@
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Cashback Type')}}</label>
                                         <select name="cashback_type" class="form-control" id="cashback_type" required>
-                                            <option value="percentage">{{translate('Percentage')}} (%)</option>
-                                            <option value="fixed">{{translate('Fixed Amount')}}</option>
+                                            <option value="percentage" {{old('cashback_type') == 'percentage' ? 'selected' : ''}}>
+                                                {{translate('Percentage')}} (%)
+                                            </option>
+                                            <option value="fixed" {{old('cashback_type') == 'fixed' ? 'selected' : ''}}>
+                                                {{translate('Fixed Amount')}}
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
@@ -58,31 +84,38 @@
                                         <label class="input-label">{{translate('Cashback Value')}}
                                             <span id="cashback_unit">(%)</span>
                                         </label>
-                                        <input type="number" step="0.01" min="0" name="cashback_value" class="form-control" placeholder="{{ translate('Ex: 5') }}" required>
+                                        <input type="number" step="0.01" min="0" name="cashback_value" 
+                                               value="{{old('cashback_value')}}"
+                                               class="form-control" 
+                                               placeholder="{{ translate('Ex: 5') }}" required>
+                                        <small class="text-muted">{{translate('No maximum limit - full value will be given')}}</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Minimum Amount')}} ({{Helpers::currency_symbol()}})</label>
-                                        <input type="number" step="0.01" min="0" name="min_amount" class="form-control" placeholder="{{ translate('Ex: 100') }}" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="input-label">{{translate('Maximum Cashback')}} ({{Helpers::currency_symbol()}})</label>
-                                        <input type="number" step="0.01" min="0" name="max_cashback" class="form-control" placeholder="{{ translate('Ex: 50') }}" required>
+                                        <input type="number" step="0.01" min="0" name="min_amount" 
+                                               value="{{old('min_amount')}}"
+                                               class="form-control" 
+                                               placeholder="{{ translate('Ex: 100') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Start Date')}}</label>
-                                        <input type="date" name="start_date" class="form-control" required>
+                                        <input type="date" name="start_date" id="start_date" 
+                                               value="{{old('start_date', date('Y-m-d'))}}"
+                                               min="{{date('Y-m-d')}}"
+                                               class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('End Date')}}</label>
-                                        <input type="date" name="end_date" class="form-control" required>
+                                        <input type="date" name="end_date" id="end_date" 
+                                               value="{{old('end_date', date('Y-m-d', strtotime('+1 year')))}}"
+                                               min="{{date('Y-m-d')}}"
+                                               class="form-control" required>
                                     </div>
                                 </div>
                             </div>
@@ -126,10 +159,10 @@
                                 <tr>
                                     <th>{{translate('SL')}}</th>
                                     <th>{{translate('Title')}}</th>
+                                    <th>{{translate('Branch')}}</th>
                                     <th>{{translate('Type')}}</th>
                                     <th>{{translate('Cashback')}}</th>
                                     <th>{{translate('Min Amount')}}</th>
-                                    <th>{{translate('Max Cashback')}}</th>
                                     <th>{{translate('Valid Period')}}</th>
                                     <th>{{translate('Status')}}</th>
                                     <th class="text-center">{{translate('Action')}}</th>
@@ -141,19 +174,35 @@
                                         <td>{{$key + $settings->firstItem()}}</td>
                                         <td>{{$setting->title}}</td>
                                         <td>
+                                            @if($setting->branch_id)
+                                                <span class="badge badge-soft-primary">
+                                                    {{$setting->branch->name ?? 'N/A'}}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-soft-secondary">
+                                                    <i class="tio-world"></i> {{translate('All Branches')}}
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             <span class="badge badge-soft-{{$setting->type == 'wallet_topup' ? 'info' : 'success'}}">
                                                 {{translate(str_replace('_', ' ', $setting->type))}}
                                             </span>
                                         </td>
                                         <td>
-                                            {{$setting->cashback_type == 'percentage' 
-                                                ? $setting->cashback_value . '%' 
-                                                : Helpers::set_symbol($setting->cashback_value)}}
+                                            <strong>
+                                                {{$setting->cashback_type == 'percentage' 
+                                                    ? $setting->cashback_value . '%' 
+                                                    : Helpers::set_symbol($setting->cashback_value)}}
+                                            </strong>
+                                            <br>
+                                            <small class="text-muted">{{translate('No max limit')}}</small>
                                         </td>
                                         <td>{{Helpers::set_symbol($setting->min_amount)}}</td>
-                                        <td>{{Helpers::set_symbol($setting->max_cashback)}}</td>
                                         <td>
-                                            {{$setting->start_date->format('d M Y')}} - {{$setting->end_date->format('d M Y')}}
+                                            <small>
+                                                {{$setting->start_date->format('d M Y')}} - {{$setting->end_date->format('d M Y')}}
+                                            </small>
                                         </td>
                                         <td>
                                             <label class="switcher">
@@ -202,10 +251,42 @@
 <script>
     "use strict";
     
+    // Update unit display when cashback type changes
     $('#cashback_type').on('change', function() {
         if ($(this).val() === 'percentage') {
             $('#cashback_unit').text('(%)');
         } else {
+            $('#cashback_unit').text('({{Helpers::currency_symbol()}})');
+        }
+    });
+
+    // Date validation: End date must be after start date
+    $('#start_date').on('change', function() {
+        var startDate = $(this).val();
+        $('#end_date').attr('min', startDate);
+        
+        // If end date is before start date, update it
+        var endDate = $('#end_date').val();
+        if (endDate && endDate < startDate) {
+            $('#end_date').val(startDate);
+        }
+    });
+
+    // Validate on form submit
+    $('#cashback-form').on('submit', function(e) {
+        var startDate = new Date($('#start_date').val());
+        var endDate = new Date($('#end_date').val());
+        
+        if (endDate < startDate) {
+            e.preventDefault();
+            toastr.error('{{translate("End date must be after or equal to start date")}}');
+            return false;
+        }
+    });
+
+    // Set initial unit based on selected type
+    $(document).ready(function() {
+        if ($('#cashback_type').val() === 'fixed') {
             $('#cashback_unit').text('({{Helpers::currency_symbol()}})');
         }
     });

@@ -39,6 +39,23 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
+                                        <label class="input-label">{{translate('Branch')}}</label>
+                                        <select name="branch_id" class="form-control">
+                                            <option value="" {{!$setting['branch_id'] ? 'selected' : ''}}>
+                                                {{translate('All Branches (Global)')}}
+                                            </option>
+                                            @foreach(\App\Model\Branch::active()->get() as $branch)
+                                                <option value="{{$branch->id}}" 
+                                                        {{$setting['branch_id'] == $branch->id ? 'selected' : ''}}>
+                                                    {{$branch->name}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">{{translate('Leave empty for global cashback')}}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
                                         <label class="input-label">{{translate('Cashback For')}}</label>
                                         <select name="type" class="form-control" required>
                                             <option value="wallet_topup" {{$setting['type']=='wallet_topup'?'selected':''}}>
@@ -63,7 +80,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Cashback Value')}}
                                             <span id="cashback_unit">
@@ -75,9 +92,10 @@
                                                class="form-control" 
                                                placeholder="{{ translate('Ex: 5') }}" 
                                                required>
+                                        <small class="text-muted">{{translate('No maximum limit - full value will be given')}}</small>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Minimum Amount')}} ({{Helpers::currency_symbol()}})</label>
                                         <input type="number" step="0.01" min="0" name="min_amount" 
@@ -87,17 +105,7 @@
                                                required>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="input-label">{{translate('Maximum Cashback')}} ({{Helpers::currency_symbol()}})</label>
-                                        <input type="number" step="0.01" min="0" name="max_cashback" 
-                                               value="{{$setting['max_cashback']}}" 
-                                               class="form-control" 
-                                               placeholder="{{ translate('Ex: 50') }}" 
-                                               required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('Start Date')}}</label>
                                         <input type="date" name="start_date" class="form-control" 
@@ -105,7 +113,7 @@
                                                required>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('End Date')}}</label>
                                         <input type="date" name="end_date" class="form-control" 

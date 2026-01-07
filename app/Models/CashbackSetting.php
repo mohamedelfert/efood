@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashbackSetting extends Model
 {
@@ -11,7 +12,7 @@ class CashbackSetting extends Model
         'cashback_type',
         'cashback_value',
         'min_amount',
-        'max_cashback',
+        'branch_id',
         'status',
         'start_date',
         'end_date',
@@ -22,11 +23,19 @@ class CashbackSetting extends Model
     protected $casts = [
         'cashback_value' => 'decimal:3',
         'min_amount' => 'decimal:3',
-        'max_cashback' => 'decimal:3',
         'status' => 'boolean',
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    /**
+     * Relationship with Branch
+     * ADD THIS METHOD - IT WAS MISSING!
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(\App\Model\Branch::class, 'branch_id');
+    }
 
     /**
      * Scope for active cashback settings
@@ -61,7 +70,18 @@ class CashbackSetting extends Model
     }
 
     /**
-     * Calculate cashback amount
+     * Scope for specific branch or global (null branch_id)
+     */
+    public function scopeForBranch($query, $branchId)
+    {
+        return $query->where(function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId)
+              ->orWhereNull('branch_id'); // Global cashback
+        });
+    }
+
+    /**
+     * Calculate cashback amount (NO MAX LIMIT)
      */
     public function calculateCashback($amount): float
     {
@@ -70,10 +90,11 @@ class CashbackSetting extends Model
         }
 
         if ($this->cashback_type === 'percentage') {
-            $cashback = ($amount * $this->cashback_value) / 100;
-            return min($cashback, $this->max_cashback);
+            // NO MORE max_cashback - return full percentage
+            return ($amount * $this->cashback_value) / 100;
         }
 
+        // For fixed type, return the cashback_value directly
         return $this->cashback_value;
     }
 
@@ -83,5 +104,19 @@ class CashbackSetting extends Model
     public function isApplicable($amount): bool
     {
         return $this->status && $amount >= $this->min_amount;
+    }
+
+    /**
+     * Get the best applicable cashback for branch and amount
+     */
+    public static function getBestCashback($type, $branchId, $amount)
+    {
+        return static::active()
+            ->where('type', $type)
+            ->forBranch($branchId)
+            ->where('min_amount', '<=', $amount)
+            ->orderByDesc('cashback_value') // Get highest cashback
+            ->orderBy('branch_id', 'desc') // Prioritize branch-specific over global
+            ->first();
     }
 }
