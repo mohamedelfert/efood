@@ -12,8 +12,9 @@ class Banner extends Model
     protected $casts = [
         'product_id' => 'integer',
         'category_id' => 'integer',
-        'offer_price' => 'float',
-        'discount_percentage' => 'float',
+        'total_offer_price' => 'float',
+        'total_discount_amount' => 'float',
+        'total_discount_percentage' => 'float',
         'start_date' => 'date',
         'end_date' => 'date',
         'created_at' => 'datetime',
@@ -26,8 +27,10 @@ class Banner extends Model
         'banner_type',
         'product_id',
         'category_id',
-        'offer_price',
-        'discount_percentage',
+        'total_offer_price',
+        'total_discount_amount',
+        'total_discount_percentage',
+        'discount_type',
         'start_date',
         'end_date',
         'status'
@@ -49,12 +52,11 @@ class Banner extends Model
     }
 
     /**
-     * Multiple products relationship with offer details in pivot
+     * Multiple products relationship (removed withPivot for pricing)
      */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'banner_products', 'banner_id', 'product_id')
-            ->withPivot('offer_price', 'discount_percentage')
             ->withTimestamps();
     }
 
@@ -105,28 +107,19 @@ class Banner extends Model
     {
         $originalPrice = $this->calculateOriginalPrice();
 
-        // For single product
-        if ($this->banner_type === 'single_product') {
-            if ($this->offer_price) {
-                return $this->offer_price;
-            } elseif ($this->discount_percentage) {
-                return $originalPrice - ($originalPrice * ($this->discount_percentage / 100));
-            }
+        // Use total offer price if set
+        if ($this->total_offer_price) {
+            return $this->total_offer_price;
         }
 
-        // For multiple products - sum individual offer prices
-        if ($this->banner_type === 'multiple_products') {
-            $total = 0;
-            foreach ($this->products as $product) {
-                if ($product->pivot->offer_price) {
-                    $total += $product->pivot->offer_price;
-                } elseif ($product->pivot->discount_percentage) {
-                    $total += $product->price - ($product->price * ($product->pivot->discount_percentage / 100));
-                } else {
-                    $total += $product->price;
-                }
-            }
-            return $total;
+        // Calculate from discount amount
+        if ($this->total_discount_amount) {
+            return max(0, $originalPrice - $this->total_discount_amount);
+        }
+
+        // Calculate from discount percentage
+        if ($this->total_discount_percentage) {
+            return $originalPrice - ($originalPrice * ($this->total_discount_percentage / 100));
         }
 
         return $originalPrice;

@@ -18,9 +18,6 @@ class BannerController extends Controller
 
     /**
      * Get all active banners with their associated data
-     * 
-     * @param Request $request
-     * @return JsonResponse
      */
     public function getBanners(Request $request): JsonResponse
     {
@@ -56,9 +53,6 @@ class BannerController extends Controller
 
     /**
      * Get banner details by ID
-     * 
-     * @param int $id
-     * @return JsonResponse
      */
     public function getBannerDetails(int $id): JsonResponse
     {
@@ -96,9 +90,6 @@ class BannerController extends Controller
 
     /**
      * Format banner data based on banner type
-     * 
-     * @param Banner $banner
-     * @return array
      */
     private function formatBannerData(Banner $banner): array
     {
@@ -107,11 +98,21 @@ class BannerController extends Controller
             'title' => $banner->title,
             'image' => $banner->image_full_path,
             'banner_type' => $banner->banner_type,
+            'discount_type' => $banner->discount_type,
             'start_date' => $banner->start_date?->format('Y-m-d'),
             'end_date' => $banner->end_date?->format('Y-m-d'),
             'is_offer_active' => $banner->isOfferActive(),
             'created_at' => $banner->created_at?->format('Y-m-d H:i:s'),
         ];
+
+        // Calculate pricing based on banner type
+        $originalPrice = $banner->calculateOriginalPrice();
+        $finalPrice = $banner->calculateFinalPrice();
+        
+        $data['original_price'] = $originalPrice;
+        $data['final_price'] = $finalPrice;
+        $data['discount_amount'] = $banner->getDiscountAmount();
+        $data['discount_percentage'] = $banner->getDiscountPercentage();
 
         // Handle different banner types
         switch ($banner->banner_type) {
@@ -119,43 +120,24 @@ class BannerController extends Controller
                 $data['product'] = $banner->product 
                     ? Helpers::product_data_formatting($banner->product) 
                     : null;
-                $data['original_price'] = $banner->product ? $banner->product->price : 0;
-                $data['offer_price'] = $banner->offer_price;
-                $data['discount_percentage'] = $banner->discount_percentage;
-                
-                // Calculate discount amount if percentage is provided
-                if ($banner->discount_percentage && $banner->product) {
-                    $data['discount_amount'] = ($banner->product->price * $banner->discount_percentage) / 100;
-                    $data['final_price'] = $banner->product->price - $data['discount_amount'];
-                } elseif ($banner->offer_price) {
-                    $data['discount_amount'] = ($banner->product->price ?? 0) - $banner->offer_price;
-                    $data['final_price'] = $banner->offer_price;
-                } else {
-                    $data['discount_amount'] = 0;
-                    $data['final_price'] = $banner->product->price ?? 0;
-                }
                 break;
 
             case 'multiple_products':
-                $products = $banner->products->map(function ($product) use ($banner) {
+                $products = $banner->products->map(function ($product) use ($banner, $originalPrice) {
                     $formattedProduct = Helpers::product_data_formatting($product);
                     
-                    // Add offer details from pivot if available
-                    if ($product->pivot) {
-                        $formattedProduct['offer_price'] = $product->pivot->offer_price;
-                        $formattedProduct['discount_percentage'] = $product->pivot->discount_percentage;
+                    // Calculate proportional discount for each product
+                    if ($originalPrice > 0 && $banner->getDiscountAmount() > 0) {
+                        $productProportion = $product->price / $originalPrice;
+                        $productDiscount = $banner->getDiscountAmount() * $productProportion;
                         
-                        // Calculate discount for this product
-                        if ($product->pivot->discount_percentage) {
-                            $formattedProduct['discount_amount'] = ($product->price * $product->pivot->discount_percentage) / 100;
-                            $formattedProduct['final_price'] = $product->price - $formattedProduct['discount_amount'];
-                        } elseif ($product->pivot->offer_price) {
-                            $formattedProduct['discount_amount'] = $product->price - $product->pivot->offer_price;
-                            $formattedProduct['final_price'] = $product->pivot->offer_price;
-                        } else {
-                            $formattedProduct['discount_amount'] = 0;
-                            $formattedProduct['final_price'] = $product->price;
-                        }
+                        $formattedProduct['discount_amount'] = round($productDiscount, 2);
+                        $formattedProduct['final_price'] = round($product->price - $productDiscount, 2);
+                        $formattedProduct['discount_percentage'] = round(($productDiscount / $product->price) * 100, 2);
+                    } else {
+                        $formattedProduct['discount_amount'] = 0;
+                        $formattedProduct['final_price'] = $product->price;
+                        $formattedProduct['discount_percentage'] = 0;
                     }
                     
                     return $formattedProduct;
@@ -163,11 +145,6 @@ class BannerController extends Controller
                 
                 $data['products'] = $products;
                 $data['products_count'] = $products->count();
-                
-                // Calculate totals
-                $data['total_original_price'] = $banner->products->sum('price');
-                $data['total_final_price'] = $products->sum('final_price');
-                $data['total_discount'] = $data['total_original_price'] - $data['total_final_price'];
                 break;
 
             case 'category':
@@ -177,7 +154,6 @@ class BannerController extends Controller
                     'image' => $banner->category->image_full_url ?? null,
                     'parent_id' => $banner->category->parent_id,
                 ] : null;
-                $data['discount_percentage'] = $banner->discount_percentage;
                 break;
         }
 
@@ -185,11 +161,7 @@ class BannerController extends Controller
     }
 
     /**
-     * Get products from a banner (for multiple products or category banners)
-     * 
-     * @param Request $request
-     * @param int $bannerId
-     * @return JsonResponse
+     * Get products from a banner
      */
     public function getBannerProducts(Request $request, int $bannerId): JsonResponse
     {
@@ -208,29 +180,25 @@ class BannerController extends Controller
             }
 
             $products = collect();
+            $originalPrice = $banner->calculateOriginalPrice();
 
             if ($banner->banner_type === 'multiple_products') {
-                $products = $banner->products->map(function ($product) {
+                $products = $banner->products->map(function ($product) use ($banner, $originalPrice) {
                     $formattedProduct = Helpers::product_data_formatting($product);
                     
-                    // Add offer details from pivot
-                    if ($product->pivot) {
-                        $formattedProduct['offer_price'] = $product->pivot->offer_price;
-                        $formattedProduct['discount_percentage'] = $product->pivot->discount_percentage;
+                    // Calculate proportional discount
+                    if ($originalPrice > 0 && $banner->getDiscountAmount() > 0) {
+                        $productProportion = $product->price / $originalPrice;
+                        $productDiscount = $banner->getDiscountAmount() * $productProportion;
                         
-                        if ($product->pivot->discount_percentage) {
-                            $formattedProduct['discount_amount'] = ($product->price * $product->pivot->discount_percentage) / 100;
-                            $formattedProduct['final_price'] = $product->price - $formattedProduct['discount_amount'];
-                        } elseif ($product->pivot->offer_price) {
-                            $formattedProduct['discount_amount'] = $product->price - $product->pivot->offer_price;
-                            $formattedProduct['final_price'] = $product->pivot->offer_price;
-                        }
+                        $formattedProduct['discount_amount'] = round($productDiscount, 2);
+                        $formattedProduct['final_price'] = round($product->price - $productDiscount, 2);
+                        $formattedProduct['discount_percentage'] = round(($productDiscount / $product->price) * 100, 2);
                     }
                     
                     return $formattedProduct;
                 });
             } elseif ($banner->banner_type === 'category' && $banner->category) {
-                // Get products from category
                 $categoryProducts = $banner->category->products()
                     ->active()
                     ->when($request->has('limit'), function($query) use ($request) {
@@ -241,11 +209,12 @@ class BannerController extends Controller
                 $products = $categoryProducts->map(function ($product) use ($banner) {
                     $formattedProduct = Helpers::product_data_formatting($product);
                     
-                    // Apply banner discount to all category products
-                    if ($banner->discount_percentage) {
-                        $formattedProduct['discount_percentage'] = $banner->discount_percentage;
-                        $formattedProduct['discount_amount'] = ($product->price * $banner->discount_percentage) / 100;
-                        $formattedProduct['final_price'] = $product->price - $formattedProduct['discount_amount'];
+                    // Apply banner discount to category products
+                    if ($banner->total_discount_percentage) {
+                        $discount = ($product->price * $banner->total_discount_percentage) / 100;
+                        $formattedProduct['discount_percentage'] = $banner->total_discount_percentage;
+                        $formattedProduct['discount_amount'] = round($discount, 2);
+                        $formattedProduct['final_price'] = round($product->price - $discount, 2);
                     }
                     
                     return $formattedProduct;
@@ -256,7 +225,7 @@ class BannerController extends Controller
                 'banner_id' => $banner->id,
                 'banner_title' => $banner->title,
                 'banner_type' => $banner->banner_type,
-                'discount_percentage' => $banner->discount_percentage,
+                'discount_percentage' => $banner->getDiscountPercentage(),
                 'products' => $products,
                 'total_products' => $products->count(),
             ], 200);
@@ -270,9 +239,7 @@ class BannerController extends Controller
     }
 
     /**
-     * Get active banner offers (only banners with active date ranges)
-     * 
-     * @return JsonResponse
+     * Get active banner offers
      */
     public function getActiveOffers(): JsonResponse
     {
