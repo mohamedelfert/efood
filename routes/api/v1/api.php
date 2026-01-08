@@ -138,7 +138,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     });
 
     Route::group(['prefix' => 'banners', 'middleware' => 'branch_adder'], function () {
-        Route::get('/', [BannerController::class, 'getBanners']);
+        Route::get('/', [BannerController::class, 'getBanners']);        
+        Route::get('/{id}', [BannerController::class, 'getBannerDetails']);
+        Route::get('/{id}/products', [BannerController::class, 'getBannerProducts']);
+        Route::get('/offers/active', [BannerController::class, 'getActiveOffers']);
     });
 
     Route::group(['prefix' => 'notifications', 'middleware' => ['auth:api']], function () {
@@ -198,11 +201,14 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::delete('remove-account', [CustomerAuthController::class, 'remove_account']);
         });
 
-        // cash back
-        Route::get('cashback/preview', [CustomerWalletController::class,'getCashbackPreview']);
-        Route::get('cashback/offers', [CustomerWalletController::class,'getActiveCashbackOffers']);
-        Route::get('cashback/summary', [CustomerWalletController::class,'getCashbackSummary']);
-        Route::get('cashback/history', [CustomerWalletController::class,'getCashbackHistory']);
+        Route::group(['prefix' => 'cashback'], function () {
+            Route::get('active', [CustomerWalletController::class, 'getActiveCashbackSettings']);            
+            Route::post('preview', [CustomerWalletController::class, 'calculateCashbackPreview']);
+            Route::get('total', [CustomerWalletController::class, 'getUserCashbackTotal']);
+            Route::get('history', [CustomerWalletController::class, 'getCashbackHistory']);
+            Route::get('summary', [CustomerWalletController::class, 'getCashbackSummary']);
+            Route::get('offers', [CustomerWalletController::class, 'getActiveCashbackOffers']);
+        });
 
         Route::group(['prefix' => 'order'], function () {
             Route::get('track', [OrderController::class, 'trackOrder'])->withoutMiddleware(['auth:api', 'is_active']);
