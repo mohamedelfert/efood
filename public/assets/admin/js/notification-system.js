@@ -1,7 +1,7 @@
 /**
- * Enhanced Admin Notification System
+ * Enhanced Admin Notification System - FIXED VERSION
  * Handles real-time notifications for orders and messages
- * Fixed: Only notify once for new items, mark as read when visiting pages
+ * Fixed: Only notify once for new items, proper read tracking
  */
 
 (function() {
@@ -16,17 +16,49 @@
         soundFile: '/public/assets/admin/sound/notification.mp3'
     };
     
-    // State management
+    // State management with localStorage persistence
+    const STATE_KEY = 'admin_notification_state';
+    
     let state = {
         lastMessageCount: 0,
         lastOrderCount: 0,
         isInitialized: false,
-        hasPlayedSound: false,
-        lastNotificationTime: {
-            message: 0,
-            order: 0
-        }
+        notifiedMessages: new Set(), // Track which counts we've already notified
+        notifiedOrders: new Set(),
+        lastCheckTime: 0
     };
+    
+    // Load state from localStorage
+    function loadState() {
+        try {
+            const saved = localStorage.getItem(STATE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state.lastMessageCount = parsed.lastMessageCount || 0;
+                state.lastOrderCount = parsed.lastOrderCount || 0;
+                state.notifiedMessages = new Set(parsed.notifiedMessages || []);
+                state.notifiedOrders = new Set(parsed.notifiedOrders || []);
+                state.lastCheckTime = parsed.lastCheckTime || 0;
+            }
+        } catch (e) {
+            console.error('Error loading notification state:', e);
+        }
+    }
+    
+    // Save state to localStorage
+    function saveState() {
+        try {
+            localStorage.setItem(STATE_KEY, JSON.stringify({
+                lastMessageCount: state.lastMessageCount,
+                lastOrderCount: state.lastOrderCount,
+                notifiedMessages: Array.from(state.notifiedMessages),
+                notifiedOrders: Array.from(state.notifiedOrders),
+                lastCheckTime: state.lastCheckTime
+            }));
+        } catch (e) {
+            console.error('Error saving notification state:', e);
+        }
+    }
     
     // Audio Manager
     const AudioManager = {
@@ -126,13 +158,18 @@
     
     // Page Visit Tracker (Mark as Read)
     const PageVisitTracker = {
+        markedMessagesOnThisPage: false,
+        markedOrdersOnThisPage: false,
+        
         init() {
             // Mark as read when page loads if on message or order page
-            if (this.isMessagePage()) {
+            if (this.isMessagePage() && !this.markedMessagesOnThisPage) {
                 this.markMessagesAsRead();
+                this.markedMessagesOnThisPage = true;
             }
-            if (this.isOrderPage()) {
+            if (this.isOrderPage() && !this.markedOrdersOnThisPage) {
                 this.markOrdersAsRead();
+                this.markedOrdersOnThisPage = true;
             }
         },
         
@@ -154,7 +191,9 @@
                 success: (response) => {
                     console.log('Messages marked as read:', response);
                     state.lastMessageCount = 0;
+                    state.notifiedMessages.clear();
                     BadgeManager.updateMessageBadge(0);
+                    saveState();
                 },
                 error: (error) => {
                     console.error('Error marking messages as read:', error);
@@ -170,7 +209,9 @@
                 success: (response) => {
                     console.log('Orders marked as read:', response);
                     state.lastOrderCount = 0;
+                    state.notifiedOrders.clear();
                     BadgeManager.updateOrderBadge(0);
+                    saveState();
                 },
                 error: (error) => {
                     console.error('Error marking orders as read:', error);
@@ -196,25 +237,64 @@
             const newMsgCount = res.message_count || 0;
             const newOrdCount = res.order_count || 0;
             
-            // Only process if initialized (prevent notification on first load)
-            if (state.isInitialized) {
-                // Check for NEW messages (count increased)
-                if (newMsgCount > state.lastMessageCount) {
-                    const diff = newMsgCount - state.lastMessageCount;
-                    this.handleNewMessages(diff);
+            // Update state timestamp
+            state.lastCheckTime = Date.now();
+            
+            // First initialization - just set the counts without notification
+            if (!state.isInitialized) {
+                state.lastMessageCount = newMsgCount;
+                state.lastOrderCount = newOrdCount;
+                state.isInitialized = true;
+                
+                // Add current counts to notified set so we don't notify on them
+                if (newMsgCount > 0) {
+                    state.notifiedMessages.add(newMsgCount);
+                }
+                if (newOrdCount > 0) {
+                    state.notifiedOrders.add(newOrdCount);
                 }
                 
-                // Check for NEW orders (count increased)
-                if (newOrdCount > state.lastOrderCount) {
-                    const diff = newOrdCount - state.lastOrderCount;
-                    this.handleNewOrders(diff);
+                saveState();
+                BadgeManager.updateMessageBadge(newMsgCount);
+                BadgeManager.updateOrderBadge(newOrdCount);
+                return;
+            }
+            
+            // Check for NEW messages (count increased AND we haven't notified about this count)
+            if (newMsgCount > state.lastMessageCount && !state.notifiedMessages.has(newMsgCount)) {
+                const diff = newMsgCount - state.lastMessageCount;
+                this.handleNewMessages(diff);
+                state.notifiedMessages.add(newMsgCount);
+            }
+            
+            // Check for NEW orders (count increased AND we haven't notified about this count)
+            if (newOrdCount > state.lastOrderCount && !state.notifiedOrders.has(newOrdCount)) {
+                const diff = newOrdCount - state.lastOrderCount;
+                this.handleNewOrders(diff);
+                state.notifiedOrders.add(newOrdCount);
+            }
+            
+            // If counts decreased (items were read), update state
+            if (newMsgCount < state.lastMessageCount) {
+                state.notifiedMessages.clear();
+                if (newMsgCount > 0) {
+                    state.notifiedMessages.add(newMsgCount);
+                }
+            }
+            
+            if (newOrdCount < state.lastOrderCount) {
+                state.notifiedOrders.clear();
+                if (newOrdCount > 0) {
+                    state.notifiedOrders.add(newOrdCount);
                 }
             }
             
             // Update state
             state.lastMessageCount = newMsgCount;
             state.lastOrderCount = newOrdCount;
-            state.isInitialized = true;
+            
+            // Save state to localStorage
+            saveState();
             
             // Update badges
             BadgeManager.updateMessageBadge(newMsgCount);
@@ -222,20 +302,15 @@
         },
         
         handleNewMessages(count) {
-            // Prevent duplicate notifications within 5 seconds
-            const now = Date.now();
-            if (now - state.lastNotificationTime.message < 5000) {
-                return;
-            }
-            state.lastNotificationTime.message = now;
+            console.log('🔔 New messages detected:', count);
             
             // Play sound
             AudioManager.play();
             
             // Show desktop notification
             DesktopNotificationManager.show(
-                'New Message' + (count > 1 ? 's' : ''),
-                `You have ${count} new message${count > 1 ? 's' : ''}`,
+                'رسالة جديدة' + (count > 1 ? ' (' + count + ')' : ''),
+                `لديك ${count} رسالة جديدة`,
                 '/public/assets/admin/img/icons/message.png',
                 () => window.location.href = '/admin/message/list'
             );
@@ -243,8 +318,8 @@
             // Show toast notification
             if (typeof toastr !== 'undefined') {
                 toastr.info(
-                    `You have ${count} new message${count > 1 ? 's' : ''}`,
-                    'New Message' + (count > 1 ? 's' : ''),
+                    `لديك ${count} رسالة جديدة`,
+                    'رسالة جديدة',
                     {
                         closeButton: true,
                         progressBar: true,
@@ -256,20 +331,15 @@
         },
         
         handleNewOrders(count) {
-            // Prevent duplicate notifications within 5 seconds
-            const now = Date.now();
-            if (now - state.lastNotificationTime.order < 5000) {
-                return;
-            }
-            state.lastNotificationTime.order = now;
+            console.log('🔔 New orders detected:', count);
             
             // Play sound
             AudioManager.play();
             
             // Show desktop notification
             DesktopNotificationManager.show(
-                'New Order' + (count > 1 ? 's' : ''),
-                `You have ${count} new order${count > 1 ? 's' : ''}`,
+                'طلب جديد' + (count > 1 ? ' (' + count + ')' : ''),
+                `لديك ${count} طلب جديد`,
                 '/public/assets/admin/img/icons/order.png',
                 () => window.location.href = '/admin/orders/list/pending'
             );
@@ -277,8 +347,8 @@
             // Show toast notification
             if (typeof toastr !== 'undefined') {
                 toastr.success(
-                    `You have ${count} new order${count > 1 ? 's' : ''}`,
-                    'New Order' + (count > 1 ? 's' : ''),
+                    `لديك ${count} طلب جديد`,
+                    'طلب جديد',
                     {
                         closeButton: true,
                         progressBar: true,
@@ -306,7 +376,7 @@
             const btn = `
                 <li class="nav-item d-none d-sm-inline-block">
                     <button id="soundToggle" class="btn btn-icon btn-ghost-secondary rounded-circle" 
-                            title="Toggle notification sound">
+                            title="تبديل صوت الإشعارات">
                         <i class="tio-notifications-on-outlined"></i>
                     </button>
                 </li>
@@ -328,11 +398,11 @@
                 if (CONFIG.soundEnabled) {
                     AudioManager.play();
                     if (typeof toastr !== 'undefined') {
-                        toastr.success('Notification sound enabled');
+                        toastr.success('تم تفعيل صوت الإشعارات');
                     }
                 } else {
                     if (typeof toastr !== 'undefined') {
-                        toastr.info('Notification sound disabled');
+                        toastr.info('تم إيقاف صوت الإشعارات');
                     }
                 }
             });
@@ -368,6 +438,9 @@
     $(document).ready(function() {
         console.log('🔔 Initializing notification system...');
         
+        // Load saved state
+        loadState();
+        
         // Initialize components
         AudioManager.init();
         DesktopNotificationManager.init();
@@ -384,6 +457,11 @@
             setInterval(() => NotificationChecker.check(), CONFIG.checkInterval);
             
             console.log('✅ Notification system initialized');
+            console.log('📊 Initial state:', {
+                messages: state.lastMessageCount,
+                orders: state.lastOrderCount,
+                initialized: state.isInitialized
+            });
         }, 2000);
     });
     
@@ -391,13 +469,29 @@
     window.NotificationSystem = {
         checkNow: () => NotificationChecker.check(),
         toggleSound: () => $('#soundToggle').click(),
-        getState: () => state,
+        getState: () => ({
+            ...state,
+            notifiedMessages: Array.from(state.notifiedMessages),
+            notifiedOrders: Array.from(state.notifiedOrders)
+        }),
         getConfig: () => CONFIG,
         resetState: () => {
-            state.isInitialized = false;
-            state.lastMessageCount = 0;
-            state.lastOrderCount = 0;
+            state = {
+                lastMessageCount: 0,
+                lastOrderCount: 0,
+                isInitialized: false,
+                notifiedMessages: new Set(),
+                notifiedOrders: new Set(),
+                lastCheckTime: 0
+            };
+            localStorage.removeItem(STATE_KEY);
             console.log('State reset');
+        },
+        clearNotifications: () => {
+            state.notifiedMessages.clear();
+            state.notifiedOrders.clear();
+            saveState();
+            console.log('Notifications cleared');
         }
     };
     
