@@ -2,28 +2,32 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\CentralLogics\Helpers;
-use App\Http\Controllers\Controller;
+use App\Model\Order;
+use App\Model\Conversation;
 use App\Model\Notification;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\Support\Renderable;
-
+use Illuminate\Contracts\Foundation\Application;
 
 class NotificationController extends Controller
 {
     public function __construct(
-        private Notification $notification
+        private Notification $notification,
+        private Conversation $conversation,
+        private Order $order
     )
     {}
 
     /**
-     * @param Request $request
-     * @return Application|Factory|View
+     * Display notification list
      */
     function index(Request $request): View|Factory|Application
     {
@@ -48,8 +52,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @return RedirectResponse
+     * Store new notification
      */
     public function store(Request $request): RedirectResponse
     {
@@ -84,8 +87,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * @param $id
-     * @return Renderable
+     * Edit notification
      */
     public function edit($id): Renderable
     {
@@ -94,9 +96,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @param $id
-     * @return RedirectResponse
+     * Update notification
      */
     public function update(Request $request, $id): RedirectResponse
     {
@@ -119,8 +119,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @return RedirectResponse
+     * Update notification status
      */
     public function status(Request $request): RedirectResponse
     {
@@ -133,8 +132,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @return RedirectResponse
+     * Delete notification
      */
     public function delete(Request $request): RedirectResponse
     {
@@ -146,26 +144,161 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function getNotificationCount(): \Illuminate\Http\JsonResponse
+    /**
+     * Get notification counts (AJAX endpoint)
+     * Called by frontend every 10 seconds
+     */
+    public function getNotificationCount()
     {
         try {
-            $messageCount = \App\Model\Conversation::where('checked', 0)
+            // Get unread message count (distinct users)
+            $messageCount = $this->conversation
+                ->where('checked', 0)
                 ->distinct('user_id')
                 ->count();
             
-            $orderCount = \App\Model\Order::where('order_status', 'pending')
+            // Get pending order count (last 7 days)
+            $orderCount = $this->order
+                ->where('order_status', 'pending')
                 ->whereDate('created_at', '>=', now()->subDays(7))
                 ->count();
             
             return response()->json([
                 'success' => true,
                 'message_count' => $messageCount,
-                'order_count' => $orderCount
+                'order_count' => $orderCount,
+                'timestamp' => now()->toIso8601String()
             ]);
+            
         } catch (\Exception $e) {
+            Log::error('Notification count error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching notification counts'
+                'message' => 'Error fetching notification counts',
+                'message_count' => 0,
+                'order_count' => 0
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark all messages as read
+     * Called when admin visits message page
+     */
+    public function markMessagesAsRead()
+    {
+        try {
+            // Update all unread conversations
+            $updated = $this->conversation
+                ->where('checked', 0)
+                ->update(['checked' => 1]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Messages marked as read',
+                'updated_count' => $updated
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Mark messages read error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error marking messages as read'
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark orders notification as read
+     * Called when admin visits orders page
+     */
+    public function markOrdersAsRead()
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'message' => 'Orders notification cleared'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Mark orders read error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error clearing orders notification'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detailed notification data
+     * Optional: For notification dropdown panel
+     */
+    public function getNotificationDetails()
+    {
+        try {
+            // Get recent unread messages with user details
+            $recentMessages = $this->conversation
+                ->where('checked', 0)
+                ->with('user:id,f_name,l_name,image')
+                ->select('id', 'user_id', 'message', 'created_at')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function($conversation) {
+                    return [
+                        'id' => $conversation->id,
+                        'user_name' => $conversation->user ? 
+                            $conversation->user->f_name . ' ' . $conversation->user->l_name : 
+                            'Unknown User',
+                        'user_image' => $conversation->user && $conversation->user->image ? 
+                            asset('storage/app/public/profile/' . $conversation->user->image) : 
+                            asset('public/assets/admin/img/default-user.png'),
+                        'message' => Str::limit($conversation->message, 50),
+                        'time' => $conversation->created_at->diffForHumans()
+                    ];
+                });
+            
+            // Get recent pending orders
+            $recentOrders = $this->order
+                ->where('order_status', 'pending')
+                ->with('customer:id,f_name,l_name')
+                ->select('id', 'user_id', 'order_amount', 'created_at')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function($order) {
+                    return [
+                        'id' => $order->id,
+                        'customer_name' => $order->customer ? 
+                            $order->customer->f_name . ' ' . $order->customer->l_name : 
+                            'Guest',
+                        'amount' => Helpers::currency_converter($order->order_amount),
+                        'time' => $order->created_at->diffForHumans(),
+                        'url' => route('admin.orders.details', ['id' => $order->id])
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'messages' => [
+                    'count' => $this->conversation->where('checked', 0)->distinct('user_id')->count(),
+                    'recent' => $recentMessages
+                ],
+                'orders' => [
+                    'count' => $this->order->where('order_status', 'pending')->count(),
+                    'recent' => $recentOrders
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Notification details error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching notification details'
             ], 500);
         }
     }
