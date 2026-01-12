@@ -90,12 +90,13 @@ class CashbackSetting extends Model
         }
 
         if ($this->cashback_type === 'percentage') {
-            // NO MORE max_cashback - return full percentage
-            return ($amount * $this->cashback_value) / 100;
+            $cashback = ($amount * $this->cashback_value) / 100;
+        } else {
+            // For fixed type, return the cashback_value directly
+            $cashback = $this->cashback_value;
         }
 
-        // For fixed type, return the cashback_value directly
-        return $this->cashback_value;
+        return round($cashback, 3); // Ensure consistent rounding
     }
 
     /**

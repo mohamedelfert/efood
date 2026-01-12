@@ -418,7 +418,7 @@ class OrderController extends Controller
     //                 $paymentData = [
     //                     'gateway' => $request->payment_method,
     //                     'amount' => $amountCents,
-    //                     'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
+    //                     'currency' => Currency::where('is_primary', true)->first()->code ?? 'YER',
     //                     'purpose' => 'order_payment',
     //                     'order_id' => $o_id,
     //                     'order_type' => $request->order_type,
@@ -466,7 +466,7 @@ class OrderController extends Controller
     //                     // BUILD METADATA WITH STRING CASTING
     //                     $metadata = [
     //                         'gateway' => $request->payment_method,
-    //                         'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
+    //                         'currency' => Currency::where('is_primary', true)->first()->code ?? 'YER',
     //                         'order_id' => $o_id,
     //                         'purpose' => 'order_payment',
     //                     ];
@@ -1146,7 +1146,7 @@ class OrderController extends Controller
             $o_id = $this->order->insertGetId($or);
 
             // HANDLE WALLET PAYMENT WITH CASHBACK
-            if ($request->payment_method == 'wallet_payment' && !$request->is_partial) {
+            if ($customer && $request->payment_method === 'wallet_payment' && !$request->is_partial) {
                 $amount = $or['order_amount'] + $or['delivery_charge'];
                 $walletTransaction = CustomerLogic::create_wallet_transaction(
                     $or['user_id'], $amount, 'order_place', 'ORDER_' . $o_id, $o_id
@@ -1233,7 +1233,7 @@ class OrderController extends Controller
                     $paymentData = [
                         'gateway' => $request->payment_method,
                         'amount' => $amountCents,
-                        'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
+                        'currency' => Currency::where('is_primary', true)->first()->code ?? 'YER',
                         'purpose' => 'order_payment',
                         'order_id' => $o_id,
                         'order_type' => $request->order_type,
@@ -1280,9 +1280,10 @@ class OrderController extends Controller
 
                         $metadata = [
                             'gateway' => $request->payment_method,
-                            'currency' => Currency::where('is_primary', true)->first()->code ?? 'SAR',
+                            'currency' => Currency::where('is_primary', true)->first()->code ?? 'YER',
                             'order_id' => $o_id,
                             'purpose' => 'order_payment',
+                            'branch_id' => $request['branch_id'],
                         ];
 
                         if ($request->payment_method === 'qib') {
@@ -1460,6 +1461,7 @@ class OrderController extends Controller
                         'gateway' => $request->payment_method,
                         'purpose' => 'order_payment',
                         'currency' => 'YER',
+                        'branch_id' => $request['branch_id'],
                     ];
 
                     if ($request->payment_method === 'qib') {

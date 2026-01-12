@@ -264,10 +264,6 @@ class PaymentsController extends Controller
     //         ], 500);
     //     }
     // }
-
-    /**
-     * Send WhatsApp notification with receipt using template
-     */
     
     public function handleCallback(Request $request): JsonResponse
     {
@@ -369,13 +365,8 @@ class PaymentsController extends Controller
                     $walletTopupCashback = null;
                     $orderCashback = null;
 
-                    if ($transaction->transaction_type === 'order_payment'){
-                        $transaction->update([
-                            'status' => 'completed',
-                            'balance' => $transaction->user->wallet_balance,
-                            'updated_at' => now(),
-                        ]);
-                    } else {
+                    // HANDLE WALLET TOP-UP (add_fund)
+                    if ($transaction->transaction_type === 'add_fund') {
                         $transaction->update([
                             'status' => 'completed',
                             'balance' => $transaction->user->wallet_balance + $transaction->credit,
@@ -386,17 +377,51 @@ class PaymentsController extends Controller
 
                         // PROCESS WALLET TOP-UP CASHBACK
                         try {
+                            // PROCESS WALLET TOP-UP CASHBACK
                             $cashbackService = app(\App\Services\CashbackService::class);
                             $walletTopupCashback = $cashbackService->processWalletTopupCashback(
                                 $transaction->user,
                                 $transaction->credit,
                                 $transaction->transaction_id
                             );
+
+                            if ($walletTopupCashback) {
+                                Log::info('Wallet top-up cashback earned', [
+                                    'user_id' => $transaction->user_id,
+                                    'transaction_id' => $transaction->transaction_id,
+                                    'topup_amount' => $transaction->credit,
+                                    'cashback_amount' => $walletTopupCashback
+                                ]);
+                            }
                         } catch (\Exception $e) {
-                            Log::error('Wallet cashback failed', ['error' => $e->getMessage()]);
+                            Log::error('Wallet cashback failed', [
+                                'transaction_id' => $transaction->transaction_id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                    // HANDLE ORDER PAYMENT
+                    elseif ($transaction->transaction_type === 'order_payment') {
+                        $transaction->update([
+                            'status' => 'completed',
+                            'balance' => $transaction->user->wallet_balance,
+                            'updated_at' => now(),
+                        ]);
+                    }
+                    // HANDLE OTHER TYPES (generic)
+                    else {
+                        $transaction->update([
+                            'status' => 'completed',
+                            'balance' => $transaction->user->wallet_balance + $transaction->credit,
+                            'updated_at' => now(),
+                        ]);
+
+                        if ($transaction->credit > 0) {
+                            $transaction->user->increment('wallet_balance', $transaction->credit);
                         }
                     }
 
+                    // Update order status if this is an order payment
                     if (isset($metadata['order_id'])) {
                         Order::where('id', $metadata['order_id'])->update([
                             'payment_status' => 'paid',
@@ -420,7 +445,7 @@ class PaymentsController extends Controller
                                 'updated_at' => now(),
                             ]);
 
-                        // PROCESS ORDER CASHBACK
+                        // PROCESS ORDER CASHBACK (only for completed orders)
                         try {
                             $order = Order::find($metadata['order_id']);
                             if ($order) {
@@ -430,9 +455,20 @@ class PaymentsController extends Controller
                                     $order->order_amount,
                                     $metadata['order_id']
                                 );
+
+                                if ($orderCashback) {
+                                    Log::info('Order cashback earned', [
+                                        'user_id' => $transaction->user_id,
+                                        'order_id' => $metadata['order_id'],
+                                        'cashback_amount' => $orderCashback
+                                    ]);
+                                }
                             }
                         } catch (\Exception $e) {
-                            Log::error('Order cashback failed', ['error' => $e->getMessage()]);
+                            Log::error('Order cashback failed', [
+                                'order_id' => $metadata['order_id'],
+                                'error' => $e->getMessage()
+                            ]);
                         }
                     }
 
@@ -444,13 +480,14 @@ class PaymentsController extends Controller
                         'order_id' => $metadata['order_id'] ?? null,
                         'stripe_order_id' => $orderId,
                         'stripe_transaction_id' => $response['stripe_transaction_id'],
-                        'new_balance' => $transaction->user->wallet_balance,
+                        'new_balance' => $transaction->user->fresh()->wallet_balance,
                         'wallet_topup_cashback' => $walletTopupCashback,
                         'order_cashback' => $orderCashback
                     ]);
 
                     $previousBalance = $transaction->balance;
 
+                    // Send appropriate notifications
                     if ($transaction->transaction_type === 'order_payment' && isset($metadata['order_id'])) {
                         $order = Order::find($metadata['order_id']);
                         if ($order) {
@@ -534,6 +571,9 @@ class PaymentsController extends Controller
         }
     }
     
+    /**
+     * Send WhatsApp notification with receipt using template
+    */
     private function sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance): void
     {
         try {

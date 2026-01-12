@@ -15,9 +15,8 @@ class CashbackService
      */
     public function processWalletTopupCashback(User $user, float $amount, string $transactionId): ?float
     {
-        $setting = CashbackSetting::active()
-            ->forWalletTopup()
-            ->first();
+        // Get best cashback setting (branch-specific or global)
+        $setting = CashbackSetting::getBestCashback('wallet_topup', $user->branch_id ?? null, $amount);
 
         if (!$setting || !$setting->isApplicable($amount)) {
             return null;
@@ -43,9 +42,8 @@ class CashbackService
      */
     public function processOrderCashback(User $user, float $orderAmount, int $orderId): ?float
     {
-        $setting = CashbackSetting::active()
-            ->forOrder()
-            ->first();
+        // Get best cashback setting (branch-specific or global)
+        $setting = CashbackSetting::getBestCashback('order', $user->branch_id ?? null, $orderAmount);
 
         if (!$setting || !$setting->isApplicable($orderAmount)) {
             return null;
@@ -141,11 +139,9 @@ class CashbackService
     /**
      * Calculate potential cashback (for preview)
      */
-    public function calculatePotentialCashback(string $type, float $amount): array
+    public function calculatePotentialCashback(string $type, float $amount, ?int $branchId = null): array
     {
-        $setting = CashbackSetting::active()
-            ->where('type', $type)
-            ->first();
+        $setting = CashbackSetting::getBestCashback($type, $branchId, $amount);
 
         if (!$setting) {
             return [
@@ -168,8 +164,9 @@ class CashbackService
         return [
             'eligible' => true,
             'amount' => $cashbackAmount,
+            'cashback_type' => $setting->cashback_type,
+            'cashback_value' => $setting->cashback_value,
             'percentage' => $setting->cashback_type === 'percentage' ? $setting->cashback_value : null,
-            'max_cashback' => $setting->max_cashback,
             'message' => "You will receive {$cashbackAmount} cashback"
         ];
     }
@@ -188,9 +185,49 @@ class CashbackService
             ->sum('credit');
 
         return [
-            'wallet_topup_cashback' => $walletCashback,
-            'order_cashback' => $orderCashback,
-            'total_cashback' => $walletCashback + $orderCashback
+            'wallet_topup_cashback' => (float) $walletCashback,
+            'order_cashback' => (float) $orderCashback,
+            'total_cashback' => (float) ($walletCashback + $orderCashback)
+        ];
+    }
+
+    /**
+     * Get cashback transaction history
+     */
+    public function getCashbackHistory(int $userId, int $limit = 20, int $offset = 0): array
+    {
+        $query = WalletTransaction::where('user_id', $userId)
+            ->whereIn('transaction_type', ['wallet_topup_cashback', 'order_cashback'])
+            ->orderBy('created_at', 'desc');
+
+        $total = $query->count();
+        
+        $transactions = $query->offset($offset)
+            ->limit($limit)
+            ->get()
+            ->map(function ($transaction) {
+                $metadata = json_decode($transaction->metadata, true) ?? [];
+                
+                return [
+                    'id' => $transaction->id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'type' => $transaction->transaction_type,
+                    'amount' => (float) $transaction->credit,
+                    'balance' => (float) $transaction->balance,
+                    'reference' => $transaction->reference,
+                    'related_transaction' => $metadata['related_transaction'] ?? null,
+                    'cashback_type' => $metadata['cashback_type'] ?? null,
+                    'status' => $transaction->status ?? 'completed',
+                    'created_at' => $transaction->created_at->toDateTimeString(),
+                    'formatted_date' => $transaction->created_at->format('d M Y, h:i A'),
+                ];
+            });
+
+        return [
+            'total' => $total,
+            'limit' => $limit,
+            'offset' => $offset,
+            'transactions' => $transactions->toArray()
         ];
     }
 }
