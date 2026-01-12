@@ -631,6 +631,22 @@ class CustomerAuthController extends Controller
     {
         $customer = $this->user->find($request->user()->id);
 
+        if (!$customer) {
+            return response()->json([
+                'status_code' => 404,
+                'message' => translate('Not found')
+            ], 404);
+        }
+
+        // Prevent deletion if wallet balance exists
+        if ((float) $customer->wallet_balance > 0) {
+            return response()->json([
+                'status_code' => 403,
+                'message' => translate('cannot_delete_customer_with_balance'),
+                'balance' => $customer->getFormattedWalletBalanceAttribute()
+            ], 403);
+        }
+
         if (isset($customer)) {
             Helpers::file_remover('customer/', $customer->image);
             $customer->delete();
