@@ -98,7 +98,7 @@
                                 $('#customer').val(null).trigger('change');
                                 $('#amount').val(null).trigger('change');
                                 $('#referance').val(null).trigger('change');
-                                toastr.success('{{__("Fund added successfully")}}', {
+                                toastr.success('{{ translate('Fund added successfully')}}', {
                                     CloseButton: true,
                                     ProgressBar: true
                                 });

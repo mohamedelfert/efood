@@ -1475,6 +1475,7 @@
   'Send_WhatsApp_On_Wallet_Top-up' => 'إرسال WhatsApp عند تعبئة المحفظة',
   'Want to delete this cashback setting?' => 'هل تريد حذف إعداد استرداد النقود هذا؟',
   'WhatsApp_Templates' => 'قالب واتس اب',
+  'Fund added successfully' => 'تم اضافه الرصيد بنجاح',
   'WhatsApp_Template' => 'قالب واتس اب',
   'Customers_will_receive_an_automated_WhatsApp_message_after_a_successful_wallet_top-up.' => 'سيتلقى العملاء رسالة WhatsApp تلقائية بعد عملية تعبئة المحفظة بنجاح.',
   'Select_Template' => 'اختر قالب',
@@ -1506,6 +1507,226 @@
   'Date' => 'تاريخ',
   'Password' => 'كلمة المرور',
   'Email' => 'بريد إلكتروني',
+
+  'Branch_Review_Reports' => 'تقارير تقييمات الفروع',
+  'Branch_Review_Report_Overview' => 'نظرة عامة على تقرير تقييمات الفروع',
+  'Branch Review Report' => 'تقرير تقييمات الفروع',
+  'branch_review_report' => 'تقرير تقييمات الفروع',
+  'Filter_Reviews' => 'تصفية التقييمات',
+  'Select_Branch' => 'اختر الفرع',
+  'All_Branches' => 'جميع الفروع',
+  'Min_Rating' => 'الحد الأدنى للتقييم',
+  'Max_Rating' => 'الحد الأقصى للتقييم',
+  'From_Date' => 'من تاريخ',
+  'To_Date' => 'إلى تاريخ',
+  'Total_Reviews' => 'إجمالي التقييمات',
+  'Average_Rating' => 'متوسط التقييم',
+  'Rating_Distribution' => 'توزيع التقييمات',
+  'Export_Excel' => 'تصدير إكسل',
+  'Print_Report' => 'طباعة التقرير',
+  'Review_Image' => 'صورة التقييم',
+  'Report generated successfully' => 'تم إنشاء التقرير بنجاح',
+  'Failed to load report. Please try again.' => 'فشل تحميل التقرير. الرجاء المحاولة مرة أخرى.',
+  'From date cannot be greater than To date!' => 'لا يمكن أن يكون تاريخ البداية أكبر من تاريخ النهاية!',
+  
+  // Service Review Report Translations
+  'Service_Review_Reports' => 'تقارير تقييمات الخدمات',
+  'Service_Review_Report_Overview' => 'نظرة عامة على تقرير تقييمات الخدمات',
+  'Service Review Report' => 'تقرير تقييمات الخدمات',
+  'service_review_report' => 'تقرير تقييمات الخدمات',
+  'Filter_Service_Reviews' => 'تصفية تقييمات الخدمات',
+  'Service Type' => 'نوع الخدمة',
+  'All Services' => 'جميع الخدمات',
+  'All_Services' => 'جميع الخدمات',
+  'Delivery' => 'التوصيل',
+  'Packaging' => 'التغليف',
+  'Customer Service' => 'خدمة العملاء',
+  'Customer_Service' => 'خدمة العملاء',
+  'Food Quality' => 'جودة الطعام',
+  'Food_Quality' => 'جودة الطعام',
+  'Service Aspect Ratings' => 'تقييمات جوانب الخدمة',
+  
+  // Table Headers
+  'SL' => 'م',
+  'Review ID' => 'رقم التقييم',
+  'Customer' => 'العميل',
+  'Branch' => 'الفرع',
+  'Order ID' => 'رقم الطلب',
+  'Order' => 'الطلب',
+  'Rating' => 'التقييم',
+  'Comment' => 'التعليق',
+  'Images' => 'الصور',
+  'Date' => 'التاريخ',
+  'Customer Deleted' => 'تم حذف العميل',
+  'No comment' => 'لا يوجد تعليق',
+  'No images' => 'لا توجد صور',
+  'No reviews found' => 'لم يتم العثور على تقييمات',
+  
+  // Service Review Specific
+  'Service_Type' => 'نوع الخدمة',
+  'Aspects' => 'الجوانب',
+  'N/A' => 'غير متاح',
+  
+  // Rating Filters
+  'All' => 'الكل',
+  'Star' => 'نجمة',
+  'Stars' => 'نجوم',
+  
+  // General
+  'Admin' => 'المسؤول',
+  'admin' => 'المسؤول',
+  'Generated' => 'تم الإنشاء',
+  'Dashboard' => 'لوحة التحكم',
+  'Show' => 'عرض',
+  'Close' => 'إغلاق',
+  
+  // PDF Report Translations
+  'Total Reviews' => 'إجمالي التقييمات',
+  'Average Rating' => 'متوسط التقييم',
+  '5 Star Reviews' => 'تقييمات 5 نجوم',
+  '1 Star Reviews' => 'تقييمات نجمة واحدة',
+  'Deleted' => 'محذوف',
+  'This is a system-generated report. Generated on' => 'هذا تقرير تم إنشاؤه بواسطة النظام. تم الإنشاء في',
+  'No reviews found for the selected criteria.' => 'لم يتم العثور على تقييمات للمعايير المحددة.',
+  'Total Orders' => 'إجمالي الطلبات',
+  'Total Items' => 'إجمالي العناصر',
+  'Total Amount' => 'المبلغ الإجمالي',
+  
+  // Additional Common Translations
+  'Invalid date range!' => 'نطاق تاريخ غير صالح!',
+  'Order Report' => 'تقرير الطلبات',
+  'Sales Report' => 'تقرير المبيعات',
+  'Product Report' => 'تقرير المنتجات',
+  'Order_Report' => 'تقرير الطلبات',
+  'Sales_Report' => 'تقرير المبيعات',
+  'Product_Report' => 'تقرير المنتجات',
+  'Date Range' => 'نطاق التاريخ',
+  'Branch:' => 'الفرع:',
+  'Service Type:' => 'نوع الخدمة:',
+  
+  // Statistics
+  'Total' => 'الإجمالي',
+  'Delivered' => 'تم التوصيل',
+  'Canceled' => 'ملغى',
+  'Returned' => 'مرتجع',
+  'Failed' => 'فشل',
+  'Pending' => 'قيد الانتظار',
+  
+  // Export Messages
+  'Excel file downloaded successfully' => 'تم تنزيل ملف إكسل بنجاح',
+  'PDF generated successfully' => 'تم إنشاء ملف PDF بنجاح',
+  'Failed to export data' => 'فشل تصدير البيانات',
+  
+  // Error Messages
+  'Please select a date range' => 'الرجاء تحديد نطاق التاريخ',
+  'Please select a branch' => 'الرجاء اختيار الفرع',
+  'No data available' => 'لا توجد بيانات متاحة',
+  'Error loading data' => 'خطأ في تحميل البيانات',
+  
+  // Additional Field Names
+  'Review Details' => 'تفاصيل التقييم',
+  'Customer Information' => 'معلومات العميل',
+  'Order Information' => 'معلومات الطلب',
+  'Rating Details' => 'تفاصيل التقييم',
+  'Attachments' => 'المرفقات',
+  'View Image' => 'عرض الصورة',
+  'Download Report' => 'تحميل التقرير',
+  'Generate Report' => 'إنشاء التقرير',
+  'Search' => 'بحث',
+  'Filter' => 'تصفية',
+  'Reset' => 'إعادة تعيين',
+  'Apply Filter' => 'تطبيق التصفية',
+  'Clear Filter' => 'مسح التصفية',
+  
+  // Month Names (if needed)
+  'January' => 'يناير',
+  'February' => 'فبراير',
+  'March' => 'مارس',
+  'April' => 'أبريل',
+  'May' => 'مايو',
+  'June' => 'يونيو',
+  'July' => 'يوليو',
+  'August' => 'أغسطس',
+  'September' => 'سبتمبر',
+  'October' => 'أكتوبر',
+  'November' => 'نوفمبر',
+  'December' => 'ديسمبر',
+  
+  // Time Formats
+  'h:i A' => 'h:i A',
+  'd M Y' => 'd M Y',
+  'd M Y, h:i A' => 'd M Y, h:i A',
+  
+  // Action Buttons
+  'Print' => 'طباعة',
+  'Export' => 'تصدير',
+  'Download' => 'تحميل',
+  'Refresh' => 'تحديث',
+  'Back' => 'رجوع',
+  'Save' => 'حفظ',
+  'Cancel' => 'إلغاء',
+  'Submit' => 'إرسال',
+  
+  // Status Messages
+  'Loading...' => 'جاري التحميل...',
+  'Processing...' => 'جاري المعالجة...',
+  'Success' => 'نجح',
+  'Error' => 'خطأ',
+  'Warning' => 'تحذير',
+  'Info' => 'معلومات',
+  
+  // Pagination
+  'Previous' => 'السابق',
+  'Next' => 'التالي',
+  'First' => 'الأول',
+  'Last' => 'الأخير',
+  'Showing' => 'عرض',
+  'to' => 'إلى',
+  'of' => 'من',
+  'entries' => 'مدخلات',
+  
+  // Form Validation
+  'This field is required' => 'هذا الحقل مطلوب',
+  'Please enter a valid value' => 'الرجاء إدخال قيمة صالحة',
+  'Please select an option' => 'الرجاء اختيار خيار',
+  
+  // Additional Review Related
+  'Review submitted successfully' => 'تم إرسال التقييم بنجاح',
+  'Review updated successfully' => 'تم تحديث التقييم بنجاح',
+  'Review deleted successfully' => 'تم حذف التقييم بنجاح',
+  'Thank you for your review' => 'شكراً لك على تقييمك',
+  'Rate your experience' => 'قيّم تجربتك',
+  'Write your comment' => 'اكتب تعليقك',
+  'Upload images' => 'تحميل الصور',
+  'Submit Review' => 'إرسال التقييم',
+  
+  // Statistical Terms
+  'Percentage' => 'النسبة المئوية',
+  'Count' => 'العدد',
+  'Average' => 'المتوسط',
+  'Minimum' => 'الحد الأدنى',
+  'Maximum' => 'الحد الأقصى',
+  'Total' => 'الإجمالي',
+  'Sum' => 'المجموع',
+  
+  // Report Sections
+  'Summary' => 'الملخص',
+  'Details' => 'التفاصيل',
+  'Statistics' => 'الإحصائيات',
+  'Overview' => 'نظرة عامة',
+  'Analysis' => 'التحليل',
+
+  'Min Rating' => 'الحد الأدنى للتقييم',
+  'Max Rating' => 'الحد الأقصى للتقييم',
+  
+  // Additional Service Types
+  'delivery' => 'التوصيل',
+  'packaging' => 'التغليف',
+  'customer_service' => 'خدمة العملاء',
+  'food_quality' => 'جودة الطعام',
+  'Branch Reviews' => 'تقييمات الفرع',
+  'Service Reviews' => 'تقييمات الخدمه',
+
   'Phone' => 'هاتف',
   'Input Field Name' => 'اسم حقل الإدخال',
   'Input Field Placeholder/Hints' => 'تلميحات/نص افتراضي لحقل الإدخال',

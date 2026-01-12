@@ -499,6 +499,18 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::post('print-branch-order-report', [ReportController::class, 'printBranchOrderReport'])->name('print-branch-order-report');
             Route::post('print-branch-sales-report', [ReportController::class, 'printBranchSalesReport'])->name('print-branch-sales-report');
             Route::post('print-branch-product-report', [ReportController::class, 'printBranchProductReport'])->name('print-branch-product-report');
+            
+            // Branch Review Report Routes
+            Route::get('branch-review-reports', [ReportController::class, 'branchReviewIndex'])->name('branch-review-reports');
+            Route::post('branch-review-report', [ReportController::class, 'branchReviewReport'])->name('branch-review-report');
+            Route::post('print-branch-review-report', [ReportController::class, 'printBranchReviewReport'])->name('print-branch-review-report');
+            Route::get('export-branch-review-report', [ReportController::class, 'exportBranchReviewReport'])->name('export-branch-review-report');
+
+            // Service Review Report Routes
+            Route::get('service-review-reports', [ReportController::class, 'serviceReviewIndex'])->name('service-review-reports');
+            Route::post('service-review-report', [ReportController::class, 'serviceReviewReport'])->name('service-review-report');
+            Route::post('print-service-review-report', [ReportController::class, 'printServiceReviewReport'])->name('print-service-review-report');
+            Route::get('export-service-review-report', [ReportController::class, 'exportServiceReviewReport'])->name('export-service-review-report');
         });
 
         Route::group(['prefix' => 'customer', 'as' => 'customer.', 'middleware' => ['actch', 'module:user_management']], function () {

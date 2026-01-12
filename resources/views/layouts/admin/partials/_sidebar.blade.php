@@ -593,6 +593,20 @@
                                         <span class="text-truncate">{{translate('sales_report')}}</span>
                                     </a>
                                 </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('admin.report.branch-review-reports') }}">
+                                        <i class="tio-star nav-icon"></i>
+                                        <span class="text-truncate">{{ translate('Branch Reviews') }}</span>
+                                    </a>
+                                </li>
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('admin.report.service-review-reports') }}">
+                                        <i class="tio-checkmark-circle nav-icon"></i>
+                                        <span class="text-truncate">{{ translate('Service Reviews') }}</span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endif

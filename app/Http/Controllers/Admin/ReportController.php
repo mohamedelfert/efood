@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\CentralLogics\Helpers;
-use App\Http\Controllers\Controller;
-use App\Model\Order;
-use App\Model\OrderDetail;
-use App\Model\Branch;
-use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
+use App\Model\Order;
+use App\Model\Branch;
+use App\Model\OrderDetail;
 use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use App\Exports\GenericExport;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\View;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Contracts\Support\Renderable;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Contracts\Foundation\Application;
 
 class ReportController extends Controller
 {
@@ -542,5 +543,256 @@ class ReportController extends Controller
         $pdf = PDF::loadView('admin-views.report.partials._report', compact('data'));
 
         return $pdf->download('sale_report_' . rand(00001, 99999) . '.pdf');
+    }
+
+    /**
+     * Branch Review Reports Index
+     * @return Renderable
+     */
+    public function branchReviewIndex(): Renderable
+    {
+        $branches = $this->branch->all();
+        
+        if (session()->has('branch_review_from_date') == false) {
+            session()->put('branch_review_from_date', date('Y-m-01'));
+            session()->put('branch_review_to_date', date('Y-m-30'));
+        }
+
+        return view('admin-views.report.branch-review-index', compact('branches'));
+    }
+
+    /**
+     * Branch Review Report
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function branchReviewReport(Request $request): JsonResponse
+    {
+        $fromDate = Carbon::parse($request->from)->startOfDay();
+        $toDate = Carbon::parse($request->to)->endOfDay();
+        $branchId = $request->branch_id;
+        $minRating = $request->min_rating ?? 0;
+        $maxRating = $request->max_rating ?? 5;
+
+        $query = \App\Models\BranchReview::with(['customer', 'branch', 'order'])
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->whereBetween('rating', [$minRating, $maxRating]);
+        
+        if ($branchId != 'all') {
+            $query->where('branch_id', $branchId);
+        }
+
+        $reviews = $query->latest()->get();
+
+        // Calculate statistics
+        $totalReviews = $reviews->count();
+        $averageRating = $reviews->avg('rating');
+        $ratingDistribution = [
+            '5_star' => $reviews->where('rating', 5)->count(),
+            '4_star' => $reviews->whereBetween('rating', [4, 4.99])->count(),
+            '3_star' => $reviews->whereBetween('rating', [3, 3.99])->count(),
+            '2_star' => $reviews->whereBetween('rating', [2, 2.99])->count(),
+            '1_star' => $reviews->whereBetween('rating', [1, 1.99])->count(),
+        ];
+
+        $data = [
+            'reviews' => $reviews,
+            'stats' => [
+                'total' => $totalReviews,
+                'average_rating' => round($averageRating, 2),
+                'rating_distribution' => $ratingDistribution,
+            ]
+        ];
+
+        session()->put('branch_review_data', $data);
+
+        return response()->json([
+            'view' => view('admin-views.report.partials._branch-review-table', $data)->render(),
+            'stats' => $data['stats']
+        ]);
+    }
+
+    /**
+     * Service Review Reports Index
+     * @return Renderable
+     */
+    public function serviceReviewIndex(): Renderable
+    {
+        $serviceTypes = ['delivery', 'packaging', 'customer_service', 'food_quality'];
+        
+        if (session()->has('service_review_from_date') == false) {
+            session()->put('service_review_from_date', date('Y-m-01'));
+            session()->put('service_review_to_date', date('Y-m-30'));
+        }
+
+        return view('admin-views.report.service-review-index', compact('serviceTypes'));
+    }
+
+    /**
+     * Service Review Report
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function serviceReviewReport(Request $request): JsonResponse
+    {
+        $fromDate = Carbon::parse($request->from)->startOfDay();
+        $toDate = Carbon::parse($request->to)->endOfDay();
+        $serviceType = $request->service_type;
+        $minRating = $request->min_rating ?? 0;
+        $maxRating = $request->max_rating ?? 5;
+
+        $query = \App\Models\ServiceReview::with(['customer', 'order'])
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->whereBetween('rating', [$minRating, $maxRating]);
+        
+        if ($serviceType != 'all') {
+            $query->where('service_type', $serviceType);
+        }
+
+        $reviews = $query->latest()->get();
+
+        // Calculate statistics
+        $totalReviews = $reviews->count();
+        $averageRating = $reviews->avg('rating');
+        $ratingDistribution = [
+            '5_star' => $reviews->where('rating', 5)->count(),
+            '4_star' => $reviews->whereBetween('rating', [4, 4.99])->count(),
+            '3_star' => $reviews->whereBetween('rating', [3, 3.99])->count(),
+            '2_star' => $reviews->whereBetween('rating', [2, 2.99])->count(),
+            '1_star' => $reviews->whereBetween('rating', [1, 1.99])->count(),
+        ];
+
+        // Service aspect ratings if available
+        $aspectRatings = [];
+        if ($serviceType != 'all') {
+            $allServiceRatings = $reviews->pluck('service_ratings')->filter();
+            if ($allServiceRatings->isNotEmpty()) {
+                $aspects = $allServiceRatings->flatten(1)->pluck('aspect')->unique();
+                foreach ($aspects as $aspect) {
+                    $ratings = $allServiceRatings->flatten(1)
+                        ->where('aspect', $aspect)
+                        ->pluck('rating')
+                        ->filter();
+                    
+                    if ($ratings->isNotEmpty()) {
+                        $aspectRatings[$aspect] = round($ratings->avg(), 2);
+                    }
+                }
+            }
+        }
+
+        $data = [
+            'reviews' => $reviews,
+            'stats' => [
+                'total' => $totalReviews,
+                'average_rating' => round($averageRating, 2),
+                'rating_distribution' => $ratingDistribution,
+                'aspect_ratings' => $aspectRatings,
+            ]
+        ];
+
+        session()->put('service_review_data', $data);
+
+        return response()->json([
+            'view' => view('admin-views.report.partials._service-review-table', $data)->render(),
+            'stats' => $data['stats']
+        ]);
+    }
+
+    /**
+     * Print Branch Review Report
+     * @param Request $request
+     * @return mixed
+     */
+    public function printBranchReviewReport(Request $request): mixed
+    {
+        $data = session('branch_review_data', []);
+        $branch = $request->branch_id != 'all' ? $this->branch->find($request->branch_id) : null;
+        $reportType = 'Branch Review Report';
+        $dateRange = $request->from . ' to ' . $request->to;
+
+        $pdf = PDF::loadView('admin-views.report.pdf.branch-review-report', compact('data', 'branch', 'reportType', 'dateRange'));
+        
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+        
+        return $pdf->download('branch_review_report_' . time() . '.pdf');
+    }
+
+    /**
+     * Print Service Review Report
+     * @return mixed
+     */
+    public function printServiceReviewReport(Request $request): mixed
+    {
+        $data = session('service_review_data', []);
+        $serviceType = $request->service_type != 'all' ? ucfirst($request->service_type) : 'All Services';
+        $reportType = 'Service Review Report';
+        $dateRange = $request->from . ' to ' . $request->to;
+
+        $pdf = PDF::loadView('admin-views.report.pdf.service-review-report', compact('data', 'serviceType', 'reportType', 'dateRange'));
+        
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+        
+        return $pdf->download('service_review_report_' . time() . '.pdf');
+    }
+
+    /**
+     * Export Branch Review Report to Excel
+     * @param Request $request
+     * @return mixed
+     */
+    public function exportBranchReviewReport(Request $request)
+    {
+        $data = session('branch_review_data', []);
+        
+        $reviews = collect($data['reviews'] ?? [])->map(function ($review) {
+            return [
+                'Review ID' => $review->id,
+                'Customer' => $review->customer->f_name . ' ' . $review->customer->l_name,
+                'Branch' => $review->branch->name ?? 'N/A',
+                'Order ID' => $review->order_id,
+                'Rating' => $review->rating,
+                'Comment' => $review->comment,
+                'Date' => $review->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return (new GenericExport($reviews))
+            ->download('branch_review_report_' . time() . '.xlsx');
+    }
+
+    /**
+     * Export Service Review Report to Excel
+     * @param Request $request
+     * @return mixed
+     */
+    public function exportServiceReviewReport(Request $request)
+    {
+        $data = session('service_review_data', []);
+        
+        $reviews = collect($data['reviews'] ?? [])->map(function ($review) {
+            return [
+                'Review ID' => $review->id,
+                'Customer' => $review->customer->f_name . ' ' . $review->customer->l_name,
+                'Service Type' => ucfirst($review->service_type),
+                'Order ID' => $review->order_id,
+                'Rating' => $review->rating,
+                'Comment' => $review->comment,
+                'Date' => $review->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return (new GenericExport($reviews))
+            ->download('service_review_report_' . time() . '.xlsx');
     }
 }
