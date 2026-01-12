@@ -24,6 +24,44 @@
                                         <input type="text" name="title" class="form-control" placeholder="{{translate('new_banner')}}" required>
                                     </div>
 
+                                    <!-- Branch Availability -->
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body">
+                                            <h5 class="mb-3">{{translate('branch_availability')}}</h5>
+                                            
+                                            <div class="form-group">
+                                                <div class="custom-control custom-radio">
+                                                    <input type="radio" id="global-banner" name="is_global" value="1" class="custom-control-input" checked>
+                                                    <label class="custom-control-label" for="global-banner">
+                                                        {{translate('global_banner')}}
+                                                        <small class="text-muted d-block">{{translate('show_in_all_branches')}}</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group mb-0">
+                                                <div class="custom-control custom-radio">
+                                                    <input type="radio" id="branch-specific" name="is_global" value="0" class="custom-control-input">
+                                                    <label class="custom-control-label" for="branch-specific">
+                                                        {{translate('branch_specific')}}
+                                                        <small class="text-muted d-block">{{translate('show_in_selected_branches_only')}}</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Branch Selection -->
+                                            <div class="form-group mt-3" id="branch-selection" style="display: none;">
+                                                <label class="input-label">{{translate('select_branches')}}<span class="text-danger ml-1">*</span></label>
+                                                <select name="branch_ids[]" class="form-control js-select2-custom" multiple id="branch-select">
+                                                    @foreach($branches as $branch)
+                                                        <option value="{{$branch->id}}">{{$branch->name}}</option>
+                                                    @endforeach
+                                                </select>
+                                                <small class="text-muted">{{translate('select_one_or_more_branches')}}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="form-group">
                                         <label class="input-label">{{translate('banner_type')}}<span class="text-danger ml-1">*</span></label>
                                         <select name="banner_type" class="custom-select" id="banner-type-select" required>
@@ -73,13 +111,11 @@
                                             <div class="card-body">
                                                 <h5 class="mb-3">{{translate('offer_pricing')}}</h5>
                                                 
-                                                <!-- Original Price Display -->
                                                 <div class="alert alert-info" id="original-price-display" style="display: none;">
                                                     <strong>{{translate('total_original_price')}}:</strong> 
                                                     <span id="original-price-value">0.00</span>
                                                 </div>
 
-                                                <!-- Discount Type -->
                                                 <div class="form-group">
                                                     <label class="input-label">{{translate('discount_type')}}<span class="text-danger ml-1">*</span></label>
                                                     <select name="discount_type" class="custom-select" id="discount-type-select" required>
@@ -88,21 +124,18 @@
                                                     </select>
                                                 </div>
 
-                                                <!-- Fixed Discount -->
                                                 <div class="form-group" id="fixed-discount-section">
                                                     <label class="input-label">{{translate('discount_amount')}}</label>
                                                     <input type="number" name="total_discount_amount" id="discount-amount-input" class="form-control" placeholder="0.00" step="0.01" min="0">
                                                     <small class="text-muted">{{translate('enter_discount_amount')}}</small>
                                                 </div>
 
-                                                <!-- Percentage Discount -->
                                                 <div class="form-group" id="percentage-discount-section" style="display: none;">
                                                     <label class="input-label">{{translate('discount_percentage')}}</label>
                                                     <input type="number" name="total_discount_percentage" id="discount-percentage-input" class="form-control" placeholder="0" step="0.01" min="0" max="100">
                                                     <small class="text-muted">{{translate('enter_discount_percentage')}}</small>
                                                 </div>
 
-                                                <!-- Or Offer Price -->
                                                 <div class="text-center my-2">
                                                     <small class="text-muted">{{translate('or')}}</small>
                                                 </div>
@@ -113,7 +146,6 @@
                                                     <small class="text-muted">{{translate('set_final_offer_price_directly')}}</small>
                                                 </div>
 
-                                                <!-- Final Price Display -->
                                                 <div class="alert alert-success" id="final-price-display" style="display: none;">
                                                     <strong>{{translate('final_offer_price')}}:</strong> 
                                                     <span id="final-price-value">0.00</span>
@@ -183,13 +215,24 @@
             var select2 = $.HSCore.components.HSSelect2.init($(this));
         });
 
+        // Branch availability toggle
+        $('input[name="is_global"]').change(function() {
+            if ($(this).val() == '0') {
+                $('#branch-selection').show();
+                $('#branch-select').prop('required', true);
+            } else {
+                $('#branch-selection').hide();
+                $('#branch-select').prop('required', false);
+                $('#branch-select').val(null).trigger('change');
+            }
+        });
+
         // Banner type change
         $('#banner-type-select').change(function() {
             var selectedType = $(this).val();
             $('.banner-type-section').hide();
             $('#pricing-section').hide();
             
-            // Reset required
             $('#single-product-select').prop('required', false);
             $('#multiple-products-select').prop('required', false);
             $('#category-select').prop('required', false);
@@ -264,14 +307,11 @@
             var finalPrice = originalPrice;
             var offerPrice = parseFloat($('#offer-price-input').val()) || 0;
             
-            // If offer price is set directly, use it
             if (offerPrice > 0) {
                 finalPrice = offerPrice;
-                // Clear discount fields
                 $('#discount-amount-input').val('');
                 $('#discount-percentage-input').val('');
             } else {
-                // Calculate based on discount
                 var discountType = $('#discount-type-select').val();
                 
                 if (discountType === 'fixed') {
@@ -282,7 +322,6 @@
                     finalPrice = originalPrice - (originalPrice * (discountPercentage / 100));
                 }
                 
-                // Clear offer price if discount is used
                 if ($('#discount-amount-input').val() || $('#discount-percentage-input').val()) {
                     $('#offer-price-input').val('');
                 }
@@ -316,6 +355,7 @@
             $('.banner-type-section').hide();
             $('#pricing-section').hide();
             $('#viewer').attr('src', '{{asset("public/assets/admin/img/icons/upload_img2.png")}}');
+            $('input[name="is_global"][value="1"]').prop('checked', true).trigger('change');
             originalPrice = 0;
             $('#original-price-display').hide();
             $('#final-price-display').hide();

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Model\Banner;
 use Illuminate\Http\JsonResponse;
@@ -10,267 +9,288 @@ use Illuminate\Http\Request;
 
 class BannerController extends Controller
 {
-    public function __construct(
-        private Banner $banner
-    )
-    {
-    }
-
     /**
-     * Get all active banners with their associated data
+     * Get banners for a specific branch or global banners
+     * 
+     * @param Request $request
+     * @return JsonResponse
      */
     public function getBanners(Request $request): JsonResponse
     {
-        try {
-            $banners = $this->banner
-                ->with([
-                    'product.rating',
-                    'product.branch_product',
-                    'products.rating',
-                    'products.branch_product',
-                    'category'
-                ])
-                ->active()
-                ->when($request->has('banner_type'), function($query) use ($request) {
-                    return $query->where('banner_type', $request->banner_type);
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
+        $branchId = $request->header('branch-id') ?? $request->branch_id;
+        
+        $banners = Banner::active()
+            ->with(['product', 'category', 'products', 'branches'])
+            ->when($branchId, function ($query) use ($branchId) {
+                // Get banners that are either global or assigned to this branch
+                $query->where(function($q) use ($branchId) {
+                    $q->where('is_global', true)
+                      ->orWhereHas('branches', function($query) use ($branchId) {
+                          $query->where('branch_id', $branchId);
+                      });
+                });
+            }, function ($query) {
+                // If no branch specified, only return global banners
+                $query->where('is_global', true);
+            })
+            ->whereHas('product', function($q) {
+                $q->where('status', 1);
+            }, '>=', 0)
+            ->get();
 
-            $formattedBanners = $banners->map(function ($banner) {
-                return $this->formatBannerData($banner);
-            });
+        // Filter active offers
+        $activeBanners = $banners->filter(function ($banner) {
+            return $banner->isOfferActive();
+        })->map(function ($banner) use ($branchId) {
+            return [
+                'id' => $banner->id,
+                'title' => $banner->title,
+                'image' => $banner->imageFullPath,
+                'banner_type' => $banner->banner_type,
+                'is_global' => $banner->is_global,
+                'branches' => $banner->is_global ? [] : $banner->branches->map(function($branch) {
+                    return [
+                        'id' => $branch->id,
+                        'name' => $branch->name
+                    ];
+                }),
+                'product' => $banner->banner_type === 'single_product' && $banner->product ? [
+                    'id' => $banner->product->id,
+                    'name' => $banner->product->name,
+                    'image' => $banner->product->imageFullPath ?? [],
+                    'price' => (float) $banner->product->price,
+                ] : null,
+                'products_count' => $banner->banner_type === 'multiple_products' ? $banner->products->count() : 0,
+                'category' => $banner->banner_type === 'category' && $banner->category ? [
+                    'id' => $banner->category->id,
+                    'name' => $banner->category->name,
+                    'image' => $banner->category->imageFullPath,
+                ] : null,
+                'pricing' => $banner->banner_type !== 'category' ? [
+                    'original_price' => (float) $banner->calculateOriginalPrice(),
+                    'final_price' => (float) $banner->calculateFinalPrice(),
+                    'discount_amount' => (float) $banner->getDiscountAmount(),
+                    'discount_percentage' => (float) $banner->getDiscountPercentage(),
+                    'discount_type' => $banner->discount_type,
+                ] : null,
+                'dates' => [
+                    'start_date' => $banner->start_date ? $banner->start_date->format('Y-m-d') : null,
+                    'end_date' => $banner->end_date ? $banner->end_date->format('Y-m-d') : null,
+                    'is_active' => $banner->isOfferActive(),
+                ],
+            ];
+        })->values();
 
-            return response()->json($formattedBanners, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'errors' => [
-                    ['code' => 'banner', 'message' => 'Failed to fetch banners']
-                ]
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $activeBanners
+        ]);
     }
 
     /**
      * Get banner details by ID
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
      */
-    public function getBannerDetails(int $id): JsonResponse
+    public function getBannerDetails(Request $request, $id): JsonResponse
     {
-        try {
-            $banner = $this->banner
-                ->with([
-                    'product.rating',
-                    'product.branch_product',
-                    'products.rating',
-                    'products.branch_product',
-                    'category'
-                ])
-                ->active()
-                ->find($id);
+        $branchId = $request->header('branch-id') ?? $request->branch_id;
+        
+        $banner = Banner::active()
+            ->with(['product', 'category', 'products', 'branches'])
+            ->find($id);
 
-            if (!$banner) {
-                return response()->json([
-                    'errors' => [
-                        ['code' => 'banner', 'message' => 'Banner not found']
-                    ]
-                ], 404);
-            }
-
-            $formattedBanner = $this->formatBannerData($banner);
-
-            return response()->json($formattedBanner, 200);
-        } catch (\Exception $e) {
+        if (!$banner) {
             return response()->json([
-                'errors' => [
-                    ['code' => 'banner', 'message' => 'Failed to fetch banner details']
-                ]
-            ], 500);
+                'success' => false,
+                'message' => 'Banner not found'
+            ], 404);
         }
-    }
 
-    /**
-     * Format banner data based on banner type
-     */
-    private function formatBannerData(Banner $banner): array
-    {
+        // Check if banner is available for this branch
+        if ($branchId && !$banner->isAvailableForBranch($branchId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Banner not available for this branch'
+            ], 403);
+        }
+
+        // Check if offer is active
+        if (!$banner->isOfferActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Offer has expired or not yet started'
+            ], 410);
+        }
+
         $data = [
             'id' => $banner->id,
             'title' => $banner->title,
-            'image' => $banner->image_full_path,
+            'image' => $banner->imageFullPath,
             'banner_type' => $banner->banner_type,
-            'discount_type' => $banner->discount_type,
-            'start_date' => $banner->start_date?->format('Y-m-d'),
-            'end_date' => $banner->end_date?->format('Y-m-d'),
-            'is_offer_active' => $banner->isOfferActive(),
-            'created_at' => $banner->created_at?->format('Y-m-d H:i:s'),
+            'is_global' => $banner->is_global,
+            'branches' => $banner->is_global ? [] : $banner->branches->map(function($branch) {
+                return [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'address' => $branch->address,
+                ];
+            }),
+            'product' => $banner->banner_type === 'single_product' && $banner->product ? [
+                'id' => $banner->product->id,
+                'name' => $banner->product->name,
+                'description' => $banner->product->description,
+                'image' => $banner->product->imageFullPath ?? [],
+                'price' => (float) $banner->product->price,
+                'discount' => (float) $banner->product->discount,
+                'rating' => (float) $banner->product->rating,
+            ] : null,
+            'category' => $banner->banner_type === 'category' && $banner->category ? [
+                'id' => $banner->category->id,
+                'name' => $banner->category->name,
+                'image' => $banner->category->imageFullPath,
+            ] : null,
+            'pricing' => $banner->banner_type !== 'category' ? [
+                'original_price' => (float) $banner->calculateOriginalPrice(),
+                'final_price' => (float) $banner->calculateFinalPrice(),
+                'discount_amount' => (float) $banner->getDiscountAmount(),
+                'discount_percentage' => (float) $banner->getDiscountPercentage(),
+                'discount_type' => $banner->discount_type,
+                'savings' => (float) $banner->getDiscountAmount(),
+            ] : null,
+            'dates' => [
+                'start_date' => $banner->start_date ? $banner->start_date->format('Y-m-d H:i:s') : null,
+                'end_date' => $banner->end_date ? $banner->end_date->format('Y-m-d H:i:s') : null,
+                'is_active' => $banner->isOfferActive(),
+            ],
         ];
 
-        // Calculate pricing based on banner type
-        $originalPrice = $banner->calculateOriginalPrice();
-        $finalPrice = $banner->calculateFinalPrice();
-        
-        $data['original_price'] = $originalPrice;
-        $data['final_price'] = $finalPrice;
-        $data['discount_amount'] = $banner->getDiscountAmount();
-        $data['discount_percentage'] = $banner->getDiscountPercentage();
-
-        // Handle different banner types
-        switch ($banner->banner_type) {
-            case 'single_product':
-                $data['product'] = $banner->product 
-                    ? Helpers::product_data_formatting($banner->product) 
-                    : null;
-                break;
-
-            case 'multiple_products':
-                $products = $banner->products->map(function ($product) use ($banner, $originalPrice) {
-                    $formattedProduct = Helpers::product_data_formatting($product);
-                    
-                    // Calculate proportional discount for each product
-                    if ($originalPrice > 0 && $banner->getDiscountAmount() > 0) {
-                        $productProportion = $product->price / $originalPrice;
-                        $productDiscount = $banner->getDiscountAmount() * $productProportion;
-                        
-                        $formattedProduct['discount_amount'] = round($productDiscount, 2);
-                        $formattedProduct['final_price'] = round($product->price - $productDiscount, 2);
-                        $formattedProduct['discount_percentage'] = round(($productDiscount / $product->price) * 100, 2);
-                    } else {
-                        $formattedProduct['discount_amount'] = 0;
-                        $formattedProduct['final_price'] = $product->price;
-                        $formattedProduct['discount_percentage'] = 0;
-                    }
-                    
-                    return $formattedProduct;
-                });
-                
-                $data['products'] = $products;
-                $data['products_count'] = $products->count();
-                break;
-
-            case 'category':
-                $data['category'] = $banner->category ? [
-                    'id' => $banner->category->id,
-                    'name' => $banner->category->name,
-                    'image' => $banner->category->image_full_url ?? null,
-                    'parent_id' => $banner->category->parent_id,
-                ] : null;
-                break;
-        }
-
-        return $data;
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
     }
 
     /**
-     * Get products from a banner
+     * Get products for a banner (for multiple products banner type)
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
      */
-    public function getBannerProducts(Request $request, int $bannerId): JsonResponse
+    public function getBannerProducts(Request $request, $id): JsonResponse
     {
-        try {
-            $banner = $this->banner
-                ->with(['products.rating', 'products.branch_product', 'category'])
-                ->active()
-                ->find($bannerId);
+        $branchId = $request->header('branch-id') ?? $request->branch_id;
+        
+        $banner = Banner::active()
+            ->with('products')
+            ->find($id);
 
-            if (!$banner) {
-                return response()->json([
-                    'errors' => [
-                        ['code' => 'banner', 'message' => 'Banner not found']
-                    ]
-                ], 404);
-            }
-
-            $products = collect();
-            $originalPrice = $banner->calculateOriginalPrice();
-
-            if ($banner->banner_type === 'multiple_products') {
-                $products = $banner->products->map(function ($product) use ($banner, $originalPrice) {
-                    $formattedProduct = Helpers::product_data_formatting($product);
-                    
-                    // Calculate proportional discount
-                    if ($originalPrice > 0 && $banner->getDiscountAmount() > 0) {
-                        $productProportion = $product->price / $originalPrice;
-                        $productDiscount = $banner->getDiscountAmount() * $productProportion;
-                        
-                        $formattedProduct['discount_amount'] = round($productDiscount, 2);
-                        $formattedProduct['final_price'] = round($product->price - $productDiscount, 2);
-                        $formattedProduct['discount_percentage'] = round(($productDiscount / $product->price) * 100, 2);
-                    }
-                    
-                    return $formattedProduct;
-                });
-            } elseif ($banner->banner_type === 'category' && $banner->category) {
-                $categoryProducts = $banner->category->products()
-                    ->active()
-                    ->when($request->has('limit'), function($query) use ($request) {
-                        return $query->limit($request->limit);
-                    })
-                    ->get();
-                
-                $products = $categoryProducts->map(function ($product) use ($banner) {
-                    $formattedProduct = Helpers::product_data_formatting($product);
-                    
-                    // Apply banner discount to category products
-                    if ($banner->total_discount_percentage) {
-                        $discount = ($product->price * $banner->total_discount_percentage) / 100;
-                        $formattedProduct['discount_percentage'] = $banner->total_discount_percentage;
-                        $formattedProduct['discount_amount'] = round($discount, 2);
-                        $formattedProduct['final_price'] = round($product->price - $discount, 2);
-                    }
-                    
-                    return $formattedProduct;
-                });
-            }
-
+        if (!$banner) {
             return response()->json([
-                'banner_id' => $banner->id,
-                'banner_title' => $banner->title,
-                'banner_type' => $banner->banner_type,
-                'discount_percentage' => $banner->getDiscountPercentage(),
+                'success' => false,
+                'message' => 'Banner not found'
+            ], 404);
+        }
+
+        // Check if banner is available for this branch
+        if ($branchId && !$banner->isAvailableForBranch($branchId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Banner not available for this branch'
+            ], 403);
+        }
+
+        if ($banner->banner_type !== 'multiple_products') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This banner is not a multiple products offer'
+            ], 400);
+        }
+
+        $products = $banner->products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'image' => $product->imageFullPath ?? [],
+                'price' => (float) $product->price,
+                'discount' => (float) $product->discount,
+                'rating' => (float) $product->rating,
+                'available_time_starts' => $product->available_time_starts,
+                'available_time_ends' => $product->available_time_ends,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'banner' => [
+                    'id' => $banner->id,
+                    'title' => $banner->title,
+                    'pricing' => [
+                        'original_price' => (float) $banner->calculateOriginalPrice(),
+                        'final_price' => (float) $banner->calculateFinalPrice(),
+                        'discount_amount' => (float) $banner->getDiscountAmount(),
+                        'discount_percentage' => (float) $banner->getDiscountPercentage(),
+                    ],
+                ],
                 'products' => $products,
                 'total_products' => $products->count(),
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'errors' => [
-                    ['code' => 'banner', 'message' => 'Failed to fetch banner products']
-                ]
-            ], 500);
-        }
+            ]
+        ]);
     }
 
     /**
-     * Get active banner offers
+     * Get active offers (banners with valid date ranges)
+     * 
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function getActiveOffers(): JsonResponse
+    public function getActiveOffers(Request $request): JsonResponse
     {
-        try {
-            $banners = $this->banner
-                ->with([
-                    'product.rating',
-                    'product.branch_product',
-                    'products.rating',
-                    'products.branch_product',
-                    'category'
-                ])
-                ->active()
-                ->whereNotNull('start_date')
-                ->whereNotNull('end_date')
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->orderBy('created_at', 'desc')
-                ->get();
+        $branchId = $request->header('branch-id') ?? $request->branch_id;
+        
+        $banners = Banner::active()
+            ->with(['product', 'products', 'category', 'branches'])
+            ->when($branchId, function ($query) use ($branchId) {
+                $query->where(function($q) use ($branchId) {
+                    $q->where('is_global', true)
+                      ->orWhereHas('branches', function($query) use ($branchId) {
+                          $query->where('branch_id', $branchId);
+                      });
+                });
+            }, function ($query) {
+                $query->where('is_global', true);
+            })
+            ->whereNotNull('start_date')
+            ->whereNotNull('end_date')
+            ->get();
 
-            $formattedBanners = $banners->map(function ($banner) {
-                return $this->formatBannerData($banner);
-            });
+        // Filter for active date ranges only
+        $activeOffers = $banners->filter(function ($banner) {
+            return $banner->isOfferActive();
+        })->map(function ($banner) {
+            return [
+                'id' => $banner->id,
+                'title' => $banner->title,
+                'image' => $banner->imageFullPath,
+                'banner_type' => $banner->banner_type,
+                'is_global' => $banner->is_global,
+                'pricing' => $banner->banner_type !== 'category' ? [
+                    'discount_percentage' => (float) $banner->getDiscountPercentage(),
+                    'savings' => (float) $banner->getDiscountAmount(),
+                ] : null,
+                'valid_until' => $banner->end_date ? $banner->end_date->format('Y-m-d H:i:s') : null,
+            ];
+        })->values();
 
-            return response()->json($formattedBanners, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'errors' => [
-                    ['code' => 'banner', 'message' => 'Failed to fetch active offers']
-                ]
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $activeOffers,
+            'total' => $activeOffers->count()
+        ]);
     }
 }

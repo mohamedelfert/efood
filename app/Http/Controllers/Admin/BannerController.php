@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Model\Banner;
+use App\Model\Branch;
 use App\Model\Category;
 use App\Model\Product;
 use Brian2694\Toastr\Facades\Toastr;
@@ -18,7 +19,8 @@ class BannerController extends Controller
     public function __construct(
         private Banner   $banner,
         private Product  $product,
-        private Category $category
+        private Category $category,
+        private Branch   $branch
     )
     {}
 
@@ -29,8 +31,9 @@ class BannerController extends Controller
     {
         $products = $this->product->orderBy('name')->get();
         $categories = $this->category->where(['parent_id' => 0])->orderBy('name')->get();
+        $branches = $this->branch->active()->orderBy('name')->get();
 
-        return view('admin-views.banner.index', compact('products', 'categories'));
+        return view('admin-views.banner.index', compact('products', 'categories', 'branches'));
     }
 
     /**
@@ -40,10 +43,11 @@ class BannerController extends Controller
     function list(Request $request): Renderable
     {
         $search = $request->search;
-        $queryParam = ['search' => $search];
+        $branchFilter = $request->branch_id;
+        $queryParam = ['search' => $search, 'branch_id' => $branchFilter];
 
         $banners = $this->banner
-            ->with(['products', 'category', 'product'])
+            ->with(['products', 'category', 'product', 'branches'])
             ->when($search, function ($query) use ($search) {
                 $keywords = explode(' ', $search);
                 foreach ($keywords as $keyword) {
@@ -51,29 +55,25 @@ class BannerController extends Controller
                         ->orwhere('id', 'LIKE', "%$keyword%");
                 }
             })
+            ->when($branchFilter, function ($query) use ($branchFilter) {
+                if ($branchFilter === 'global') {
+                    $query->where('is_global', true);
+                } else {
+                    $query->where(function($q) use ($branchFilter) {
+                        $q->where('is_global', true)
+                          ->orWhereHas('branches', function($query) use ($branchFilter) {
+                              $query->where('branch_id', $branchFilter);
+                          });
+                    });
+                }
+            })
             ->latest()
             ->paginate(Helpers::getPagination())
             ->appends($queryParam);
 
-        return view('admin-views.banner.list', compact('banners', 'search'));
-    }
+        $branches = $this->branch->active()->orderBy('name')->get();
 
-    /**
-     * Calculate total price for selected products (AJAX)
-     */
-    public function calculateTotalPrice(Request $request): JsonResponse
-    {
-        $productIds = $request->product_ids ?? [];
-        $total = 0;
-
-        if (!empty($productIds)) {
-            $total = $this->product->whereIn('id', $productIds)->sum('price');
-        }
-
-        return response()->json([
-            'success' => true,
-            'total_price' => round($total, 2)
-        ]);
+        return view('admin-views.banner.list', compact('banners', 'search', 'branches', 'branchFilter'));
     }
 
     /**
@@ -93,6 +93,9 @@ class BannerController extends Controller
             'total_offer_price' => 'nullable|numeric|min:0',
             'total_discount_amount' => 'nullable|numeric|min:0',
             'total_discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'is_global' => 'required|boolean',
+            'branch_ids' => 'required_if:is_global,0|array',
+            'branch_ids.*' => 'exists:branches,id',
         ];
 
         // Conditional validation based on banner type
@@ -113,6 +116,7 @@ class BannerController extends Controller
             'product_ids.required' => translate('messages.select_at_least_one_product'),
             'category_id.required' => translate('messages.select_category'),
             'end_date.after_or_equal' => translate('messages.end_date_after_start'),
+            'branch_ids.required_if' => translate('messages.select_at_least_one_branch'),
         ];
 
         $request->validate($rules, $messages);
@@ -126,6 +130,7 @@ class BannerController extends Controller
         $banner->total_offer_price = $request->total_offer_price;
         $banner->total_discount_amount = $request->total_discount_amount;
         $banner->total_discount_percentage = $request->total_discount_percentage;
+        $banner->is_global = $request->is_global;
 
         // Handle single product
         if ($request->banner_type == 'single_product') {
@@ -159,6 +164,17 @@ class BannerController extends Controller
             }
         }
 
+        // Attach branches if not global
+        if (!$request->is_global && !empty($request->branch_ids)) {
+            $branchIds = array_filter($request->branch_ids, function($id) {
+                return !empty($id);
+            });
+            
+            if (!empty($branchIds)) {
+                $banner->branches()->attach($branchIds);
+            }
+        }
+
         Toastr::success(translate('messages.banner_added_successfully'));
         return redirect('admin/banner/list');
     }
@@ -170,24 +186,11 @@ class BannerController extends Controller
     public function edit($id): Renderable
     {
         $products = $this->product->orderBy('name')->get();
-        $banner = $this->banner->with('products')->find($id);
+        $banner = $this->banner->with(['products', 'branches'])->find($id);
         $categories = $this->category->where(['parent_id' => 0])->orderBy('name')->get();
+        $branches = $this->branch->active()->orderBy('name')->get();
 
-        return view('admin-views.banner.edit', compact('banner', 'products', 'categories'));
-    }
-
-    /**
-     * @param Request $request
-     * @return RedirectResponse
-     */
-    public function status(Request $request): RedirectResponse
-    {
-        $banner = $this->banner->find($request->id);
-        $banner->status = $request->status;
-        $banner->save();
-
-        Toastr::success(translate('messages.banner_status_updated'));
-        return back();
+        return view('admin-views.banner.edit', compact('banner', 'products', 'categories', 'branches'));
     }
 
     /**
@@ -207,6 +210,9 @@ class BannerController extends Controller
             'total_offer_price' => 'nullable|numeric|min:0',
             'total_discount_amount' => 'nullable|numeric|min:0',
             'total_discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'is_global' => 'required|boolean',
+            'branch_ids' => 'required_if:is_global,0|array',
+            'branch_ids.*' => 'exists:branches,id',
         ];
 
         // Conditional validation
@@ -230,6 +236,7 @@ class BannerController extends Controller
         $banner->total_offer_price = $request->total_offer_price;
         $banner->total_discount_amount = $request->total_discount_amount;
         $banner->total_discount_percentage = $request->total_discount_percentage;
+        $banner->is_global = $request->is_global;
 
         // Reset relationships
         $banner->product_id = null;
@@ -268,6 +275,18 @@ class BannerController extends Controller
         
         $banner->save();
 
+        // Update branches
+        $banner->branches()->detach();
+        if (!$request->is_global && !empty($request->branch_ids)) {
+            $branchIds = array_filter($request->branch_ids, function($id) {
+                return !empty($id);
+            });
+            
+            if (!empty($branchIds)) {
+                $banner->branches()->attach($branchIds);
+            }
+        }
+
         Toastr::success(translate('messages.banner_updated_successfully'));
         return redirect('admin/banner/list');
     }
@@ -280,6 +299,7 @@ class BannerController extends Controller
     {
         $banner = $this->banner->find($request->id);
         $banner->products()->detach();
+        $banner->branches()->detach();
         Helpers::delete('banner/' . $banner['image']);
         $banner->delete();
 

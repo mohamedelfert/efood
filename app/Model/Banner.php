@@ -17,6 +17,8 @@ class Banner extends Model
         'total_discount_percentage' => 'float',
         'start_date' => 'date',
         'end_date' => 'date',
+        'is_global' => 'boolean',
+        'status' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
@@ -33,6 +35,7 @@ class Banner extends Model
         'discount_type',
         'start_date',
         'end_date',
+        'is_global',
         'status'
     ];
 
@@ -52,12 +55,70 @@ class Banner extends Model
     }
 
     /**
-     * Multiple products relationship (removed withPivot for pricing)
+     * Multiple products relationship
      */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'banner_products', 'banner_id', 'product_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Branches relationship - banners can belong to multiple branches
+     */
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'banner_branches', 'banner_id', 'branch_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Scope to filter banners by branch
+     */
+    public function scopeForBranch($query, $branchId)
+    {
+        return $query->where(function($q) use ($branchId) {
+            $q->where('is_global', true)
+              ->orWhereHas('branches', function($query) use ($branchId) {
+                  $query->where('branch_id', $branchId);
+              });
+        });
+    }
+
+    /**
+     * Scope to get global banners only
+     */
+    public function scopeGlobal($query)
+    {
+        return $query->where('is_global', true);
+    }
+
+    /**
+     * Scope to get branch-specific banners only
+     */
+    public function scopeBranchSpecific($query)
+    {
+        return $query->where('is_global', false);
+    }
+
+    /**
+     * Check if banner is available for a specific branch
+     */
+    public function isAvailableForBranch($branchId): bool
+    {
+        if ($this->is_global) {
+            return true;
+        }
+
+        return $this->branches()->where('branch_id', $branchId)->exists();
+    }
+
+    /**
+     * Get all branch IDs this banner is assigned to
+     */
+    public function getBranchIdsAttribute(): array
+    {
+        return $this->branches()->pluck('branch_id')->toArray();
     }
 
     public function getImageFullPathAttribute(): string
@@ -68,6 +129,7 @@ class Banner extends Model
         if (!is_null($image) && Storage::disk('public')->exists('banner/' . $image)) {
             $path = asset('storage/app/public/banner/' . $image);
         }
+
         return $path;
     }
 
@@ -77,7 +139,7 @@ class Banner extends Model
     public function isOfferActive(): bool
     {
         if (!$this->start_date || !$this->end_date) {
-            return true; // No date restriction
+            return true;
         }
 
         $now = now();
@@ -107,17 +169,14 @@ class Banner extends Model
     {
         $originalPrice = $this->calculateOriginalPrice();
 
-        // Use total offer price if set
         if ($this->total_offer_price) {
             return $this->total_offer_price;
         }
 
-        // Calculate from discount amount
         if ($this->total_discount_amount) {
             return max(0, $originalPrice - $this->total_discount_amount);
         }
 
-        // Calculate from discount percentage
         if ($this->total_discount_percentage) {
             return $originalPrice - ($originalPrice * ($this->total_discount_percentage / 100));
         }
@@ -132,7 +191,6 @@ class Banner extends Model
     {
         $originalPrice = $this->calculateOriginalPrice();
         $finalPrice = $this->calculateFinalPrice();
-        
         return max(0, $originalPrice - $finalPrice);
     }
 
@@ -142,6 +200,7 @@ class Banner extends Model
     public function getDiscountPercentage(): float
     {
         $originalPrice = $this->calculateOriginalPrice();
+
         if ($originalPrice <= 0) {
             return 0;
         }
