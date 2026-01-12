@@ -432,6 +432,7 @@
   'banner_status_updated' => 'تم تحديث حالة العرض!',
   'banner_removed' => 'تم حذف العرض!',
   'want_to_delete_banner' => 'هل تريد حذف هذا العرض؟',
+  'Global' => 'عام',
   
   // Form Labels
   'banner_setup' => 'إعداد العرض',
