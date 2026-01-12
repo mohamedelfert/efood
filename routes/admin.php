@@ -383,10 +383,16 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                     Route::get('app-setting', [BusinessSettingsController::class, 'appSettingIndex'])->name('app_setting');
                     Route::post('app-setting', [BusinessSettingsController::class, 'appSettingUpdate']);
 
+                    // Database Clean Routes
                     Route::get('db-index', [DatabaseSettingsController::class, 'databaseIndex'])->name('db-index');
                     Route::post('db-clean', [DatabaseSettingsController::class, 'cleanDatabase'])->name('clean-db');
+                    
+                    // Database Backup Routes
                     Route::get('db-backup', [DatabaseSettingsController::class, 'backupIndex'])->name('db-backup-index');
-                    Route::post('db-backup', [DatabaseSettingsController::class, 'backupDatabase'])->name('db-backup');
+                    Route::post('db-backup-create', [DatabaseSettingsController::class, 'backupDatabase'])->name('db-backup-create');
+                    Route::get('db-backup/download/{filename}', [DatabaseSettingsController::class, 'downloadBackup'])->name('db-backup-download');
+                    Route::delete('db-backup/delete/{filename}', [DatabaseSettingsController::class, 'deleteBackup'])->name('db-backup-delete');
+                    Route::post('db-backup/restore', [DatabaseSettingsController::class, 'restoreBackup'])->name('db-backup-restore');
 
                     Route::get('firebase-message-config', [BusinessSettingsController::class, 'firebaseMessageConfigIndex'])->name('firebase_message_config_index');
 

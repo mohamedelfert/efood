@@ -1727,6 +1727,113 @@
   'Branch Reviews' => 'تقييمات الفرع',
   'Service Reviews' => 'تقييمات الخدمه',
 
+  'database_backup' => 'نسخ احتياطي لقاعدة البيانات',
+  'backup_actions' => 'إجراءات النسخ الاحتياطي',
+  'available_backups' => 'النسخ الاحتياطية المتاحة',
+  'important_information' => 'معلومات هامة',
+
+  // Buttons
+  'create_new_backup' => 'إنشاء نسخة احتياطية جديدة',
+  'download' => 'تحميل',
+  'restore' => 'استعادة',
+  'delete' => 'حذف',
+
+  // Table Headers
+  'file_name' => 'اسم الملف',
+  'size' => 'الحجم',
+  'created_at' => 'تاريخ الإنشاء',
+  'actions' => 'الإجراءات',
+
+  // Messages
+  'backup_description' => 'اضغط لإنشاء نسخة احتياطية يدوية لقاعدة البيانات. يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام.',
+  'no_backups_found' => 'لم يتم العثور على نسخ احتياطية',
+  'create_first_backup' => 'قم بإنشاء أول نسخة احتياطية للبدء',
+
+  // Information Messages
+  'storage_location' => 'يتم تخزين النسخ الاحتياطية في: storage/app/backups/',
+  'automatic_schedule' => 'يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام في الساعة 2:00 صباحاً',
+  'retention_policy' => 'يتم الاحتفاظ بآخر 10 نسخ احتياطية فقط تلقائياً',
+  'external_storage_warning' => 'قم دائماً بتحميل النسخ الاحتياطية المهمة إلى مساحة تخزين خارجية',
+  'restore_warning' => 'استعادة النسخة الاحتياطية ستستبدل قاعدة البيانات الحالية',
+
+  // Confirmation Messages
+  'are_you_sure' => 'هل أنت متأكد؟',
+  'delete_confirmation' => 'هل تريد حذف هذه النسخة الاحتياطية؟',
+  'yes_delete' => 'نعم، احذفها!',
+  'cancel' => 'إلغاء',
+  'restore_confirmation' => 'سيؤدي هذا إلى استبدال قاعدة البيانات الحالية! تأكد من وجود نسخة احتياطية حديثة.',
+  'yes_restore' => 'نعم، استعدها!',
+
+  // Success/Error Messages
+  'backup_created' => 'تم إنشاء النسخة الاحتياطية بنجاح!',
+  'backup_failed' => 'فشل النسخ الاحتياطي: ',
+  'file_not_found' => 'لم يتم العثور على ملف النسخ الاحتياطي!',
+  'backup_deleted' => 'تم حذف النسخة الاحتياطية بنجاح!',
+  'delete_failed' => 'فشل حذف النسخة الاحتياطية: ',
+  'restore_success' => 'تم استعادة قاعدة البيانات بنجاح!',
+  'restore_failed' => 'فشلت الاستعادة: ',
+
+  // Page & Section Titles
+  'Database Backup' => 'النسخ الاحتياطي لقاعدة البيانات',
+  'Backup Actions' => 'إجراءات النسخ الاحتياطي',
+  'Available Backups' => 'النسخ الاحتياطية المتاحة',
+  'Important Information' => 'معلومات هامة',
+  
+  // Action Buttons
+  'Create New Backup' => 'إنشاء نسخة احتياطية جديدة',
+  'Download' => 'تحميل',
+  'Restore' => 'استعادة',
+  'Delete' => 'حذف',
+  'Cancel' => 'إلغاء',
+  
+  // Table Headers
+  'File Name' => 'اسم الملف',
+  'Size' => 'الحجم',
+  'Created At' => 'تاريخ الإنشاء',
+  'Actions' => 'الإجراءات',
+  
+  // Descriptions & Instructions
+  'Click to create a manual backup of your database. Automatic backups run every 7 days.' => 
+      'اضغط لإنشاء نسخة احتياطية يدوية لقاعدة البيانات. يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام.',
+  
+  // Empty State
+  'No Backups Found' => 'لم يتم العثور على نسخ احتياطية',
+  'Create your first backup to get started' => 'قم بإنشاء أول نسخة احتياطية للبدء',
+  
+  // Information Messages
+  'Backups are stored in: storage/app/backups/' => 
+      'يتم تخزين النسخ الاحتياطية في: storage/app/backups/',
+  'Automatic backups run every 7 days at 2:00 AM' => 
+      'يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام في الساعة 2:00 صباحاً',
+  'Only the last 10 backups are kept automatically' => 
+      'يتم الاحتفاظ بآخر 10 نسخ احتياطية فقط تلقائياً',
+  'Always download important backups to external storage' => 
+      'قم دائماً بتحميل النسخ الاحتياطية المهمة إلى مساحة تخزين خارجية',
+  'Restoring a backup will overwrite your current database' => 
+      'استعادة النسخة الاحتياطية ستستبدل قاعدة البيانات الحالية',
+  
+  // Confirmation Dialogs
+  'Are you sure?' => 'هل أنت متأكد؟',
+  'You want to delete this backup?' => 'هل تريد حذف هذه النسخة الاحتياطية؟',
+  'Yes, delete it!' => 'نعم، احذفها!',
+  'This will overwrite your current database! Make sure you have a recent backup.' => 
+      'سيؤدي هذا إلى استبدال قاعدة البيانات الحالية! تأكد من وجود نسخة احتياطية حديثة.',
+  'Yes, restore it!' => 'نعم، استعدها!',
+  
+  // Success Messages
+  'Database backup created successfully!' => 'تم إنشاء النسخة الاحتياطية بنجاح!',
+  'Backup deleted successfully!' => 'تم حذف النسخة الاحتياطية بنجاح!',
+  'Database restored successfully!' => 'تم استعادة قاعدة البيانات بنجاح!',
+  'Updated successfully!' => 'تم التحديث بنجاح!',
+  
+  // Error Messages
+  'Backup failed: ' => 'فشل النسخ الاحتياطي: ',
+  'Backup file not found!' => 'لم يتم العثور على ملف النسخ الاحتياطي!',
+  'Failed to delete backup: ' => 'فشل حذف النسخة الاحتياطية: ',
+  'Restore failed: ' => 'فشلت الاستعادة: ',
+  'Failed to update!' => 'فشل التحديث!',
+  'No Table Updated' => 'لم يتم تحديث أي جدول',
+
   'Phone' => 'هاتف',
   'Input Field Name' => 'اسم حقل الإدخال',
   'Input Field Placeholder/Hints' => 'تلميحات/نص افتراضي لحقل الإدخال',
