@@ -175,7 +175,7 @@ class BannerController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.banner_added_successfully'));
+        Toastr::success(translate('banner_added_successfully'));
         return redirect('admin/banner/list');
     }
 
@@ -287,7 +287,7 @@ class BannerController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.banner_updated_successfully'));
+        Toastr::success(translate('banner_updated_successfully'));
         return redirect('admin/banner/list');
     }
 
@@ -303,7 +303,7 @@ class BannerController extends Controller
         Helpers::delete('banner/' . $banner['image']);
         $banner->delete();
 
-        Toastr::success(translate('messages.banner_removed'));
+        Toastr::success(translate('banner_removed'));
         return back();
     }
 }
