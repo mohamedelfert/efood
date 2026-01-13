@@ -451,6 +451,210 @@
   'ratio_2_1' => 'النسبة 2:1',
   'original_price' => 'السعر الأصلي',
   'new_banner' => 'عرض جديد',
+
+  // Report Translations
+'branch_review_report' => 'تقرير تقييمات الفرع',
+'service_review_report' => 'تقرير تقييمات الخدمة',
+'branch' => 'الفرع',
+'all_branches' => 'جميع الفروع',
+'date_range' => 'الفترة الزمنية',
+'generated' => 'تم الإنشاء',
+'total_reviews' => 'إجمالي التقييمات',
+'average_rating' => 'متوسط التقييم',
+'5_star_reviews' => 'تقييمات 5 نجوم',
+'1_star_reviews' => 'تقييمات نجمة واحدة',
+
+// Report Translations
+'branch_review_report' => 'تقرير تقييمات الفرع',
+'service_review_report' => 'تقرير تقييمات الخدمة',
+'sales_report' => 'تقرير المبيعات',
+'product_report' => 'تقرير المنتجات',
+'order_report' => 'تقرير الطلبات',
+
+// Common Fields
+'branch' => 'الفرع',
+'all_branches' => 'جميع الفروع',
+'date_range' => 'الفترة الزمنية',
+'generated' => 'تم الإنشاء',
+'generated_by' => 'تم الإنشاء بواسطة',
+'serial' => 'م',
+'date' => 'التاريخ',
+
+// Statistics
+'total_reviews' => 'إجمالي التقييمات',
+'average_rating' => 'متوسط التقييم',
+'5_star_reviews' => 'تقييمات 5 نجوم',
+'1_star_reviews' => 'تقييمات نجمة واحدة',
+'total_orders' => 'إجمالي الطلبات',
+'total_items' => 'إجمالي الأصناف',
+'total_items_sold' => 'إجمالي الأصناف المباعة',
+'total_amount' => 'إجمالي المبلغ',
+'total_revenue' => 'إجمالي الإيرادات',
+'delivered' => 'تم التوصيل',
+'canceled' => 'ملغي',
+
+// Order Fields
+'order_number' => 'رقم الطلب',
+'product_name' => 'اسم المنتج',
+'quantity' => 'الكمية',
+'amount' => 'المبلغ',
+'customer' => 'العميل',
+'payment_method' => 'طريقة الدفع',
+'status' => 'الحالة',
+'main_branch' => 'الفرع الرئيسي',
+
+// Review Fields
+'rating' => 'التقييم',
+'comment' => 'التعليق',
+'no_comment' => 'بدون تعليق',
+
+// Status
+'pending' => 'قيد الانتظار',
+'confirmed' => 'مؤكد',
+'processing' => 'قيد المعالجة',
+'out for delivery' => 'خارج للتوصيل',
+'returned' => 'مرتجع',
+'failed' => 'فاشل',
+
+// Payment Methods
+'cash on delivery' => 'الدفع عند الاستلام',
+'digital payment' => 'الدفع الإلكتروني',
+
+// Messages
+'not_available' => 'غير متوفر',
+'invalid_customer' => 'عميل غير صالح',
+'deleted' => 'محذوف',
+'no_data_available' => 'لا توجد بيانات متاحة',
+'no_reviews_found' => 'لم يتم العثور على تقييمات',
+'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
+'total' => 'الإجمالي',
+
+// Report Translations
+'branch_review_report' => 'تقرير تقييمات الفرع',
+'service_review_report' => 'تقرير تقييمات الخدمة',
+'sales_report' => 'تقرير المبيعات',
+'product_report' => 'تقرير المنتجات',
+'order_report' => 'تقرير الطلبات',
+
+// Common Fields
+'branch' => 'الفرع',
+'all_branches' => 'جميع الفروع',
+'date_range' => 'الفترة الزمنية',
+'generated' => 'تم الإنشاء',
+'generated_by' => 'تم الإنشاء بواسطة',
+'serial' => 'م',
+'date' => 'التاريخ',
+
+// Statistics
+'total_reviews' => 'إجمالي التقييمات',
+'average_rating' => 'متوسط التقييم',
+'5_star_reviews' => 'تقييمات 5 نجوم',
+'1_star_reviews' => 'تقييمات نجمة واحدة',
+'total_orders' => 'إجمالي الطلبات',
+'total_items' => 'إجمالي الأصناف',
+'total_items_sold' => 'إجمالي الأصناف المباعة',
+'total_amount' => 'إجمالي المبلغ',
+'total_revenue' => 'إجمالي الإيرادات',
+'delivered' => 'تم التوصيل',
+'canceled' => 'ملغي',
+
+// Order Fields
+'order_number' => 'رقم الطلب',
+'product_name' => 'اسم المنتج',
+'quantity' => 'الكمية',
+'amount' => 'المبلغ',
+'customer' => 'العميل',
+'payment_method' => 'طريقة الدفع',
+'status' => 'الحالة',
+'main_branch' => 'الفرع الرئيسي',
+
+// Review Fields
+'rating' => 'التقييم',
+'comment' => 'التعليق',
+'no_comment' => 'بدون تعليق',
+
+// Status
+'pending' => 'قيد الانتظار',
+'confirmed' => 'مؤكد',
+'processing' => 'قيد المعالجة',
+'out for delivery' => 'خارج للتوصيل',
+'returned' => 'مرتجع',
+'failed' => 'فاشل',
+
+// Payment Methods
+'cash on delivery' => 'الدفع عند الاستلام',
+'digital payment' => 'الدفع الإلكتروني',
+
+// Messages
+'not_available' => 'غير متوفر',
+'invalid_customer' => 'عميل غير صالح',
+'deleted' => 'محذوف',
+'no_data_available' => 'لا توجد بيانات متاحة',
+'no_reviews_found' => 'لم يتم العثور على تقييمات',
+'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
+'total' => 'الإجمالي',
+
+// DataTables Translations
+'showing' => 'إظهار',
+'to' => 'إلى',
+'of' => 'من أصل',
+'entries' => 'مدخلات',
+'show' => 'عرض',
+'search' => 'بحث',
+'first' => 'الأول',
+'last' => 'الأخير',
+'next' => 'التالي',
+'previous' => 'السابق',
+'loading' => 'جارٍ التحميل',
+'processing' => 'جارٍ المعالجة',
+'no_matching_records' => 'لم يُعثر على أية سجلات مطابقة',
+'filtered_from' => 'منقاة من مجموع',
+'total_entries' => 'مدخل إجمالي',
+
+// PDF Export
+'download_pdf' => 'تحميل PDF',
+'product_report' => 'تقرير المنتجات',
+'sales_report' => 'تقرير المبيعات',
+
+// Table Headers
+'serial' => 'م',
+'customer' => 'العميل',
+'order_number' => 'رقم الطلب',
+'rating' => 'التقييم',
+'comment' => 'التعليق',
+'date' => 'التاريخ',
+'service_type' => 'نوع الخدمة',
+'review_id' => 'رقم التقييم',
+
+// Service Types
+'all_services' => 'جميع الخدمات',
+'delivery' => 'التوصيل',
+'packaging' => 'التغليف',
+'customer_service' => 'خدمة العملاء',
+'food_quality' => 'جودة الطعام',
+
+// Service Aspects
+'service_aspect_ratings' => 'تقييمات جوانب الخدمة',
+'delivery_speed' => 'سرعة التوصيل',
+'food_temperature' => 'درجة حرارة الطعام',
+'packaging_quality' => 'جودة التغليف',
+
+// Messages
+'no_comment' => 'لا يوجد تعليق',
+'deleted' => 'محذوف',
+'not_available' => 'غير متاح',
+'no_reviews_found' => 'لا توجد تقييمات للمعايير المحددة.',
+'system_generated_report' => 'هذا تقرير تم إنشاؤه بواسطة النظام. تم الإنشاء في',
+
+// Excel Column Headers
+'excel_review_id' => 'رقم التقييم',
+'excel_customer' => 'العميل',
+'excel_branch' => 'الفرع',
+'excel_order_id' => 'رقم الطلب',
+'excel_rating' => 'التقييم',
+'excel_comment' => 'التعليق',
+'excel_date' => 'التاريخ',
+'excel_service_type' => 'نوع الخدمة',
   
   // Table Headers
   'sl' => 'م',

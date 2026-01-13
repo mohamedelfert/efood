@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ translate('branch_review_report') }}</title>
+    <title>{{ translate('sales_report') }}</title>
     <style>
         @page {
             margin: 20px;
@@ -47,7 +47,7 @@
         }
         .stat-box {
             display: table-cell;
-            width: 25%;
+            width: 33.33%;
             border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
@@ -85,9 +85,23 @@
         tr:nth-child(even) {
             background-color: #fafafa;
         }
-        .rating-badge {
-            background-color: #ffc107;
-            color: #000;
+        .total-row {
+            background-color: #e8f5e9 !important;
+            font-weight: bold;
+            border-top: 2px solid #333 !important;
+        }
+        .order-badge {
+            background-color: #2196f3;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            display: inline-block;
+            font-size: 10px;
+        }
+        .quantity-badge {
+            background-color: #4caf50;
+            color: #fff;
             padding: 3px 8px;
             border-radius: 3px;
             font-weight: bold;
@@ -105,86 +119,77 @@
         .text-center {
             text-align: center;
         }
+        .amount-cell {
+            font-weight: bold;
+            color: #1976d2;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>{{ translate('branch_review_report') }}</h1>
-        @if($branch)
-            <p><strong>{{ translate('branch') }}:</strong> {{ $branch->name }}</p>
-        @else
-            <p><strong>{{ translate('branch') }}:</strong> {{ translate('all_branches') }}</p>
-        @endif
-        <p><strong>{{ translate('date_range') }}:</strong> {{ $dateRange }}</p>
+        <h1>{{\App\CentralLogics\Helpers::get_business_settings('restaurant_name')}}</h1>
+        <h1>{{ translate('sales_report') }}</h1>
         <p><strong>{{ translate('generated') }}:</strong> {{ date('d M Y, h:i A') }}</p>
+        <p><strong>{{ translate('generated_by') }}:</strong> {{ auth('admin')->user()->name }}</p>
     </div>
 
-    @if(isset($data['stats']))
+    @php
+        $totalOrders = isset($data) ? count($data) : 0;
+        $totalQty = isset($data) ? array_sum(array_column($data, 'quantity')) : 0;
+        $totalAmount = isset($data) ? array_sum(array_column($data, 'price')) : 0;
+    @endphp
+
     <div class="stats-container">
         <div class="stats-row">
             <div class="stat-box">
-                <h3>{{ $data['stats']['total'] }}</h3>
-                <p>{{ translate('total_reviews') }}</p>
+                <h3>{{ $totalOrders }}</h3>
+                <p>{{ translate('total_orders') }}</p>
             </div>
             <div class="stat-box">
-                <h3>{{ number_format($data['stats']['average_rating'], 1) }}</h3>
-                <p>{{ translate('average_rating') }}</p>
+                <h3>{{ $totalQty }}</h3>
+                <p>{{ translate('total_items') }}</p>
             </div>
             <div class="stat-box">
-                <h3>{{ $data['stats']['rating_distribution']['5_star'] }}</h3>
-                <p>{{ translate('5_star_reviews') }}</p>
-            </div>
-            <div class="stat-box">
-                <h3>{{ $data['stats']['rating_distribution']['1_star'] }}</h3>
-                <p>{{ translate('1_star_reviews') }}</p>
+                <h3>{{ \App\CentralLogics\Helpers::set_symbol($totalAmount) }}</h3>
+                <p>{{ translate('total_amount') }}</p>
             </div>
         </div>
     </div>
-    @endif
 
-    @if(isset($data['reviews']) && count($data['reviews']) > 0)
+    @if(isset($data) && count($data) > 0)
     <table>
         <thead>
             <tr>
-                <th style="width: 5%;">{{ translate('serial') }}</th>
-                <th style="width: 15%;">{{ translate('customer') }}</th>
-                <th style="width: 15%;">{{ translate('branch') }}</th>
-                <th style="width: 10%;">{{ translate('order_number') }}</th>
-                <th style="width: 8%;">{{ translate('rating') }}</th>
-                <th style="width: 37%;">{{ translate('comment') }}</th>
-                <th style="width: 10%;">{{ translate('date') }}</th>
+                <th style="width: 8%;">{{ translate('serial') }}</th>
+                <th style="width: 20%;">{{ translate('order_number') }}</th>
+                <th style="width: 37%;">{{ translate('date') }}</th>
+                <th style="width: 15%;" class="text-center">{{ translate('quantity') }}</th>
+                <th style="width: 20%;" class="text-center">{{ translate('amount') }}</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($data['reviews'] as $k => $review)
+            @foreach($data as $key => $row)
             <tr>
-                <td class="text-center">{{ $k + 1 }}</td>
-                <td>
-                    @if($review->customer)
-                        {{ $review->customer->f_name }} {{ $review->customer->l_name }}
-                    @else
-                        {{ translate('deleted') }}
-                    @endif
-                </td>
-                <td>
-                    @if($review->branch)
-                        {{ $review->branch->name }}
-                    @else
-                        {{ translate('not_available') }}
-                    @endif
-                </td>
-                <td class="text-center">#{{ $review->order_id }}</td>
+                <td class="text-center">{{ $key + 1 }}</td>
+                <td><span class="order-badge">#{{ $row['order_id'] }}</span></td>
+                <td>{{ date('d M Y, h:i A', strtotime($row['date'])) }}</td>
                 <td class="text-center">
-                    <span class="rating-badge">{{ number_format($review->rating, 1) }} ★</span>
+                    <span class="quantity-badge">{{ $row['quantity'] }}</span>
                 </td>
-                <td>{{ $review->comment ? Str::limit($review->comment, 100) : translate('no_comment') }}</td>
-                <td class="text-center">{{ $review->created_at->format('d M Y') }}</td>
+                <td class="text-center">
+                    <span class="amount-cell">{{ \App\CentralLogics\Helpers::set_symbol($row['price']) }}</span>
+                </td>
             </tr>
             @endforeach
+            <tr class="total-row">
+                <td colspan="3" class="text-center">{{ translate('total') }}</td>
+                <td class="text-center">{{ $totalQty }}</td>
+                <td class="text-center">{{ \App\CentralLogics\Helpers::set_symbol($totalAmount) }}</td>
+            </tr>
         </tbody>
     </table>
     @else
-    <p style="text-align: center; padding: 20px; color: #666;">{{ translate('no_reviews_found') }}</p>
+    <p style="text-align: center; padding: 20px; color: #666;">{{ translate('no_data_available') }}</p>
     @endif
 
     <div class="footer">

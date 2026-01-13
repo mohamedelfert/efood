@@ -95,8 +95,23 @@
             "pageLength": 25,
             "ordering": true,
             "searching": true,
+            "order": [[0, "desc"]],
             "language": {
-                "zeroRecords": '<div class="text-center p-4"><img class="mb-3" src="{{asset("public/assets/admin")}}/svg/illustrations/sorry.svg" style="width: 7rem;"><p class="mb-0">{{translate("No data to show")}}</p></div>'
+                "emptyTable": "{{translate('no_data_available')}}",
+                "info": "{{translate('showing')}} _START_ {{translate('to')}} _END_ {{translate('of')}} _TOTAL_ {{translate('entries')}}",
+                "infoEmpty": "{{translate('showing')}} 0 {{translate('to')}} 0 {{translate('of')}} 0 {{translate('entries')}}",
+                "infoFiltered": "({{translate('filtered_from')}} _MAX_ {{translate('total_entries')}})",
+                "lengthMenu": "{{translate('show')}} _MENU_ {{translate('entries')}}",
+                "loadingRecords": "{{translate('loading')}}...",
+                "processing": "{{translate('processing')}}...",
+                "search": "{{translate('search')}}:",
+                "zeroRecords": '<div class="text-center p-4"><img class="mb-3" src="{{asset("public/assets/admin")}}/svg/illustrations/sorry.svg" style="width: 7rem;"><p class="mb-0">{{translate("No data to show")}}</p></div>',
+                "paginate": {
+                    "first": "{{translate('first')}}",
+                    "last": "{{translate('last')}}",
+                    "next": "{{translate('next')}}",
+                    "previous": "{{translate('previous')}}"
+                }
             }
         });
     });

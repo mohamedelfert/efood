@@ -13,10 +13,8 @@
     <tbody>
     @foreach($data as $key=>$row)
         <tr>
-            <td class="">
-                {{$key+1}}
-            </td>
-            <td class="">
+            <td>{{$key+1}}</td>
+            <td>
                 <a href="{{route('admin.orders.details',['id'=>$row['order_id']])}}">{{$row['order_id']}}</a>
             </td>
             <td>{{date('d M Y',strtotime($row['date']))}}</td>
@@ -30,9 +28,29 @@
 <script type="text/javascript">
     $(document).ready(function () {
         $('input').addClass('form-control');
-    });
-    var datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
-        dom: 'Bfrtip',
-        "iDisplayLength": 25,
+        
+        var datatable = $('#datatable').DataTable({
+            "pageLength": 25,
+            "ordering": true,
+            "searching": true,
+            "order": [[0, "desc"]],
+            "language": {
+                "emptyTable": "{{translate('no_data_available')}}",
+                "info": "{{translate('showing')}} _START_ {{translate('to')}} _END_ {{translate('of')}} _TOTAL_ {{translate('entries')}}",
+                "infoEmpty": "{{translate('showing')}} 0 {{translate('to')}} 0 {{translate('of')}} 0 {{translate('entries')}}",
+                "infoFiltered": "({{translate('filtered_from')}} _MAX_ {{translate('total_entries')}})",
+                "lengthMenu": "{{translate('show')}} _MENU_ {{translate('entries')}}",
+                "loadingRecords": "{{translate('loading')}}...",
+                "processing": "{{translate('processing')}}...",
+                "search": "{{translate('search')}}:",
+                "zeroRecords": '<div class="text-center p-4"><img class="mb-3" src="{{asset("public/assets/admin")}}/svg/illustrations/sorry.svg" style="width: 7rem;"><p class="mb-0">{{translate("No data to show")}}</p></div>',
+                "paginate": {
+                    "first": "{{translate('first')}}",
+                    "last": "{{translate('last')}}",
+                    "next": "{{translate('next')}}",
+                    "previous": "{{translate('previous')}}"
+                }
+            }
+        });
     });
 </script>

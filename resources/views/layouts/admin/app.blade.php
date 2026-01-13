@@ -21,6 +21,8 @@
     <!-- CSS Front Template -->
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/theme.minc619.css?v=1.0">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/style.css?v=1.0">
+    <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/style.css?v=1.0">
+    <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/datatable-rtl.css?v=1.0">
     @stack('css_or_js')
 
     <script
@@ -218,6 +220,60 @@
     });
 </script>
 
+<!-- DataTables RTL Configuration -->
+<script>
+    // Set global defaults for all DataTables
+    if (typeof $.fn.dataTable !== 'undefined') {
+        $.extend(true, $.fn.dataTable.defaults, {
+            "language": {
+                "emptyTable": "{{translate('no_data_available')}}",
+                "info": "{{translate('showing')}} _START_ {{translate('to')}} _END_ {{translate('of')}} _TOTAL_ {{translate('entries')}}",
+                "infoEmpty": "{{translate('showing')}} 0 {{translate('to')}} 0 {{translate('of')}} 0 {{translate('entries')}}",
+                "infoFiltered": "({{translate('filtered_from')}} _MAX_ {{translate('total_entries')}})",
+                "lengthMenu": "{{translate('show')}} _MENU_ {{translate('entries')}}",
+                "loadingRecords": "{{translate('loading')}}...",
+                "processing": "{{translate('processing')}}...",
+                "search": "{{translate('search')}}:",
+                "zeroRecords": "{{translate('no_matching_records')}}",
+                "paginate": {
+                    "first": "{{translate('first')}}",
+                    "last": "{{translate('last')}}",
+                    "next": "{{translate('next')}}",
+                    "previous": "{{translate('previous')}}"
+                }
+            }
+        });
+
+        // Apply RTL direction after DataTable initialization
+        $(document).on('init.dt', function(e, settings) {
+            var api = new $.fn.dataTable.Api(settings);
+            var wrapper = $(api.table().container());
+            
+            // Force RTL on wrapper
+            wrapper.attr('dir', 'rtl');
+            wrapper.css('direction', 'rtl');
+            
+            // Fix the layout structure
+            var topRow = wrapper.find('.row').first();
+            topRow.css({
+                'display': 'flex',
+                'flex-direction': 'row-reverse',
+                'justify-content': 'space-between',
+                'align-items': 'center'
+            });
+            
+            var bottomRow = wrapper.find('.row').last();
+            if (bottomRow.length && !bottomRow.is(topRow)) {
+                bottomRow.css({
+                    'display': 'flex',
+                    'flex-direction': 'row-reverse',
+                    'justify-content': 'space-between',
+                    'align-items': 'center'
+                });
+            }
+        });
+    }
+</script>
 
 @stack('script_2')
 <audio id="myAudio">

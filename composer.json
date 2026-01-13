@@ -30,6 +30,7 @@
         "maatwebsite/excel": "^3.1",
         "madnest/madzipper": "^1.1",
         "mercadopago/dx-php": "2.4.2",
+        "mpdf/mpdf": "^8.2",
         "nwidart/laravel-modules": "^9.0",
         "paypal/rest-api-sdk-php": "^1.6",
         "phonepe/phonepe-pg-php-sdk": "^1.0",

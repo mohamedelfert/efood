@@ -142,11 +142,11 @@
                             {{translate('report_details')}}
                         </h5>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
-                                <i class="tio-print"></i> {{translate('print')}}
-                            </button>
-                            <a href="{{route('admin.report.export-product-report')}}" class="btn btn-outline-success btn-sm">
-                                <i class="tio-download"></i> {{translate('export')}}
+                            <a href="{{route('admin.report.export-product-report')}}" 
+                            class="btn btn-outline-danger btn-sm" 
+                            id="export-pdf-btn"
+                            style="display: none;">
+                                <i class="tio-document-pdf"></i> {{translate('download_pdf')}}
                             </a>
                         </div>
                     </div>
@@ -166,38 +166,6 @@
         $(document).on('ready', function () {
             $('.js-select2-custom').each(function () {
                 var select2 = $.HSCore.components.HSSelect2.init($(this));
-            });
-
-            var datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'copy',
-                        className: 'd-none'
-                    },
-                    {
-                        extend: 'excel',
-                        className: 'd-none'
-                    },
-                    {
-                        extend: 'csv',
-                        className: 'd-none'
-                    },
-                    {
-                        extend: 'pdf',
-                        className: 'd-none'
-                    },
-                    {
-                        extend: 'print',
-                        className: 'd-none'
-                    },
-                ],
-                language: {
-                    zeroRecords: '<div class="text-center p-4">' +
-                        '<img class="mb-3" src="{{asset('public/assets/admin')}}/svg/illustrations/sorry.svg" alt="Image Description" style="width: 7rem;">' +
-                        '<p class="mb-0">{{translate('No data to show')}}</p>' +
-                        '</div>'
-                }
             });
         });
 
@@ -220,12 +188,18 @@
                 data: $('#search-form').serialize(),
                 beforeSend: function () {
                     $('#loading').show();
+                    $('#export-pdf-btn').hide();
                 },
                 success: function (data) {
                     $('#order_count').html(data.order_count);
                     $('#order_amount').html(data.order_sum);
                     $('#item_count').html(data.item_qty);
                     $('#set-rows').html(data.view);
+                    
+                    // Show export button if data exists
+                    if (data.order_count > 0) {
+                        $('#export-pdf-btn').show();
+                    }
                     
                     toastr.success('{{translate('Report generated successfully')}}', {
                         CloseButton: true,
@@ -259,31 +233,4 @@
             }
         });
     </script>
-
-    <style>
-        .icon-circle {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        
-        .bg-soft-primary {
-            background-color: rgba(55, 125, 255, 0.1) !important;
-        }
-        
-        @media print {
-            .card-header button,
-            .card-header a,
-            .btn,
-            .navbar,
-            .sidebar,
-            form {
-                display: none !important;
-            }
-        }
-    </style>
 @endpush

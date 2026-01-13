@@ -18,6 +18,8 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\Foundation\Application;
+use Maatwebsite\Excel\Facades\Excel;
+use Mpdf\Mpdf;
 
 class ReportController extends Controller
 {
@@ -266,22 +268,29 @@ class ReportController extends Controller
     {
         $data = session('branch_report_data', []);
         $branch = $request->branch_id != 'all' ? $this->branch->find($request->branch_id) : null;
-        $reportType = 'Order Report';
         $dateRange = $request->from . ' to ' . $request->to;
 
-        $pdf = PDF::loadView('admin-views.report.pdf.branch-order-report', compact('data', 'branch', 'reportType', 'dateRange'));
-        
-        // Set paper size and orientation
-        $pdf->setPaper('A4', 'landscape');
-        
-        // Enable Arabic support
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+        $html = view('admin-views.report.pdf.branch-order-report', compact('data', 'branch', 'dateRange'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
         ]);
-        
-        return $pdf->download('branch_order_report_' . time() . '.pdf');
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('branch_order_report_' . time() . '.pdf', 'D');
     }
 
     /**
@@ -292,19 +301,29 @@ class ReportController extends Controller
     {
         $data = session('branch_sales_data', []);
         $branch = $request->branch_id != 'all' ? $this->branch->find($request->branch_id) : null;
-        $reportType = 'Sales Report';
         $dateRange = $request->from . ' to ' . $request->to;
 
-        $pdf = PDF::loadView('admin-views.report.pdf.branch-sales-report', compact('data', 'branch', 'reportType', 'dateRange'));
-        
-        $pdf->setPaper('A4', 'landscape');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+        $html = view('admin-views.report.pdf.branch-sales-report', compact('data', 'branch', 'dateRange'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
         ]);
-        
-        return $pdf->download('branch_sales_report_' . time() . '.pdf');
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('branch_sales_report_' . time() . '.pdf', 'D');
     }
 
     /**
@@ -315,20 +334,30 @@ class ReportController extends Controller
     {
         $data = session('branch_product_data', []);
         $branch = $request->branch_id != 'all' ? $this->branch->find($request->branch_id) : null;
-        $reportType = 'Product Report';
         $dateRange = $request->from . ' to ' . $request->to;
 
-        $pdf = PDF::loadView('admin-views.report.pdf.branch-product-report', compact('data', 'branch', 'reportType', 'dateRange'));
-        
-        $pdf->setPaper('A4', 'landscape');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+        $html = view('admin-views.report.pdf.branch-product-report', compact('data', 'branch', 'dateRange'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
         ]);
-        
-        return $pdf->download('branch_product_report_' . time() . '.pdf');
-}
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('branch_product_report_' . time() . '.pdf', 'D');
+    }
 
     /**
      * @param Request $request
@@ -403,6 +432,7 @@ class ReportController extends Controller
         $data = [];
         $totalSold = 0;
         $totalQuantity = 0;
+        
         foreach ($orders as $order) {
             foreach ($order->details as $detail) {
                 if ($request['product_id'] != 'all') {
@@ -419,7 +449,6 @@ class ReportController extends Controller
                         $totalSold += $orderTotal;
                         $totalQuantity += $detail['quantity'];
                     }
-
                 } else {
                     $price = Helpers::variation_price(json_decode($detail->product_details, true), $detail['variations']) - $detail['discount_on_product'];
                     $orderTotal = $price * $detail['quantity'];
@@ -436,6 +465,7 @@ class ReportController extends Controller
             }
         }
 
+        // Store in session for export
         session()->put('export_data', $data);
 
         return response()->json([
@@ -453,31 +483,31 @@ class ReportController extends Controller
     {
         if (session()->has('export_data')) {
             $data = session('export_data');
-
         } else {
-            $orders = $this->order->all();
             $data = [];
-            $totalSold = 0;
-            $totalQuantity = 0;
-            foreach ($orders as $order) {
-                foreach ($order->details as $detail) {
-                    $price = Helpers::variation_price(json_decode($detail->product_details, true), $detail['variations']) - $detail['discount_on_product'];
-                    $orderTotal = $price * $detail['quantity'];
-                    $data[] = [
-                        'order_id' => $order['id'],
-                        'date' => $order['created_at'],
-                        'customer' => $order->customer,
-                        'price' => $orderTotal,
-                        'quantity' => $detail['quantity'],
-                    ];
-                    $totalSold += $orderTotal;
-                    $totalQuantity += $detail['quantity'];
-                }
-            }
         }
 
-        $pdf = PDF::loadView('admin-views.report.partials._report', compact('data'));
-        return $pdf->download('report_' . rand(00001, 99999) . '.pdf');
+        $html = view('admin-views.report.pdf.product-report', compact('data'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('product_report_' . time() . '.pdf', 'D');
     }
 
     /**
@@ -500,7 +530,6 @@ class ReportController extends Controller
 
         if ($request['branch_id'] == 'all') {
             $orders = $this->order->whereBetween('created_at', [$fromDate, $toDate])->pluck('id')->toArray();
-
         } else {
             $orders = $this->order
                 ->where(['branch_id' => $request['branch_id']])
@@ -526,6 +555,9 @@ class ReportController extends Controller
             $totalQuantity += $detail['quantity'];
         }
 
+        // Store in session for export
+        session()->put('export_sale_data', $data);
+
         return response()->json([
             'order_count' => count($data),
             'item_qty' => $totalQuantity,
@@ -539,10 +571,33 @@ class ReportController extends Controller
      */
     public function exportSaleReport(): mixed
     {
-        $data = session('export_sale_data');
-        $pdf = PDF::loadView('admin-views.report.partials._report', compact('data'));
+        if (session()->has('export_sale_data')) {
+            $data = session('export_sale_data');
+        } else {
+            $data = [];
+        }
 
-        return $pdf->download('sale_report_' . rand(00001, 99999) . '.pdf');
+        $html = view('admin-views.report.pdf.sale-report', compact('data'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('sale_report_' . time() . '.pdf', 'D');
     }
 
     /**
@@ -704,50 +759,70 @@ class ReportController extends Controller
      * @param Request $request
      * @return mixed
      */
-    public function printBranchReviewReport(Request $request): mixed
+    public function printBranchReviewReport(Request $request)
     {
         $data = session('branch_review_data', []);
         $branch = $request->branch_id != 'all' ? $this->branch->find($request->branch_id) : null;
-        $reportType = 'Branch Review Report';
         $dateRange = $request->from . ' to ' . $request->to;
 
-        $pdf = PDF::loadView('admin-views.report.pdf.branch-review-report', compact('data', 'branch', 'reportType', 'dateRange'));
-        
-        $pdf->setPaper('A4', 'portrait');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+        $html = view('admin-views.report.pdf.branch-review-report', compact('data', 'branch', 'dateRange'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
         ]);
-        
-        return $pdf->download('branch_review_report_' . time() . '.pdf');
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('branch_review_report_' . time() . '.pdf', 'D');
     }
 
     /**
      * Print Service Review Report
      * @return mixed
      */
-    public function printServiceReviewReport(Request $request): mixed
+    public function printServiceReviewReport(Request $request)
     {
         $data = session('service_review_data', []);
-        $serviceType = $request->service_type != 'all' ? ucfirst($request->service_type) : 'All Services';
-        $reportType = 'Service Review Report';
+        $serviceType = $request->service_type != 'all' ? ucfirst(str_replace('_', ' ', $request->service_type)) : 'All Services';
         $dateRange = $request->from . ' to ' . $request->to;
 
-        $pdf = PDF::loadView('admin-views.report.pdf.service-review-report', compact('data', 'serviceType', 'reportType', 'dateRange'));
-        
-        $pdf->setPaper('A4', 'portrait');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+        $html = view('admin-views.report.pdf.service-review-report', compact('data', 'serviceType', 'dateRange'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'orientation' => 'P',
+            'directionality' => 'rtl',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
         ]);
-        
-        return $pdf->download('service_review_report_' . time() . '.pdf');
+
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('service_review_report_' . time() . '.pdf', 'D');
     }
 
     /**
-     * Export Branch Review Report to Excel
+     * Export Branch Review Report to Excel (Arabic)
      * @param Request $request
      * @return mixed
      */
@@ -757,22 +832,24 @@ class ReportController extends Controller
         
         $reviews = collect($data['reviews'] ?? [])->map(function ($review) {
             return [
-                'Review ID' => $review->id,
-                'Customer' => $review->customer->f_name . ' ' . $review->customer->l_name,
-                'Branch' => $review->branch->name ?? 'N/A',
-                'Order ID' => $review->order_id,
-                'Rating' => $review->rating,
-                'Comment' => $review->comment,
-                'Date' => $review->created_at->format('Y-m-d H:i:s'),
+                translate('excel_review_id') => $review->id,
+                translate('excel_customer') => $review->customer ? $review->customer->f_name . ' ' . $review->customer->l_name : translate('deleted'),
+                translate('excel_branch') => $review->branch->name ?? translate('not_available'),
+                translate('excel_order_id') => $review->order_id,
+                translate('excel_rating') => $review->rating,
+                translate('excel_comment') => $review->comment ?? translate('no_comment'),
+                translate('excel_date') => $review->created_at->format('Y-m-d H:i:s'),
             ];
         });
 
-        return (new GenericExport($reviews))
-            ->download('branch_review_report_' . time() . '.xlsx');
+        return Excel::download(
+            new GenericExport($reviews), 
+            'branch_review_report_' . time() . '.xlsx'
+        );
     }
 
     /**
-     * Export Service Review Report to Excel
+     * Export Service Review Report to Excel (Arabic)
      * @param Request $request
      * @return mixed
      */
@@ -781,18 +858,29 @@ class ReportController extends Controller
         $data = session('service_review_data', []);
         
         $reviews = collect($data['reviews'] ?? [])->map(function ($review) {
+            // Translate service type
+            $serviceTypeTranslated = match($review->service_type) {
+                'delivery' => translate('delivery'),
+                'packaging' => translate('packaging'),
+                'customer_service' => translate('customer_service'),
+                'food_quality' => translate('food_quality'),
+                default => ucfirst($review->service_type)
+            };
+            
             return [
-                'Review ID' => $review->id,
-                'Customer' => $review->customer->f_name . ' ' . $review->customer->l_name,
-                'Service Type' => ucfirst($review->service_type),
-                'Order ID' => $review->order_id,
-                'Rating' => $review->rating,
-                'Comment' => $review->comment,
-                'Date' => $review->created_at->format('Y-m-d H:i:s'),
+                translate('excel_review_id') => $review->id,
+                translate('excel_customer') => $review->customer ? $review->customer->f_name . ' ' . $review->customer->l_name : translate('deleted'),
+                translate('excel_service_type') => $serviceTypeTranslated,
+                translate('excel_order_id') => $review->order_id,
+                translate('excel_rating') => $review->rating,
+                translate('excel_comment') => $review->comment ?? translate('no_comment'),
+                translate('excel_date') => $review->created_at->format('Y-m-d H:i:s'),
             ];
         });
 
-        return (new GenericExport($reviews))
-            ->download('service_review_report_' . time() . '.xlsx');
+        return Excel::download(
+            new GenericExport($reviews), 
+            'service_review_report_' . time() . '.xlsx'
+        );
     }
 }
