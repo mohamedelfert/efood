@@ -151,7 +151,7 @@ class ConfigController extends Controller
             'symbol' => $currencySymbol,
             'delivery_charge' => (float) Helpers::get_business_settings('delivery_charge'),
             'delivery_management' => $deliveryManagement,
-            'branches' => $this->branch->where('status', 1)->get(['id', 'name', 'email', 'longitude', 'latitude', 'address', 'coverage', 'status', 'image', 'cover_image', 'preparation_time']),
+            'branches' => $this->branch->where('status', 1)->get(['id', 'name', 'email','phone', 'longitude', 'latitude', 'address', 'coverage', 'status', 'image', 'cover_image', 'preparation_time']),
             'email_verification' => (boolean) Helpers::get_business_settings('email_verification') ?? 0,
             'phone_verification' => (boolean) Helpers::get_business_settings('phone_verification') ?? 0,
             'symbol_position' => Helpers::get_business_settings('symbol_position') ?? 'right',
