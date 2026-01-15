@@ -637,6 +637,7 @@
 'download_pdf' => 'تحميل PDF',
 'product_report' => 'تقرير المنتجات',
 'sales_report' => 'تقرير المبيعات',
+'Error' => 'خطأ',
 
 // Table Headers
 'serial' => 'م',
