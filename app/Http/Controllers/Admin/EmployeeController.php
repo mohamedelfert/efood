@@ -48,14 +48,30 @@ class EmployeeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => 'required',
             'role_id' => 'required|exists:admin_roles,id',
             'branch_id' => 'required|exists:branches,id',
             'email' => 'required|email|unique:admins,email',
             'password' => 'required|min:8',
             'phone' => 'required',
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب.',
+            'role_id.required' => 'معرف الدور مطلوب.',
+            'role_id.exists' => 'معرف الدور غير موجود.',
+            'branch_id.required' => 'معرف الفرع مطلوب.',
+            'branch_id.exists' => 'معرف الفرع غير موجود.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.email' => 'البريد الإلكتروني غير صالح.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'password.required' => 'كلمة المرور مطلوبة.',
+            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
+        ];
+
+        $request->validate($rules, $messages);
 
         $role = $this->admin_role->findOrFail($request->role_id);
 
@@ -140,13 +156,27 @@ class EmployeeController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $rules = [
             'name' => 'required',
             'role_id' => 'required|exists:admin_roles,id',
             'branch_id' => 'required|exists:branches,id',
             'email' => 'required|email|unique:admins,email,'.$id,
             'phone' => 'required',
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب.',
+            'role_id.required' => 'معرف الدور مطلوب.',
+            'role_id.exists' => 'معرف الدور غير موجود.',
+            'branch_id.required' => 'معرف الفرع مطلوب.',
+            'branch_id.exists' => 'معرف الفرع غير موجود.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.email' => 'البريد الإلكتروني غير صالح.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
+        ];
+
+        $request->validate($rules, $messages);
 
         if ($user->admin_role_id != 1 && $request->branch_id != $user->branch_id) {
             Toastr::error(translate('You are not allowed to change branch!'));
