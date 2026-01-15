@@ -164,14 +164,25 @@ class DeliveryManController extends Controller
     public function store(Request $request): RedirectResponse
     {
         //dd($request->all());
-        $request->validate([
+
+        $rules = [
             'name' => 'required',
             'email' => 'required|regex:/(.+)@(.+)\.(.+)/i|unique:delivery_men',
             'phone' => 'required|unique:delivery_men',
             'confirm_password' => 'same:password'
-        ], [
-            'name.required' => translate('First name is required!')
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب!',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.regex' => 'صيغة البريد الإلكتروني غير صحيحة.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
+            'phone.unique' => 'رقم الهاتف مستخدم بالفعل.',
+            'confirm_password.same' => 'كلمة المرور وتأكيد كلمة المرور لا يتطابقان.',
+        ];
+
+        $request->validate($rules, $messages);
 
         $identityImageNames = [];
         if (!empty($request->file('identity_image'))) {
@@ -242,32 +253,39 @@ class DeliveryManController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|regex:/(.+)@(.+)\.(.+)/i',
-        ], [
-            'name.required' => translate('Name is required!')
-        ]);
-
-        if ($request->password) {
-            $request->validate([
-                'confirm_password' => 'same:password'
-            ]);
-        }
-
         $deliveryman = $this->deliveryman->find($id);
 
+        $rules = [
+            'name' => 'required',
+            'email' => 'required|regex:/(.+)@(.+)\.(.+)/i',
+            'phone' => 'required',
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب!',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.regex' => 'صيغة البريد الإلكتروني غير صحيحة.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
+            'phone.unique' => 'رقم الهاتف مستخدم بالفعل.',
+            'confirm_password.same' => 'كلمة المرور وتأكيد كلمة المرور لا يتطابقان.',
+            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+        ];
+
+        if ($request->password) {
+            $rules['password'] = 'min:8';
+            $rules['confirm_password'] = 'same:password';
+        }
+
         if ($deliveryman['email'] != $request['email']) {
-            $request->validate([
-                'email' => 'required|unique:delivery_men',
-            ]);
+            $rules['email'] .= '|unique:delivery_men';
         }
 
         if ($deliveryman['phone'] != $request['phone']) {
-            $request->validate([
-                'phone' => 'required|unique:delivery_men',
-            ]);
+            $rules['phone'] .= '|unique:delivery_men';
         }
+
+        $request->validate($rules, $messages);
 
         if (!empty($request->file('identity_image'))) {
             foreach (json_decode($deliveryman['identity_image'], true) as $img) {
