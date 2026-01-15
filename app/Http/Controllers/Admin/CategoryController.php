@@ -79,16 +79,30 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
             'branch_ids' => 'required|array',
             'branch_ids.*' => 'exists:branches,id',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ], [
-            'name.*.required' => translate('Category name is required in all languages'),
-            'branch_ids.required' => translate('Please select at least one branch'),
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب.',
+            'name.array' => 'يجب أن يكون الاسم مصفوفة.',
+            'name.*.required' => 'اسم الفئة مطلوب في جميع اللغات.',
+            'name.*.string' => 'يجب أن يكون الاسم نصًا.',
+            'name.*.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
+            'branch_ids.required' => 'يرجى تحديد فرع واحد على الأقل.',
+            'branch_ids.array' => 'يجب أن تكون معرفات الفروع مصفوفة.',
+            'branch_ids.*.exists' => 'معرف الفرع غير موجود.',
+            'image.required' => 'الصورة مطلوبة.',
+            'image.image' => 'يجب أن تكون الصورة صورة.',
+            'image.mimes' => 'يجب أن تكون الصورة من نوع: jpeg, png, jpg, gif.',
+            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+        ];
+
+        $request->validate($rules, $messages);
 
         // Check duplicate
         foreach ($request->name as $index => $name) {
@@ -169,17 +183,35 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $rules = [
             'name'          => 'required|array',
             'name.*'        => 'required|string|max:255',
             'branch_ids'    => 'required|array',
             'branch_ids.*'  => 'exists:branches,id',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'banner_image'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-        ], [
-            'branch_ids.required' => translate('Please select at least one branch'),
-            'name.*.required'     => translate('Category name is required'),
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب.',
+            'name.array' => 'يجب أن يكون الاسم مصفوفة.',
+            'name.*.required' => 'اسم الفئة مطلوب.',
+            'name.*.string' => 'يجب أن يكون الاسم نصًا.',
+            'name.*.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
+            'branch_ids.required' => 'يرجى تحديد فرع واحد على الأقل.',
+            'branch_ids.array' => 'يجب أن تكون معرفات الفروع مصفوفة.',
+            'branch_ids.*.exists' => 'معرف الفرع غير موجود.',
+            'image.nullable' => '',
+            'image.image' => 'يجب أن تكون الصورة صورة.',
+            'image.mimes' => 'يجب أن تكون الصورة من نوع: jpeg, png, jpg, gif, webp.',
+            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+            'banner_image.nullable' => '',
+            'banner_image.image' => 'يجب أن تكون صورة البانر صورة.',
+            'banner_image.mimes' => 'يجب أن تكون صورة البانر من نوع: jpeg, png, jpg, gif, webp.',
+            'banner_image.max' => 'يجب ألا يتجاوز حجم صورة البانر 2048 كيلوبايت.',
+        ];
+
+        $request->validate($rules, $messages);
 
         $category = $this->category->findOrFail($id);
 

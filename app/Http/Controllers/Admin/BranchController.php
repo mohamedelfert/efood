@@ -39,7 +39,7 @@ class BranchController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|max:255|unique:branches',
             'email' => 'required|max:255|unique:branches',
             'password' => 'required|min:8|max:255',
@@ -47,10 +47,27 @@ class BranchController extends Controller
             'image' => 'nullable|max:2048',
             'schedule' => 'required|array',
             'schedule.*' => 'required|array',
-        ], [
-            'name.required' => translate('Name is required!'),
-            'schedule.required' => translate('Schedule is required!'),
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب!',
+            'name.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
+            'name.unique' => 'الاسم مستخدم بالفعل.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.max' => 'يجب ألا يتجاوز البريد الإلكتروني 255 حرفًا.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'password.required' => 'كلمة المرور مطلوبة.',
+            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+            'password.max' => 'يجب ألا تتجاوز كلمة المرور 255 حرفًا.',
+            'preparation_time.required' => 'وقت التحضير مطلوب.',
+            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+            'schedule.required' => 'الجدول الزمني مطلوب!',
+            'schedule.array' => 'يجب أن يكون الجدول الزمني مصفوفة.',
+            'schedule.*.required' => 'الجدول الزمني مطلوب.',
+            'schedule.*.array' => 'يجب أن يكون الجدول الزمني مصفوفة.',
+        ];
+
+        $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
@@ -169,16 +186,28 @@ class BranchController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|max:255',
             'preparation_time' => 'required',
             'email' => ['required', 'unique:branches,email,' . $id . ',id'],
             'image' => 'max:2048',
             'password' => 'nullable|min:8|max:255',
             'schedule' => 'nullable|array',
-        ], [
-            'name.required' => translate('Name is required!'),
-        ]);
+        ];
+
+        $messages = [
+            'name.required' => 'الاسم مطلوب!',
+            'name.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
+            'preparation_time.required' => 'وقت التحضير مطلوب.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+            'password.max' => 'يجب ألا تتجاوز كلمة المرور 255 حرفًا.',
+            'schedule.array' => 'يجب أن يكون الجدول الزمني مصفوفة.',
+        ];
+
+        $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
