@@ -129,7 +129,7 @@
                                         @if($role['module_access']!=null)
                                             @php($comma = '')
                                             @foreach((array)json_decode($role['module_access']) as $module)
-                                                {{$comma}}{{str_replace('_',' ',$module)}}
+                                                {{$comma}}{{translate($module)}}
                                                 @php($comma = ', ')
                                             @endforeach
                                         @endif
