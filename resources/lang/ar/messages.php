@@ -611,6 +611,28 @@
 'filtered_from' => 'منقاة من مجموع',
 'total_entries' => 'مدخل إجمالي',
 
+'name.required' => 'الاسم مطلوب.',
+'role_id.required' => 'معرف الدور مطلوب.',
+'role_id.exists' => 'معرف الدور غير موجود.',
+'branch_id.required' => 'معرف الفرع مطلوب.',
+'branch_id.exists' => 'معرف الفرع غير موجود.',
+'email.required' => 'البريد الإلكتروني مطلوب.',
+'email.email' => 'البريد الإلكتروني غير صالح.',
+'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+'password.required' => 'كلمة المرور مطلوبة.',
+'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+'phone.required' => 'رقم الهاتف مطلوب.',
+
+'access_denied' => 'تم رفض الوصول!',
+'you_are_not_allowed_to_add_employee_in_another_branch' => 'غير مسموح لك بإضافة موظف في فرع آخر!',
+'employee_added_successfully' => 'تم إضافة الموظف بنجاح!',
+'you_are_not_allowed_to_change_branch' => 'غير مسموح لك بتغيير الفرع!',
+'employee_updated_successfully' => 'تم تحديث الموظف بنجاح!',
+'employee_status_updated' => 'تم تحديث حالة الموظف!',
+'master_admin_can_not_be_deleted' => 'لا يمكن حذف المدير الرئيسي',
+'employee_deleted_successfully' => 'تم حذف الموظف بنجاح',
+'employee_is_not_deleted' => 'لم يتم حذف الموظف',
+
 // PDF Export
 'download_pdf' => 'تحميل PDF',
 'product_report' => 'تقرير المنتجات',
