@@ -308,7 +308,8 @@
 
     // Wallet Top-Up Notifications
     'Wallet Top-Up Successful' => 'تم شحن المحفظة بنجاح',
-    'Your wallet has been topped up with :amount :currency' => 'تم شحن محفظتك بمبلغ :amount :currency',
+    'Your wallet has been topped up with :amount :currency' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
+    'wallet_topped_up_with_amount' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
     
     // Money Transfer Notifications - Sender
     'Money Sent' => 'تم إرسال الأموال',
