@@ -25,6 +25,7 @@
   'unpaid' => 'غير مدفوع',
   'Unpaid' => 'غير مدفوع',
   'partial_paid' => 'مدفوع جزئي',
+  'Search Menu' => 'قائمه البحث',
   'canceled' => 'ملغى',
   'Cancel Reason' => 'سبب الإلغاء',
   'order_received' => 'استلام الطلب',
