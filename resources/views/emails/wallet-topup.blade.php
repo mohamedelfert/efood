@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Top-Up Successful</title>
+    <title>translate('Wallet Top-Up Successful')</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -19,7 +19,7 @@
     <div class="container">
         <div class="header">
             <div class="success-icon">✓</div>
-            <h1>Wallet Top-Up Successful</h1>
+            <h1>translate('Wallet Top-Up Successful')</h1>
         </div>
         
         <div class="content">

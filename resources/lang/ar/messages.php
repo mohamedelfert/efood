@@ -304,6 +304,102 @@
     'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
     'No' => 'لا يوجد',
 
+    'Wallet Top-Up Successful' => 'تم شحن المحفظه بنجاح!',
+
+    // Wallet Top-Up Notifications
+    'Wallet Top-Up Successful' => 'تم شحن المحفظة بنجاح',
+    'Your wallet has been topped up with :amount :currency' => 'تم شحن محفظتك بمبلغ :amount :currency',
+    
+    // Money Transfer Notifications - Sender
+    'Money Sent' => 'تم إرسال الأموال',
+    'You sent :amount :currency to :name' => 'لقد أرسلت :amount :currency إلى :name',
+    
+    // Money Transfer Notifications - Receiver
+    'Money Received' => 'تم استلام الأموال',
+    'You received :amount :currency from :name' => 'لقد استلمت :amount :currency من :name',
+    
+    // Order Notifications
+    'Order Placed Successfully' => 'تم تقديم الطلب بنجاح',
+    'Your order #:order_id has been placed' => 'تم تقديم طلبك رقم #:order_id',
+    
+    // Loyalty Points Conversion
+    'Loyalty Points Converted' => 'تم تحويل نقاط الولاء',
+    'Converted :points points to :amount :currency' => 'تم تحويل :points نقطة إلى :amount :currency',
+    
+    // PIN Reset Notifications
+    'Wallet PIN Reset' => 'تم إعادة تعيين رمز المحفظة',
+    'Your wallet PIN has been reset successfully' => 'تم إعادة تعيين رمز المحفظة الخاص بك بنجاح',
+    
+    // Common Terms
+    'Transaction ID' => 'رقم المعاملة',
+    'Amount' => 'المبلغ',
+    'Balance' => 'الرصيد',
+    'New Balance' => 'الرصيد الجديد',
+    'Previous Balance' => 'الرصيد السابق',
+    'Date' => 'التاريخ',
+    'Time' => 'الوقت',
+    'Timestamp' => 'الوقت والتاريخ',
+    'Currency' => 'العملة',
+    'Gateway' => 'بوابة الدفع',
+    'Payment Method' => 'طريقة الدفع',
+    'Order Type' => 'نوع الطلب',
+    'Delivery Date' => 'تاريخ التوصيل',
+    'Delivery Time' => 'وقت التوصيل',
+    'Branch' => 'الفرع',
+    'Items Count' => 'عدد العناصر',
+    'Note' => 'ملاحظة',
+    'Points Used' => 'النقاط المستخدمة',
+    'Converted Amount' => 'المبلغ المحول',
+    'Remaining Points' => 'النقاط المتبقية',
+    'N/A' => 'غير متوفر',
+    
+    // Email/WhatsApp/Notification Status
+    'Email sent successfully' => 'تم إرسال البريد الإلكتروني بنجاح',
+    'WhatsApp sent successfully' => 'تم إرسال رسالة واتساب بنجاح',
+    'Push notification sent' => 'تم إرسال الإشعار',
+    'Notification sent' => 'تم إرسال الإشعار',
+    
+    // Error Messages
+    'Failed to send email' => 'فشل إرسال البريد الإلكتروني',
+    'Failed to send WhatsApp' => 'فشل إرسال رسالة واتساب',
+    'Failed to send push notification' => 'فشل إرسال الإشعار',
+    'Failed to store notification' => 'فشل حفظ الإشعار',
+    'Receipt generation failed' => 'فشل إنشاء الإيصال',
+    
+    // Receipt Related
+    'View your receipt' => 'عرض الإيصال الخاص بك',
+    'Receipt' => 'إيصال',
+    'Customer Name' => 'اسم العميل',
+    'Account Number' => 'رقم الحساب',
+    'Tax' => 'الضريبة',
+    
+    // OTP Related
+    'OTP' => 'رمز التحقق',
+    'Expiry Minutes' => 'مدة الصلاحية بالدقائق',
+    'Login OTP' => 'رمز تسجيل الدخول',
+    'PIN Reset OTP' => 'رمز إعادة تعيين الرمز السري',
+    'Wallet PIN Reset' => 'إعادة تعيين رمز المحفظة',
+    
+    // User Related
+    'User Name' => 'اسم المستخدم',
+    'Sender Name' => 'اسم المرسل',
+    'Receiver Name' => 'اسم المستلم',
+    'Recipient Name' => 'اسم المستلم',
+    
+    // Transaction Types
+    'wallet_topup' => 'شحن المحفظة',
+    'money_transfer_sent' => 'تحويل أموال - مرسل',
+    'money_transfer_received' => 'تحويل أموال - مستلم',
+    'order_placed' => 'تقديم طلب',
+    'loyalty_conversion' => 'تحويل نقاط الولاء',
+    'pin_reset_success' => 'نجاح إعادة تعيين الرمز',
+    
+    // Image Validation (from your example)
+    'File must be an image' => 'يجب أن يكون الملف صورة',
+    'Image must be jpg, jpeg, png or gif' => 'يجب أن تكون الصورة بصيغة jpg أو jpeg أو png أو gif',
+    'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
+    'No' => 'لا يوجد',
+
   'scheduled' => 'مجدول',
   'table order' => 'طلب طاولة',
   'addon' => 'إضافة',
