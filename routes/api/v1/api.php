@@ -333,8 +333,17 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     });
 
     Route::group(['prefix' => 'coupon'], function () {
+        // Get list of active coupons
         Route::get('list', [CouponController::class, 'list']);
-        Route::get('apply', [CouponController::class, 'apply']);
+        
+        // Apply coupon code
+        Route::post('apply', [CouponController::class, 'apply']);
+        
+        // Get coupon details by code
+        Route::get('details', [CouponController::class, 'details']);
+        
+        // Get available coupons for specific order amount
+        Route::get('available', [CouponController::class, 'availableCoupons']);
     });
 
     //map api
