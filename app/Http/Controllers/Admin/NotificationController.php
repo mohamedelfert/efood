@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Model\Order;
+use App\Model\Branch;
 use App\Model\Conversation;
 use App\Model\Notification;
 use Illuminate\Support\Str;
@@ -22,33 +23,47 @@ class NotificationController extends Controller
     public function __construct(
         private Notification $notification,
         private Conversation $conversation,
-        private Order $order
+        private Order $order,
+        private Branch $branch
     )
     {}
 
     /**
-     * Display notification list
+     * Display notification list with search and branch filter
      */
     function index(Request $request): View|Factory|Application
     {
         $queryParam = [];
         $search = $request['search'];
+        $branchFilter = $request['branch_id'] ?? 'all';
 
-        if ($request->has('search')) {
+        $query = $this->notification->with('branch');
+
+        // Search functionality
+        if ($request->has('search') && !empty($search)) {
             $key = explode(' ', $request['search']);
-            $notifications = $this->notification->where(function ($q) use ($key) {
+            $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('title', 'like', "%{$value}%")
                         ->orWhere('description', 'like', "%{$value}%");
                 }
             });
-            $queryParam = ['search' => $request['search']];
-        } else {
-            $notifications = $this->notification;
+            $queryParam['search'] = $request['search'];
         }
 
-        $notifications = $notifications->latest()->paginate(Helpers::getPagination())->appends($queryParam);
-        return view('admin-views.notification.index', compact('notifications', 'search'));
+        // Branch filter functionality
+        if ($request->has('branch_id') && $request['branch_id'] != 'all') {
+            $query->where(function ($q) use ($branchFilter) {
+                $q->where('branch_id', $branchFilter)
+                  ->orWhereNull('branch_id'); // Include global notifications
+            });
+            $queryParam['branch_id'] = $request['branch_id'];
+        }
+
+        $notifications = $query->latest()->paginate(Helpers::getPagination())->appends($queryParam);
+        $branches = $this->branch->active()->get();
+
+        return view('admin-views.notification.index', compact('notifications', 'search', 'branches', 'branchFilter'));
     }
 
     /**
@@ -56,34 +71,69 @@ class NotificationController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        // Custom validation rules
+        $rules = [
             'title' => 'required|max:100',
-            'description' => 'required|max:255'
-        ], [
-            'title.max' => translate('Title is too long!'),
-            'description.max' => translate('Description is too long!'),
-        ]);
+            'description' => 'required|max:255',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048'
+        ];
 
-        $notification = $this->notification;
-        $notification->title = $request->title;
-        $notification->description = $request->description;
-        $notification->image = Helpers::upload('notification/', 'png', $request->file('image'));
-        $notification->status = 1;
-        $notification->user_id = auth()->id();
-        $notification->notification_type = 'admin_notification';
-        $notification->is_read = false;
-        $notification->save();
-
-        $notification->image = asset('storage/app/public/notification') . '/' . $notification->image;
-
-        try {
-            Helpers::send_push_notif_to_topic($notification, 'notify', 'general');
-        } catch (\Exception $e) {
-            Toastr::warning(translate('Push notification failed!'));
+        // Only validate branch_id if it's not 'all'
+        if ($request->branch_id != 'all' && !empty($request->branch_id)) {
+            $rules['branch_id'] = 'required|exists:branches,id';
         }
 
-        Toastr::success(translate('Notification sent successfully!'));
-        return back();
+        $messages = [
+            'title.required' => translate('Notification title is required'),
+            'title.max' => translate('Title is too long!'),
+            'description.required' => translate('Notification description is required'),
+            'description.max' => translate('Description is too long!'),
+            'branch_id.exists' => translate('Selected branch is invalid'),
+            'image.image' => translate('File must be an image'),
+            'image.mimes' => translate('Image must be jpg, jpeg, png or gif'),
+            'image.max' => translate('Image size must not exceed 2MB')
+        ];
+
+        $request->validate($rules, $messages);
+
+        try {
+            $notification = $this->notification;
+            $notification->branch_id = ($request->branch_id == 'all' || empty($request->branch_id)) ? null : $request->branch_id;
+            $notification->title = $request->title;
+            $notification->description = $request->description;
+            $notification->image = $request->hasFile('image') ? Helpers::upload('notification/', 'png', $request->file('image')) : null;
+            $notification->status = 1;
+            $notification->user_id = auth()->id();
+            $notification->notification_type = 'admin_notification';
+            $notification->is_read = false;
+            $notification->save();
+
+            // Prepare notification data for push
+            $notificationData = $notification->fresh();
+            $notificationData->image = $notification->image ? 
+                asset('storage/app/public/notification/' . $notification->image) : null;
+
+            // Send push notification
+            try {
+                $topic = is_null($notification->branch_id) ? 'general' : 'branch_' . $notification->branch_id;
+                Helpers::send_push_notif_to_topic($notificationData, 'notify', $topic);
+            } catch (\Exception $e) {
+                Log::error('Push notification failed: ' . $e->getMessage());
+                Toastr::warning(translate('Push notification failed!'));
+            }
+
+            $successMessage = is_null($notification->branch_id) 
+                ? translate('Notification sent to all branches successfully!')
+                : translate('Notification sent to selected branch successfully!');
+            
+            Toastr::success($successMessage);
+            return redirect()->route('admin.notification.add-new');
+
+        } catch (\Exception $e) {
+            Log::error('Notification creation failed: ' . $e->getMessage());
+            Toastr::error(translate('Failed to send notification. Please try again.'));
+            return back()->withInput();
+        }
     }
 
     /**
@@ -91,8 +141,9 @@ class NotificationController extends Controller
      */
     public function edit($id): Renderable
     {
-        $notification = $this->notification->find($id);
-        return view('admin-views.notification.edit', compact('notification'));
+        $notification = $this->notification->with('branch')->findOrFail($id);
+        $branches = $this->branch->active()->get();
+        return view('admin-views.notification.edit', compact('notification', 'branches'));
     }
 
     /**
@@ -100,22 +151,49 @@ class NotificationController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        $request->validate([
+        // Custom validation rules
+        $rules = [
             'title' => 'required|max:100',
-            'description' => 'required|max:255'
-        ], [
+            'description' => 'required|max:255',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048'
+        ];
+
+        // Only validate branch_id if it's not 'all'
+        if ($request->branch_id != 'all' && !empty($request->branch_id)) {
+            $rules['branch_id'] = 'required|exists:branches,id';
+        }
+
+        $messages = [
+            'title.required' => translate('Notification title is required'),
             'title.max' => translate('Title is too long!'),
+            'description.required' => translate('Notification description is required'),
             'description.max' => translate('Description is too long!'),
-        ]);
+            'branch_id.exists' => translate('Selected branch is invalid'),
+            'image.image' => translate('File must be an image'),
+            'image.mimes' => translate('Image must be jpg, jpeg, png or gif'),
+            'image.max' => translate('Image size must not exceed 2MB')
+        ];
 
-        $notification = $this->notification->find($id);
-        $notification->title = $request->title;
-        $notification->description = $request->description;
-        $notification->image = $request->has('image') ? Helpers::update('notification/', $notification->image, 'png', $request->file('image')) : $notification->image;
-        $notification->save();
+        $request->validate($rules, $messages);
 
-        Toastr::success(translate('Notification updated successfully!'));
-        return back();
+        try {
+            $notification = $this->notification->findOrFail($id);
+            $notification->branch_id = ($request->branch_id == 'all' || empty($request->branch_id)) ? null : $request->branch_id;
+            $notification->title = $request->title;
+            $notification->description = $request->description;
+            $notification->image = $request->hasFile('image') ? 
+                Helpers::update('notification/', $notification->image, 'png', $request->file('image')) : 
+                $notification->image;
+            $notification->save();
+
+            Toastr::success(translate('Notification updated successfully!'));
+            return redirect()->route('admin.notification.add-new');
+
+        } catch (\Exception $e) {
+            Log::error('Notification update failed: ' . $e->getMessage());
+            Toastr::error(translate('Failed to update notification. Please try again.'));
+            return back()->withInput();
+        }
     }
 
     /**
@@ -123,12 +201,18 @@ class NotificationController extends Controller
      */
     public function status(Request $request): RedirectResponse
     {
-        $notification = $this->notification->find($request->id);
-        $notification->status = $request->status;
-        $notification->save();
+        try {
+            $notification = $this->notification->findOrFail($request->id);
+            $notification->status = $request->status;
+            $notification->save();
 
-        Toastr::success(translate('Notification status updated!'));
-        return back();
+            Toastr::success(translate('Notification status updated!'));
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Status update failed: ' . $e->getMessage());
+            Toastr::error(translate('Failed to update status. Please try again.'));
+            return back();
+        }
     }
 
     /**
@@ -136,21 +220,33 @@ class NotificationController extends Controller
      */
     public function delete(Request $request): RedirectResponse
     {
-        $notification = $this->notification->find($request->id);
-        Helpers::delete('notification/' . $notification['image']);
-        $notification->delete();
+        try {
+            $notification = $this->notification->findOrFail($request->id);
+            
+            if ($notification->image) {
+                Helpers::delete('notification/' . $notification->image);
+            }
+            
+            $notification->delete();
 
-        Toastr::success(translate('Notification removed!'));
-        return back();
+            Toastr::success(translate('Notification removed!'));
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Notification deletion failed: ' . $e->getMessage());
+            Toastr::error(translate('Failed to delete notification. Please try again.'));
+            return back();
+        }
     }
 
     /**
      * Get notification counts (AJAX endpoint)
      * Called by frontend every 10 seconds
      */
-    public function getNotificationCount()
+    public function getNotificationCount(Request $request)
     {
         try {
+            $branchId = $request->input('branch_id');
+            
             // Get unread message count (distinct users)
             $messageCount = $this->conversation
                 ->where('checked', 0)
@@ -158,10 +254,16 @@ class NotificationController extends Controller
                 ->count();
             
             // Get pending order count (last 7 days)
-            $orderCount = $this->order
+            $orderQuery = $this->order
                 ->where('order_status', 'pending')
-                ->whereDate('created_at', '>=', now()->subDays(7))
-                ->count();
+                ->whereDate('created_at', '>=', now()->subDays(7));
+            
+            // Filter by branch if provided
+            if ($branchId && $branchId != 'all') {
+                $orderQuery->where('branch_id', $branchId);
+            }
+            
+            $orderCount = $orderQuery->count();
             
             return response()->json([
                 'success' => true,
@@ -236,9 +338,11 @@ class NotificationController extends Controller
      * Get detailed notification data
      * Optional: For notification dropdown panel
      */
-    public function getNotificationDetails()
+    public function getNotificationDetails(Request $request)
     {
         try {
+            $branchId = $request->input('branch_id');
+            
             // Get recent unread messages with user details
             $recentMessages = $this->conversation
                 ->where('checked', 0)
@@ -262,13 +366,19 @@ class NotificationController extends Controller
                 });
             
             // Get recent pending orders
-            $recentOrders = $this->order
+            $orderQuery = $this->order
                 ->where('order_status', 'pending')
                 ->with('customer:id,f_name,l_name')
-                ->select('id', 'user_id', 'order_amount', 'created_at')
+                ->select('id', 'user_id', 'order_amount', 'branch_id', 'created_at')
                 ->latest()
-                ->take(5)
-                ->get()
+                ->take(5);
+            
+            // Filter by branch if provided
+            if ($branchId && $branchId != 'all') {
+                $orderQuery->where('branch_id', $branchId);
+            }
+            
+            $recentOrders = $orderQuery->get()
                 ->map(function($order) {
                     return [
                         'id' => $order->id,
@@ -288,7 +398,9 @@ class NotificationController extends Controller
                     'recent' => $recentMessages
                 ],
                 'orders' => [
-                    'count' => $this->order->where('order_status', 'pending')->count(),
+                    'count' => $branchId && $branchId != 'all' 
+                        ? $this->order->where('order_status', 'pending')->where('branch_id', $branchId)->count()
+                        : $this->order->where('order_status', 'pending')->count(),
                     'recent' => $recentOrders
                 ]
             ]);

@@ -22,19 +22,36 @@
                             <div class="row">
                                 <div class="col-lg-6">
                                     <div class="form-group">
+                                        <label class="input-label">{{translate('branch')}}</label>
+                                        <select name="branch_id" class="custom-select">
+                                            <option value="all" {{is_null($notification->branch_id) ? 'selected' : ''}}>
+                                                {{translate('All Branches')}}
+                                            </option>
+                                            @foreach($branches as $branch)
+                                                <option value="{{$branch->id}}" {{$notification->branch_id == $branch->id ? 'selected' : ''}}>
+                                                    {{$branch->name}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="form-text text-muted">{{translate('Select "All Branches" to send notification to all branches')}}</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
                                         <label class="input-label">{{translate('title')}}
                                             <i class="tio-info text-danger" data-toggle="tooltip" data-placement="right"
                                                title="{{ translate('not_more_than_100_characters') }}">
                                             </i>
-                                        </label>                                        <input type="text" value="{{$notification['title']}}" name="title" class="form-control" placeholder="{{translate('New notification')}}" required>
+                                        </label>
+                                        <input type="text" value="{{$notification['title']}}" name="title" maxlength="100" class="form-control" placeholder="{{translate('New notification')}}" required>
                                     </div>
+                                    
                                     <div class="form-group">
                                         <label class="input-label">{{translate('description')}}
                                             <i class="tio-info text-danger" data-toggle="tooltip" data-placement="right"
                                                title="{{ translate('not_more_than_255_characters') }}">
                                             </i>
                                         </label>
-                                        <textarea name="description" class="form-control" rows="3" required>{{$notification['description']}}</textarea>
+                                        <textarea name="description" maxlength="255" class="form-control" rows="3" required>{{$notification['description']}}</textarea>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">

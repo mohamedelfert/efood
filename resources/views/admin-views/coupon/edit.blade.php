@@ -22,6 +22,22 @@
                             <div class="row">
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group">
+                                        <label class="input-label">{{translate('branch')}}</label>
+                                        <select name="branch_id" class="custom-select">
+                                            <option value="all" {{is_null($coupon->branch_id) ? 'selected' : ''}}>
+                                                {{translate('All Branches')}}
+                                            </option>
+                                            @foreach($branches as $branch)
+                                                <option value="{{$branch->id}}" {{$coupon->branch_id == $branch->id ? 'selected' : ''}}>
+                                                    {{$branch->name}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="form-text text-muted">{{translate('Select "All Branches" to make coupon available for all branches')}}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group">
                                         <label class="input-label">{{translate('title')}}</label>
                                         <input type="text" name="title" value="{{$coupon['title']}}" class="form-control"
                                             placeholder="{{ translate('New coupon') }}" required>

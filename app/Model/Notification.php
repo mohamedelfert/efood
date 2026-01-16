@@ -4,17 +4,33 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
     protected $guarded = [];
 
     protected $casts = [
+        'user_id' => 'integer',
+        'branch_id' => 'integer',
         'status' => 'integer',
         'is_read' => 'boolean',
         'data' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
+    ];
+
+    protected $fillable = [
+        'user_id',
+        'branch_id',
+        'title',
+        'description',
+        'notification_type',
+        'reference_id',
+        'status',
+        'is_read',
+        'image',
+        'data'
     ];
 
     /**
@@ -52,6 +68,25 @@ class Notification extends Model
     }
 
     /**
+     * Get notifications for specific branch (including global)
+     */
+    public function scopeForBranch($query, $branchId)
+    {
+        return $query->where(function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId)
+              ->orWhereNull('branch_id');
+        });
+    }
+
+    /**
+     * Get global notifications (for all branches)
+     */
+    public function scopeGlobal($query)
+    {
+        return $query->whereNull('branch_id');
+    }
+
+    /**
      * Get notifications by type
      */
     public function scopeOfType($query, $type)
@@ -65,6 +100,22 @@ class Notification extends Model
     public function isBroadcast(): bool
     {
         return empty($this->user_id) || $this->user_id == 0;
+    }
+
+    /**
+     * Check if notification is global (all branches)
+     */
+    public function isGlobal(): bool
+    {
+        return is_null($this->branch_id);
+    }
+
+    /**
+     * Check if notification is available for specific branch
+     */
+    public function isAvailableForBranch($branchId): bool
+    {
+        return is_null($this->branch_id) || $this->branch_id == $branchId;
     }
 
     /**
@@ -92,9 +143,17 @@ class Notification extends Model
     /**
      * Relationship: User who owns this notification
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(\App\User::class, 'user_id');
+    }
+
+    /**
+     * Relationship: Branch that owns this notification
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
     }
 
     /**
@@ -120,6 +179,7 @@ class Notification extends Model
     {
         return self::create([
             'user_id' => $data['user_id'] ?? null,
+            'branch_id' => $data['branch_id'] ?? null,
             'title' => $data['title'],
             'description' => $data['description'],
             'notification_type' => $data['type'] ?? 'general',
@@ -136,6 +196,20 @@ class Notification extends Model
      */
     public static function broadcast(array $data): self
     {
-        return self::createNotification(array_merge($data, ['user_id' => null]));
+        return self::createNotification(array_merge($data, [
+            'user_id' => null,
+            'branch_id' => null
+        ]));
+    }
+
+    /**
+     * Static method to send branch-specific notification
+     */
+    public static function sendToBranch($branchId, array $data): self
+    {
+        return self::createNotification(array_merge($data, [
+            'branch_id' => $branchId,
+            'user_id' => null
+        ]));
     }
 }

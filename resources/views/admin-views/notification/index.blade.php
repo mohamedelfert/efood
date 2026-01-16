@@ -22,6 +22,17 @@
                             <div class="row">
                                 <div class="col-lg-6">
                                     <div class="form-group">
+                                        <label class="input-label">{{translate('branch')}}</label>
+                                        <select name="branch_id" class="custom-select">
+                                            <option value="all" selected>{{translate('All Branches')}}</option>
+                                            @foreach($branches as $branch)
+                                                <option value="{{$branch->id}}">{{$branch->name}}</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="form-text text-muted">{{translate('Select "All Branches" to send notification to all branches')}}</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
                                         <label class="input-label">{{translate('title')}}
                                             <i class="tio-info text-danger" data-toggle="tooltip" data-placement="right"
                                                title="{{ translate('not_more_than_100_characters') }}">
@@ -29,6 +40,7 @@
                                         </label>
                                         <input type="text" name="title" maxlength="100" class="form-control" value="{{ old('title') }}" placeholder="{{translate('New notification')}}" required>
                                     </div>
+                                    
                                     <div class="form-group">
                                         <label class="input-label">{{translate('description')}}
                                             <i class="tio-info text-danger" data-toggle="tooltip" data-placement="right"
@@ -68,23 +80,37 @@
                 <div class="card">
                     <div class="card-top px-card pt-4">
                         <div class="row justify-content-between align-items-center gy-2">
-                            <div class="col-sm-4 col-md-6 col-lg-8">
+                            <div class="col-sm-4 col-md-6 col-lg-4">
                                 <h5 class="d-flex align-items-center gap-2 mb-0">
                                     {{translate('Notification_Table')}}
                                     <span class="badge badge-soft-dark rounded-50 fz-12">{{ $notifications->total() }}</span>
                                 </h5>
                             </div>
-                            <div class="col-sm-8 col-md-6 col-lg-4">
-                                <form action="{{url()->current()}}" method="GET">
-                                    <div class="input-group">
-                                        <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('Search by title or description')}}" aria-label="Search" value="{{$search}}" required="" autocomplete="off">
-                                        <div class="input-group-append">
-                                            <button type="submit" class="btn btn-primary">
-                                                {{translate('Search')}}
-                                            </button>
+                            <div class="col-sm-8 col-md-6 col-lg-8">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <form action="{{url()->current()}}" method="GET" class="mb-0">
+                                        <div class="input-group">
+                                            <select name="branch_id" class="custom-select" onchange="this.form.submit()">
+                                                <option value="all">{{translate('All Branches')}}</option>
+                                                @foreach($branches as $branch)
+                                                    <option value="{{$branch->id}}" {{$branchFilter == $branch->id ? 'selected' : ''}}>
+                                                        {{$branch->name}}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                    <form action="{{url()->current()}}" method="GET">
+                                        <div class="input-group">
+                                            <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('Search by title or description')}}" aria-label="Search" value="{{$search}}" required="" autocomplete="off">
+                                            <div class="input-group-append">
+                                                <button type="submit" class="btn btn-primary">
+                                                    {{translate('Search')}}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -96,6 +122,7 @@
                                 <thead class="thead-light">
                                 <tr>
                                     <th>{{translate('SL')}}</th>
+                                    <th>{{translate('Branch')}}</th>
                                     <th>{{translate('image')}}</th>
                                     <th>{{translate('title')}}</th>
                                     <th>{{translate('description')}}</th>
@@ -108,6 +135,13 @@
                                 @foreach($notifications as $key=>$notification)
                                     <tr>
                                         <td>{{$notifications->firstitem()+$key}}</td>
+                                        <td>
+                                            @if($notification->branch_id)
+                                                <span class="badge badge-soft-info">{{$notification->branch->name ?? translate('N/A')}}</span>
+                                            @else
+                                                <span class="badge badge-soft-success">{{translate('All Branches')}}</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($notification['image']!=null)
                                                 <img class="img-vertical-150" src="{{$notification['imageFullPath']}}" alt="{{ translate('notification') }}">

@@ -60,6 +60,27 @@ class Branch extends Authenticatable
             ->orderBy('opening_time');
     }
 
+    /**
+     * Get coupons for this branch
+     */
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(Coupon::class);
+    }
+
+    /**
+     * Get active coupons for this branch (including global coupons)
+     */
+    public function activeCoupons()
+    {
+        return Coupon::where(function ($query) {
+                $query->where('branch_id', $this->id)
+                      ->orWhereNull('branch_id');
+            })
+            ->active()
+            ->get();
+    }
+
     public function getImageFullPathAttribute(): string
     {
         $image = $this->image ?? null;
@@ -144,5 +165,10 @@ class Branch extends Authenticatable
     public function getTotalReviewsAttribute()
     {
         return $this->reviews()->count();
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 }

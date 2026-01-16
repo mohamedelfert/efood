@@ -127,6 +127,7 @@
                     </div>
                 </div>
 
+                <!--
                 <div class="card h100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
@@ -164,6 +165,7 @@
                         </div>
                     </div>
                 </div>
+                -->
 
                 <div class="card h100 recent-orders">
                     <div class="card-header d-flex justify-content-between gap-10">

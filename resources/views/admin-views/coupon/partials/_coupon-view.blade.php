@@ -13,6 +13,24 @@
     </div>
     <div class="coupon-info">
         <div class="coupon-info-item">
+            <span>{{translate('branch')}} :</span>
+            @if($coupon->branch_id)
+                <strong>{{$coupon->branch->name ?? translate('N/A')}}</strong>
+            @else
+                <strong class="text-success">{{translate('All Branches')}}</strong>
+            @endif
+        </div>
+        <div class="coupon-info-item">
+            <span>{{translate('coupon_type')}} :</span>
+            <strong class="text-capitalize">{{translate($coupon->coupon_type)}}</strong>
+        </div>
+        @if($coupon->coupon_type == 'default')
+        <div class="coupon-info-item">
+            <span>{{translate('usage_limit_per_user')}} :</span>
+            <strong>{{$coupon->limit ?? translate('unlimited')}}</strong>
+        </div>
+        @endif
+        <div class="coupon-info-item">
             <span>{{translate('min_purchase')}} :</span>
             <strong id="min_purchase">{{Helpers::set_symbol($coupon->min_purchase)}}</strong>
         </div>

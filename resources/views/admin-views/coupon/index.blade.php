@@ -22,6 +22,17 @@
                             <div class="row">
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group">
+                                        <label class="input-label">{{translate('branch')}} <span class="text-danger">*</span></label>
+                                        <select name="branch_id" class="custom-select" required>
+                                            <option value="all">{{translate('All Branches')}}</option>
+                                            @foreach($branches as $branch)
+                                                <option value="{{$branch->id}}">{{$branch->name}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group">
                                         <label class="input-label">{{translate('coupon')}} {{translate('type')}}</label>
                                         <select name="coupon_type" class="custom-select" id="coupon_type">
                                             <option value="default">{{translate('default')}}</option>
@@ -104,23 +115,37 @@
                 <div class="card">
                     <div class="card-top px-card pt-4">
                         <div class="row justify-content-between align-items-center gy-2">
-                            <div class="col-sm-4 col-md-6 col-lg-8">
+                            <div class="col-sm-4 col-md-6 col-lg-4">
                                 <h5 class="d-flex align-items-center gap-2 mb-0">
                                     {{translate('Coupon_Table')}}
                                     <span class="badge badge-soft-dark rounded-50 fz-12">{{ $coupons->total() }}</span>
                                 </h5>
                             </div>
-                            <div class="col-sm-8 col-md-6 col-lg-4">
-                                <form action="{{url()->current()}}" class="mb-0" method="GET">
-                                    <div class="input-group">
-                                        <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('Search by Title')}}" aria-label="Search" value="{{$search}}" required="" autocomplete="off">
-                                        <div class="input-group-append">
-                                            <button type="submit" class="btn btn-primary">
-                                                {{translate('Search')}}
-                                            </button>
+                            <div class="col-sm-8 col-md-6 col-lg-8">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <form action="{{url()->current()}}" method="GET" class="mb-0">
+                                        <div class="input-group">
+                                            <select name="branch_id" class="custom-select" onchange="this.form.submit()">
+                                                <option value="all">{{translate('All Branches')}}</option>
+                                                @foreach($branches as $branch)
+                                                    <option value="{{$branch->id}}" {{$branchFilter == $branch->id ? 'selected' : ''}}>
+                                                        {{$branch->name}}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                    <form action="{{url()->current()}}" class="mb-0" method="GET">
+                                        <div class="input-group">
+                                            <input type="search" name="search" class="form-control" placeholder="{{translate('Search by Title')}}" value="{{$search}}" autocomplete="off">
+                                            <div class="input-group-append">
+                                                <button type="submit" class="btn btn-primary">
+                                                    {{translate('Search')}}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -131,6 +156,7 @@
                                 <thead class="thead-light">
                                     <tr>
                                         <th>{{translate('SL')}}</th>
+                                        <th>{{translate('Branch')}}</th>
                                         <th>{{translate('Coupon')}}</th>
                                         <th>{{translate('Amount')}}</th>
                                         <th>{{translate('Coupon_Type')}}</th>
@@ -145,6 +171,13 @@
                                     <tr>
                                         <td>{{$coupons->firstItem()+$key}}</td>
                                         <td>
+                                            @if($coupon->branch_id)
+                                                <span class="badge badge-soft-info">{{$coupon->branch->name ?? translate('N/A')}}</span>
+                                            @else
+                                                <span class="badge badge-soft-success">{{translate('All Branches')}}</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             <div>
                                                 <div class="fz-14"><strong>{{translate('code')}}: {{$coupon['code']}}</strong></div>
                                                 <div class="max-w300 text-wrap fz-12 mt-1">{{$coupon['title']}}</div>
@@ -155,7 +188,7 @@
                                         @else
                                             <td>{{$coupon->discount}}%</td>
                                         @endif
-                                        <td>{{translate($coupon->discount_type)}}</td>
+                                        <td>{{translate($coupon->coupon_type)}}</td>
                                         <td><div class="text-muted">{{date('d M, Y', strtotime($coupon['start_date']))}} - {{date('d M, Y', strtotime($coupon['expire_date']))}}</div></td>
                                         <td>
                                             <label class="switcher">

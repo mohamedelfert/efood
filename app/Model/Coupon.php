@@ -4,10 +4,12 @@ namespace App\Model;
 
 use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Coupon extends Model
 {
     protected $casts = [
+        'branch_id' => 'integer',
         'min_purchase' => 'float',
         'max_discount' => 'float',
         'discount' => 'float',
@@ -16,6 +18,21 @@ class Coupon extends Model
         'expire_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
+    ];
+
+    protected $fillable = [
+        'branch_id',
+        'title',
+        'code',
+        'limit',
+        'coupon_type',
+        'start_date',
+        'expire_date',
+        'min_purchase',
+        'max_discount',
+        'discount',
+        'discount_type',
+        'status'
     ];
 
     public function getMinPurchaseAttribute($min_purchase): float
@@ -35,11 +52,37 @@ class Coupon extends Model
 
     public function scopeActive($query)
     {
-        return $query->where(['status' => 1])->where('start_date', '<=', now()->format('Y-m-d'))->where('expire_date', '>=', now()->format('Y-m-d'));
+        return $query->where(['status' => 1])
+            ->where('start_date', '<=', now()->format('Y-m-d'))
+            ->where('expire_date', '>=', now()->format('Y-m-d'));
     }
 
     public function scopeDefault($query)
     {
         return $query->where(['coupon_type' => 'default']);
+    }
+
+    public function scopeForBranch($query, $branchId)
+    {
+        return $query->where(function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId)
+              ->orWhereNull('branch_id');
+        });
+    }
+
+    /**
+     * Get the branch that owns the coupon
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Check if coupon is available for specific branch
+     */
+    public function isAvailableForBranch($branchId): bool
+    {
+        return is_null($this->branch_id) || $this->branch_id == $branchId;
     }
 }
