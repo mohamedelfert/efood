@@ -25,6 +25,17 @@ class NotificationService
     }
 
     /**
+     * Helper function to replace placeholders in translations
+     */
+    private function replaceTranslationPlaceholders(string $text, array $replacements): string
+    {
+        foreach ($replacements as $key => $value) {
+            $text = str_replace([':' . $key, '{' . $key . '}'], $value, $text);
+        }
+        return $text;
+    }
+
+    /**
      * Send login OTP via Email and WhatsApp
      * Removed transaction_id (doesn't exist for login)
      */
