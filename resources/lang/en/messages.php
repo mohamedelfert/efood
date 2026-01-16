@@ -1,4 +1,4 @@
-<?php return array (
+<?php return array(
   'Dashboard' => 'Dashboard',
   'welcome' => 'Welcome',
   'Monitor_your_business_analytics_and_statistics' => 'Monitor your business analytics and statistics',
@@ -11,7 +11,15 @@
   'confirmed' => 'Confirmed',
   'processing' => 'Processing',
   'out_for_delivery' => 'Out for delivery',
+  'Branch deleted!' => 'Branch deleted!',
+  'N/A' => 'N/A',
+  'On' => 'On',
+  'Off' => 'Off',
   'canceled' => 'Canceled',
+  'Cancel Reason' => 'Cancel Reason',
+  'order_received' => 'Order Received',
+  'order_processing' => 'Order Processing',
+  'order_ready' => 'Order Ready',
   'failed_to_deliver' => 'Failed to deliver',
   'order_statistics' => 'Order statistics',
   'This_Year' => 'This Year',
@@ -520,7 +528,7 @@
   'banner_status_updated' => 'Offer status updated!',
   'banner_removed' => 'Offer removed!',
   'want_to_delete_banner' => 'Do you want to delete this offer?',
-  
+
   // Form Labels
   'banner_setup' => 'Offer Setup',
   'add_new_banner' => 'Add New Offer',
@@ -538,18 +546,18 @@
   'ratio_2_1' => 'Ratio 2:1',
   'original_price' => 'Original Price',
   'new_banner' => 'New Offer',
-  
+
   // Table Headers
   'sl' => 'SL',
   'banner_image_col' => 'Offer Image',
   'banner_type_col' => 'Offer Type',
   'details' => 'Details',
-  
+
   // Buttons
   'add_product' => 'Add Product',
   'search' => 'Search',
   'search_by_title' => 'Search by Title',
-  
+
   // Alerts
   'loading_price' => 'Loading price...',
   'price_not_available' => 'Price not available',

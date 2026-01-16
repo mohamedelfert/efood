@@ -1,4 +1,4 @@
-<?php return array (
+<?php return array(
   'Dashboard' => 'لوحة التحكم',
   'welcome' => 'مرحباً',
   'Monitor_your_business_analytics_and_statistics' => 'راقب تحليلات وإحصائيات أعمالك',
@@ -11,7 +11,25 @@
   'confirmed' => 'مؤكد',
   'processing' => 'قيد المعالجة',
   'out_for_delivery' => 'خارج للتوصيل',
+  'Branch deleted!' => 'الفرع محذوف!',
+  'N/A' => 'غير متاح',
+  'On' => 'مفعّل',
+  'Off' => 'غير مفعّل',
+  'Change status to Order Received ?' => 'تغيير حاله الطلب الي مستلم',
+  'Change status to Order Processing ?' => 'تغيير حاله الطلب الي قيد التجهيز',
+  'Change status to Order Ready ?' => 'تغيير حاله الطلب الي جاهز للاستلام',
+  'Cancel Order' => 'الغاء الطلب',
+  'Enter cancel reason...' => 'اكتب سبب الالغاء',
+  'paid' => 'مدفوع',
+  'Paid' => 'مدفوع',
+  'unpaid' => 'غير مدفوع',
+  'Unpaid' => 'غير مدفوع',
+  'partial_paid' => 'مدفوع جزئي',
   'canceled' => 'ملغى',
+  'Cancel Reason' => 'سبب الإلغاء',
+  'order_received' => 'استلام الطلب',
+  'order_processing' => 'تجهيز الطلب',
+  'order_ready' => 'الطلب جاهز',
   'failed_to_deliver' => 'فشل التوصيل',
   'order_statistics' => 'إحصائيات الطلبات',
   'This_Year' => 'هذا العام',
@@ -54,352 +72,352 @@
   'all' => 'الكل',
 
   // Existing translations
-    'ongoing' => 'جارية',
-    'delivered' => 'تم التوصيل',
-    'returned' => 'مرتجع',
-    'earning_statistics' => 'إحصائيات الأرباح',
-    'recent_Orders' => 'الطلبات الأخيرة',
-    'View_All' => 'عرض الكل',
+  'ongoing' => 'جارية',
+  'delivered' => 'تم التوصيل',
+  'returned' => 'مرتجع',
+  'earning_statistics' => 'إحصائيات الأرباح',
+  'recent_Orders' => 'الطلبات الأخيرة',
+  'View_All' => 'عرض الكل',
 
-    // Coupon System - General
-    'coupon' => 'كوبون',
-    'coupons' => 'الكوبونات',
-    'Add_New_Coupon' => 'إضافة كوبون جديد',
-    'Coupon_Update' => 'تحديث الكوبون',
-    'Coupon_Table' => 'جدول الكوبونات',
-    'coupon_code' => 'كود الكوبون',
-    'Coupon_Code' => 'كود الكوبون',
-    'Coupon_Title' => 'عنوان الكوبون',
-    'coupon_type' => 'نوع الكوبون',
-    'coupon_details' => 'تفاصيل الكوبون',
-    
-    // Coupon Types
-    'default' => 'افتراضي',
-    'first_order' => 'الطلب الأول',
-    'first order' => 'الطلب الأول',
-    
-    // Branch Related
-    'branch' => 'الفرع',
-    'branches' => 'الفروع',
-    'All_Branches' => 'جميع الفروع',
-    'All Branches' => 'جميع الفروع',
-    'branch_name' => 'اسم الفرع',
-    
-    // Discount Related
-    'discount' => 'خصم',
-    'discount_Type' => 'نوع الخصم',
-    'discount_type' => 'نوع الخصم',
-    'discount_Amount' => 'مبلغ الخصم',
-    'discount_percent' => 'نسبة الخصم',
-    'discount_in' => 'الخصم في',
-    'percent' => 'نسبة مئوية',
-    'amount' => 'مبلغ',
-    'percentage' => 'نسبة مئوية',
-    
-    // Limits and Conditions
-    'limit' => 'الحد',
-    'limit_For_Same_User' => 'حد الاستخدام لنفس المستخدم',
-    'limit_for' => 'حد الاستخدام لـ',
-    'same' => 'نفس',
-    'user' => 'المستخدم',
-    'minimum' => 'الحد الأدنى',
-    'maximum' => 'الحد الأقصى',
-    'min_purchase' => 'الحد الأدنى للشراء',
-    'min_Purchase' => 'الحد الأدنى للشراء',
-    'max_discount' => 'الحد الأقصى للخصم',
-    'max_Discount' => 'الحد الأقصى للخصم',
-    'usage_limit_per_user' => 'حد الاستخدام لكل مستخدم',
-    'unlimited' => 'غير محدود',
-    
-    // Dates
-    'start' => 'البداية',
-    'start_date' => 'تاريخ البداية',
-    'start_Date' => 'تاريخ البداية',
-    'expire' => 'الانتهاء',
-    'expire_date' => 'تاريخ الانتهاء',
-    'expire_Date' => 'تاريخ الانتهاء',
-    'duration' => 'المدة',
-    'date' => 'التاريخ',
-    
-    // Actions
-    'generate_code' => 'توليد الكود',
-    'code' => 'الكود',
-    'title' => 'العنوان',
-    'status' => 'الحالة',
-    'action' => 'الإجراء',
-    'submit' => 'إرسال',
-    'update' => 'تحديث',
-    'reset' => 'إعادة تعيين',
-    'delete' => 'حذف',
-    'edit' => 'تعديل',
-    'view' => 'عرض',
-    'search' => 'بحث',
-    'Search' => 'بحث',
-    'Search by Title' => 'البحث بالعنوان',
-    'filter' => 'تصفية',
-    
-    // Messages
-    'Coupon added successfully!' => 'تمت إضافة الكوبون بنجاح!',
-    'Coupon updated successfully!' => 'تم تحديث الكوبون بنجاح!',
-    'Coupon status updated!' => 'تم تحديث حالة الكوبون!',
-    'Coupon removed!' => 'تم حذف الكوبون!',
-    'Want to delete this coupon ?' => 'هل تريد حذف هذا الكوبون؟',
-    'discount_can_not_be_more_than_100%' => 'لا يمكن أن يكون الخصم أكثر من 100%',
-    'Title is too long!' => 'العنوان طويل جداً!',
-    'Coupon code already exists!' => 'كود الكوبون موجود بالفعل!',
-    'Expire date must be after or equal to start date!' => 'يجب أن يكون تاريخ الانتهاء بعد أو مساوٍ لتاريخ البداية!',
-    
-    // Placeholders
-    'New coupon' => 'كوبون جديد',
-    'EX: 10' => 'مثال: 10',
-    'Ex: 50%' => 'مثال: 50%',
-    'Ex: 500' => 'مثال: 500',
-    'Select dates' => 'اختر التواريخ',
-    '100' => '100',
-    
-    // Table Headers
-    'SL' => 'ت',
-    'Amount' => 'المبلغ',
-    'Branch' => 'الفرع',
-    'Coupon' => 'الكوبون',
-    'Coupon_Type' => 'نوع الكوبون',
-    
-    // Common
-    'N/A' => 'غير متوفر',
-    'off' => 'خصم',
-    'purchase' => 'الشراء',
-    'for' => 'لـ',
-    'type' => 'النوع',
-    'required' => 'مطلوب',
-    
-    // Validation Messages
-    'The branch field is required.' => 'حقل الفرع مطلوب.',
-    'The code field is required.' => 'حقل الكود مطلوب.',
-    'The title field is required.' => 'حقل العنوان مطلوب.',
-    'The start date field is required.' => 'حقل تاريخ البداية مطلوب.',
-    'The expire date field is required.' => 'حقل تاريخ الانتهاء مطلوب.',
-    'The discount field is required.' => 'حقل الخصم مطلوب.',
-    'The selected branch is invalid.' => 'الفرع المحدد غير صالح.',
-    'Selected branch is invalid' => 'الفرع المحدد غير صالح',
-    'Coupon title is required' => 'عنوان الكوبون مطلوب',
-    'Coupon code is required' => 'كود الكوبون مطلوب',
-    'Coupon code is too long!' => 'كود الكوبون طويل جداً!',
-    'Discount amount is required' => 'مبلغ الخصم مطلوب',
-    'Discount must be a number' => 'يجب أن يكون الخصم رقماً',
-    'Discount percentage must be at least 1%' => 'يجب أن تكون نسبة الخصم 1% على الأقل',
-    'Failed to add coupon. Please try again.' => 'فشل في إضافة الكوبون. يرجى المحاولة مرة أخرى.',
-    'Failed to update coupon. Please try again.' => 'فشل في تحديث الكوبون. يرجى المحاولة مرة أخرى.',
-    'Failed to update status. Please try again.' => 'فشل في تحديث الحالة. يرجى المحاولة مرة أخرى.',
-    'Failed to delete coupon. Please try again.' => 'فشل في حذف الكوبون. يرجى المحاولة مرة أخرى.',
-    'Select "All Branches" to make coupon available for all branches' => 'اختر "جميع الفروع" لجعل الكوبون متاحاً لجميع الفروع',
-    
-    // Additional Common Terms
-    'active' => 'نشط',
-    'inactive' => 'غير نشط',
-    'enabled' => 'مفعّل',
-    'disabled' => 'معطّل',
-    'yes' => 'نعم',
-    'no' => 'لا',
-    'close' => 'إغلاق',
-    'cancel' => 'إلغاء',
-    'save' => 'حفظ',
-    'apply' => 'تطبيق',
-    'clear' => 'مسح',
-    'total' => 'المجموع',
-    'select' => 'اختر',
-    'all' => 'الكل',
-    'none' => 'لا شيء',
-    
-    // Date formats
-    'today' => 'اليوم',
-    'yesterday' => 'أمس',
-    'this_week' => 'هذا الأسبوع',
-    'this_month' => 'هذا الشهر',
-    'last_month' => 'الشهر الماضي',
-    
-    // Additional Coupon Features
-    'coupon_list' => 'قائمة الكوبونات',
-    'create_coupon' => 'إنشاء كوبون',
-    'edit_coupon' => 'تعديل الكوبون',
-    'delete_coupon' => 'حذف الكوبون',
-    'activate_coupon' => 'تفعيل الكوبون',
-    'deactivate_coupon' => 'إلغاء تفعيل الكوبون',
-    'copy_code' => 'نسخ الكود',
-    'coupon_copied' => 'تم نسخ الكوبون',
-    
-    // Filters
-    'filter_by_branch' => 'تصفية حسب الفرع',
-    'filter_by_type' => 'تصفية حسب النوع',
-    'filter_by_status' => 'تصفية حسب الحالة',
-    'show_all' => 'عرض الكل',
-    'show_active' => 'عرض النشطة',
-    'show_inactive' => 'عرض غير النشطة',
-    'show_expired' => 'عرض المنتهية',
-    
-    // Statistics
-    'total_coupons' => 'إجمالي الكوبونات',
-    'active_coupons' => 'الكوبونات النشطة',
-    'expired_coupons' => 'الكوبونات المنتهية',
-    'used_coupons' => 'الكوبونات المستخدمة',
-    'available_coupons' => 'الكوبونات المتاحة',
-    
-    // Success/Error Messages
-    'operation_successful' => 'تمت العملية بنجاح',
-    'operation_failed' => 'فشلت العملية',
-    'invalid_coupon' => 'كوبون غير صالح',
-    'expired_coupon' => 'كوبون منتهي الصلاحية',
-    'coupon_not_applicable' => 'الكوبون غير قابل للتطبيق',
-    'minimum_purchase_not_met' => 'لم يتم الوصول للحد الأدنى للشراء',
-    'usage_limit_exceeded' => 'تم تجاوز حد الاستخدام',
-    
-    // Additional UI Elements
-    'loading' => 'جاري التحميل...',
-    'no_data' => 'لا توجد بيانات',
-    'no_coupons_found' => 'لم يتم العثور على كوبونات',
-    'showing' => 'عرض',
-    'of' => 'من',
-    'entries' => 'إدخالات',
-    'previous' => 'السابق',
-    'next' => 'التالي',
-    'first' => 'الأول',
-    'last' => 'الأخير',
-    
-    // Notification System
-    'notification' => 'إشعار',
-    'notifications' => 'الإشعارات',
-    'send_Notification' => 'إرسال إشعار',
-    'send_notification' => 'إرسال الإشعار',
-    'notification_Update' => 'تحديث الإشعار',
-    'Notification_Table' => 'جدول الإشعارات',
-    'notification_Banner' => 'صورة الإشعار',
-    'notification_title' => 'عنوان الإشعار',
-    'notification_description' => 'وصف الإشعار',
-    'Add new notification' => 'إضافة إشعار جديد',
-    'Update Notification' => 'تحديث الإشعار',
-    'New notification' => 'إشعار جديد',
-    'Description...' => 'الوصف...',
-    'Search by title or description' => 'البحث بالعنوان أو الوصف',
-    'not_more_than_100_characters' => 'لا يزيد عن 100 حرف',
-    'not_more_than_255_characters' => 'لا يزيد عن 255 حرف',
-    'ratio' => 'النسبة',
-    
-    // Notification Messages
-    'Notification title is required' => 'عنوان الإشعار مطلوب',
-    'Notification description is required' => 'وصف الإشعار مطلوب',
-    'Notification sent successfully!' => 'تم إرسال الإشعار بنجاح!',
-    'Notification sent to all branches successfully!' => 'تم إرسال الإشعار لجميع الفروع بنجاح!',
-    'Notification sent to selected branch successfully!' => 'تم إرسال الإشعار للفرع المحدد بنجاح!',
-    'Notification updated successfully!' => 'تم تحديث الإشعار بنجاح!',
-    'Notification status updated!' => 'تم تحديث حالة الإشعار!',
-    'Notification removed!' => 'تم حذف الإشعار!',
-    'Push notification failed!' => 'فشل إرسال الإشعار الفوري!',
-    'Failed to send notification. Please try again.' => 'فشل إرسال الإشعار. يرجى المحاولة مرة أخرى.',
-    'Failed to update notification. Please try again.' => 'فشل تحديث الإشعار. يرجى المحاولة مرة أخرى.',
-    'Failed to delete notification. Please try again.' => 'فشل حذف الإشعار. يرجى المحاولة مرة أخرى.',
-    'Select "All Branches" to send notification to all branches' => 'اختر "جميع الفروع" لإرسال الإشعار لجميع الفروع',
-    
-    // Image Validation
-    'File must be an image' => 'يجب أن يكون الملف صورة',
-    'Image must be jpg, jpeg, png or gif' => 'يجب أن تكون الصورة بصيغة jpg أو jpeg أو png أو gif',
-    'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
-    'No' => 'لا يوجد',
+  // Coupon System - General
+  'coupon' => 'كوبون',
+  'coupons' => 'الكوبونات',
+  'Add_New_Coupon' => 'إضافة كوبون جديد',
+  'Coupon_Update' => 'تحديث الكوبون',
+  'Coupon_Table' => 'جدول الكوبونات',
+  'coupon_code' => 'كود الكوبون',
+  'Coupon_Code' => 'كود الكوبون',
+  'Coupon_Title' => 'عنوان الكوبون',
+  'coupon_type' => 'نوع الكوبون',
+  'coupon_details' => 'تفاصيل الكوبون',
 
-    'Wallet Top-Up Successful' => 'تم شحن المحفظه بنجاح!',
+  // Coupon Types
+  'default' => 'افتراضي',
+  'first_order' => 'الطلب الأول',
+  'first order' => 'الطلب الأول',
 
-    // Wallet Top-Up Notifications
-    'Wallet Top-Up Successful' => 'تم شحن المحفظة بنجاح',
-    'Your wallet has been topped up with :amount :currency' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
-    'wallet_topped_up_with_amount' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
-    
-    // Money Transfer Notifications - Sender
-    'Money Sent' => 'تم إرسال الأموال',
-    'You sent :amount :currency to :name' => 'لقد أرسلت :amount :currency إلى :name',
-    
-    // Money Transfer Notifications - Receiver
-    'Money Received' => 'تم استلام الأموال',
-    'You received :amount :currency from :name' => 'لقد استلمت :amount :currency من :name',
-    
-    // Order Notifications
-    'Order Placed Successfully' => 'تم تقديم الطلب بنجاح',
-    'Your order #:order_id has been placed' => 'تم تقديم طلبك رقم #:order_id',
-    
-    // Loyalty Points Conversion
-    'Loyalty Points Converted' => 'تم تحويل نقاط الولاء',
-    'Converted :points points to :amount :currency' => 'تم تحويل :points نقطة إلى :amount :currency',
-    
-    // PIN Reset Notifications
-    'Wallet PIN Reset' => 'تم إعادة تعيين رمز المحفظة',
-    'Your wallet PIN has been reset successfully' => 'تم إعادة تعيين رمز المحفظة الخاص بك بنجاح',
-    
-    // Common Terms
-    'Transaction ID' => 'رقم المعاملة',
-    'Amount' => 'المبلغ',
-    'Balance' => 'الرصيد',
-    'New Balance' => 'الرصيد الجديد',
-    'Previous Balance' => 'الرصيد السابق',
-    'Date' => 'التاريخ',
-    'Time' => 'الوقت',
-    'Timestamp' => 'الوقت والتاريخ',
-    'Currency' => 'العملة',
-    'Gateway' => 'بوابة الدفع',
-    'Payment Method' => 'طريقة الدفع',
-    'Order Type' => 'نوع الطلب',
-    'Delivery Date' => 'تاريخ التوصيل',
-    'Delivery Time' => 'وقت التوصيل',
-    'Branch' => 'الفرع',
-    'Items Count' => 'عدد العناصر',
-    'Note' => 'ملاحظة',
-    'Points Used' => 'النقاط المستخدمة',
-    'Converted Amount' => 'المبلغ المحول',
-    'Remaining Points' => 'النقاط المتبقية',
-    'N/A' => 'غير متوفر',
-    
-    // Email/WhatsApp/Notification Status
-    'Email sent successfully' => 'تم إرسال البريد الإلكتروني بنجاح',
-    'WhatsApp sent successfully' => 'تم إرسال رسالة واتساب بنجاح',
-    'Push notification sent' => 'تم إرسال الإشعار',
-    'Notification sent' => 'تم إرسال الإشعار',
-    
-    // Error Messages
-    'Failed to send email' => 'فشل إرسال البريد الإلكتروني',
-    'Failed to send WhatsApp' => 'فشل إرسال رسالة واتساب',
-    'Failed to send push notification' => 'فشل إرسال الإشعار',
-    'Failed to store notification' => 'فشل حفظ الإشعار',
-    'Receipt generation failed' => 'فشل إنشاء الإيصال',
-    
-    // Receipt Related
-    'View your receipt' => 'عرض الإيصال الخاص بك',
-    'Receipt' => 'إيصال',
-    'Customer Name' => 'اسم العميل',
-    'Account Number' => 'رقم الحساب',
-    'Tax' => 'الضريبة',
-    
-    // OTP Related
-    'OTP' => 'رمز التحقق',
-    'Expiry Minutes' => 'مدة الصلاحية بالدقائق',
-    'Login OTP' => 'رمز تسجيل الدخول',
-    'PIN Reset OTP' => 'رمز إعادة تعيين الرمز السري',
-    'Wallet PIN Reset' => 'إعادة تعيين رمز المحفظة',
-    
-    // User Related
-    'User Name' => 'اسم المستخدم',
-    'Sender Name' => 'اسم المرسل',
-    'Receiver Name' => 'اسم المستلم',
-    'Recipient Name' => 'اسم المستلم',
-    
-    // Transaction Types
-    'wallet_topup' => 'شحن المحفظة',
-    'money_transfer_sent' => 'تحويل أموال - مرسل',
-    'money_transfer_received' => 'تحويل أموال - مستلم',
-    'order_placed' => 'تقديم طلب',
-    'loyalty_conversion' => 'تحويل نقاط الولاء',
-    'pin_reset_success' => 'نجاح إعادة تعيين الرمز',
-    
-    // Image Validation (from your example)
-    'File must be an image' => 'يجب أن يكون الملف صورة',
-    'Image must be jpg, jpeg, png or gif' => 'يجب أن تكون الصورة بصيغة jpg أو jpeg أو png أو gif',
-    'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
-    'No' => 'لا يوجد',
+  // Branch Related
+  'branch' => 'الفرع',
+  'branches' => 'الفروع',
+  'All_Branches' => 'جميع الفروع',
+  'All Branches' => 'جميع الفروع',
+  'branch_name' => 'اسم الفرع',
+
+  // Discount Related
+  'discount' => 'خصم',
+  'discount_Type' => 'نوع الخصم',
+  'discount_type' => 'نوع الخصم',
+  'discount_Amount' => 'مبلغ الخصم',
+  'discount_percent' => 'نسبة الخصم',
+  'discount_in' => 'الخصم في',
+  'percent' => 'نسبة مئوية',
+  'amount' => 'مبلغ',
+  'percentage' => 'نسبة مئوية',
+
+  // Limits and Conditions
+  'limit' => 'الحد',
+  'limit_For_Same_User' => 'حد الاستخدام لنفس المستخدم',
+  'limit_for' => 'حد الاستخدام لـ',
+  'same' => 'نفس',
+  'user' => 'المستخدم',
+  'minimum' => 'الحد الأدنى',
+  'maximum' => 'الحد الأقصى',
+  'min_purchase' => 'الحد الأدنى للشراء',
+  'min_Purchase' => 'الحد الأدنى للشراء',
+  'max_discount' => 'الحد الأقصى للخصم',
+  'max_Discount' => 'الحد الأقصى للخصم',
+  'usage_limit_per_user' => 'حد الاستخدام لكل مستخدم',
+  'unlimited' => 'غير محدود',
+
+  // Dates
+  'start' => 'البداية',
+  'start_date' => 'تاريخ البداية',
+  'start_Date' => 'تاريخ البداية',
+  'expire' => 'الانتهاء',
+  'expire_date' => 'تاريخ الانتهاء',
+  'expire_Date' => 'تاريخ الانتهاء',
+  'duration' => 'المدة',
+  'date' => 'التاريخ',
+
+  // Actions
+  'generate_code' => 'توليد الكود',
+  'code' => 'الكود',
+  'title' => 'العنوان',
+  'status' => 'الحالة',
+  'action' => 'الإجراء',
+  'submit' => 'إرسال',
+  'update' => 'تحديث',
+  'reset' => 'إعادة تعيين',
+  'delete' => 'حذف',
+  'edit' => 'تعديل',
+  'view' => 'عرض',
+  'search' => 'بحث',
+  'Search' => 'بحث',
+  'Search by Title' => 'البحث بالعنوان',
+  'filter' => 'تصفية',
+
+  // Messages
+  'Coupon added successfully!' => 'تمت إضافة الكوبون بنجاح!',
+  'Coupon updated successfully!' => 'تم تحديث الكوبون بنجاح!',
+  'Coupon status updated!' => 'تم تحديث حالة الكوبون!',
+  'Coupon removed!' => 'تم حذف الكوبون!',
+  'Want to delete this coupon ?' => 'هل تريد حذف هذا الكوبون؟',
+  'discount_can_not_be_more_than_100%' => 'لا يمكن أن يكون الخصم أكثر من 100%',
+  'Title is too long!' => 'العنوان طويل جداً!',
+  'Coupon code already exists!' => 'كود الكوبون موجود بالفعل!',
+  'Expire date must be after or equal to start date!' => 'يجب أن يكون تاريخ الانتهاء بعد أو مساوٍ لتاريخ البداية!',
+
+  // Placeholders
+  'New coupon' => 'كوبون جديد',
+  'EX: 10' => 'مثال: 10',
+  'Ex: 50%' => 'مثال: 50%',
+  'Ex: 500' => 'مثال: 500',
+  'Select dates' => 'اختر التواريخ',
+  '100' => '100',
+
+  // Table Headers
+  'SL' => 'ت',
+  'Amount' => 'المبلغ',
+  'Branch' => 'الفرع',
+  'Coupon' => 'الكوبون',
+  'Coupon_Type' => 'نوع الكوبون',
+
+  // Common
+  'N/A' => 'غير متوفر',
+  'off' => 'خصم',
+  'purchase' => 'الشراء',
+  'for' => 'لـ',
+  'type' => 'النوع',
+  'required' => 'مطلوب',
+
+  // Validation Messages
+  'The branch field is required.' => 'حقل الفرع مطلوب.',
+  'The code field is required.' => 'حقل الكود مطلوب.',
+  'The title field is required.' => 'حقل العنوان مطلوب.',
+  'The start date field is required.' => 'حقل تاريخ البداية مطلوب.',
+  'The expire date field is required.' => 'حقل تاريخ الانتهاء مطلوب.',
+  'The discount field is required.' => 'حقل الخصم مطلوب.',
+  'The selected branch is invalid.' => 'الفرع المحدد غير صالح.',
+  'Selected branch is invalid' => 'الفرع المحدد غير صالح',
+  'Coupon title is required' => 'عنوان الكوبون مطلوب',
+  'Coupon code is required' => 'كود الكوبون مطلوب',
+  'Coupon code is too long!' => 'كود الكوبون طويل جداً!',
+  'Discount amount is required' => 'مبلغ الخصم مطلوب',
+  'Discount must be a number' => 'يجب أن يكون الخصم رقماً',
+  'Discount percentage must be at least 1%' => 'يجب أن تكون نسبة الخصم 1% على الأقل',
+  'Failed to add coupon. Please try again.' => 'فشل في إضافة الكوبون. يرجى المحاولة مرة أخرى.',
+  'Failed to update coupon. Please try again.' => 'فشل في تحديث الكوبون. يرجى المحاولة مرة أخرى.',
+  'Failed to update status. Please try again.' => 'فشل في تحديث الحالة. يرجى المحاولة مرة أخرى.',
+  'Failed to delete coupon. Please try again.' => 'فشل في حذف الكوبون. يرجى المحاولة مرة أخرى.',
+  'Select "All Branches" to make coupon available for all branches' => 'اختر "جميع الفروع" لجعل الكوبون متاحاً لجميع الفروع',
+
+  // Additional Common Terms
+  'active' => 'نشط',
+  'inactive' => 'غير نشط',
+  'enabled' => 'مفعّل',
+  'disabled' => 'معطّل',
+  'yes' => 'نعم',
+  'no' => 'لا',
+  'close' => 'إغلاق',
+  'cancel' => 'إلغاء',
+  'save' => 'حفظ',
+  'apply' => 'تطبيق',
+  'clear' => 'مسح',
+  'total' => 'المجموع',
+  'select' => 'اختر',
+  'all' => 'الكل',
+  'none' => 'لا شيء',
+
+  // Date formats
+  'today' => 'اليوم',
+  'yesterday' => 'أمس',
+  'this_week' => 'هذا الأسبوع',
+  'this_month' => 'هذا الشهر',
+  'last_month' => 'الشهر الماضي',
+
+  // Additional Coupon Features
+  'coupon_list' => 'قائمة الكوبونات',
+  'create_coupon' => 'إنشاء كوبون',
+  'edit_coupon' => 'تعديل الكوبون',
+  'delete_coupon' => 'حذف الكوبون',
+  'activate_coupon' => 'تفعيل الكوبون',
+  'deactivate_coupon' => 'إلغاء تفعيل الكوبون',
+  'copy_code' => 'نسخ الكود',
+  'coupon_copied' => 'تم نسخ الكوبون',
+
+  // Filters
+  'filter_by_branch' => 'تصفية حسب الفرع',
+  'filter_by_type' => 'تصفية حسب النوع',
+  'filter_by_status' => 'تصفية حسب الحالة',
+  'show_all' => 'عرض الكل',
+  'show_active' => 'عرض النشطة',
+  'show_inactive' => 'عرض غير النشطة',
+  'show_expired' => 'عرض المنتهية',
+
+  // Statistics
+  'total_coupons' => 'إجمالي الكوبونات',
+  'active_coupons' => 'الكوبونات النشطة',
+  'expired_coupons' => 'الكوبونات المنتهية',
+  'used_coupons' => 'الكوبونات المستخدمة',
+  'available_coupons' => 'الكوبونات المتاحة',
+
+  // Success/Error Messages
+  'operation_successful' => 'تمت العملية بنجاح',
+  'operation_failed' => 'فشلت العملية',
+  'invalid_coupon' => 'كوبون غير صالح',
+  'expired_coupon' => 'كوبون منتهي الصلاحية',
+  'coupon_not_applicable' => 'الكوبون غير قابل للتطبيق',
+  'minimum_purchase_not_met' => 'لم يتم الوصول للحد الأدنى للشراء',
+  'usage_limit_exceeded' => 'تم تجاوز حد الاستخدام',
+
+  // Additional UI Elements
+  'loading' => 'جاري التحميل...',
+  'no_data' => 'لا توجد بيانات',
+  'no_coupons_found' => 'لم يتم العثور على كوبونات',
+  'showing' => 'عرض',
+  'of' => 'من',
+  'entries' => 'إدخالات',
+  'previous' => 'السابق',
+  'next' => 'التالي',
+  'first' => 'الأول',
+  'last' => 'الأخير',
+
+  // Notification System
+  'notification' => 'إشعار',
+  'notifications' => 'الإشعارات',
+  'send_Notification' => 'إرسال إشعار',
+  'send_notification' => 'إرسال الإشعار',
+  'notification_Update' => 'تحديث الإشعار',
+  'Notification_Table' => 'جدول الإشعارات',
+  'notification_Banner' => 'صورة الإشعار',
+  'notification_title' => 'عنوان الإشعار',
+  'notification_description' => 'وصف الإشعار',
+  'Add new notification' => 'إضافة إشعار جديد',
+  'Update Notification' => 'تحديث الإشعار',
+  'New notification' => 'إشعار جديد',
+  'Description...' => 'الوصف...',
+  'Search by title or description' => 'البحث بالعنوان أو الوصف',
+  'not_more_than_100_characters' => 'لا يزيد عن 100 حرف',
+  'not_more_than_255_characters' => 'لا يزيد عن 255 حرف',
+  'ratio' => 'النسبة',
+
+  // Notification Messages
+  'Notification title is required' => 'عنوان الإشعار مطلوب',
+  'Notification description is required' => 'وصف الإشعار مطلوب',
+  'Notification sent successfully!' => 'تم إرسال الإشعار بنجاح!',
+  'Notification sent to all branches successfully!' => 'تم إرسال الإشعار لجميع الفروع بنجاح!',
+  'Notification sent to selected branch successfully!' => 'تم إرسال الإشعار للفرع المحدد بنجاح!',
+  'Notification updated successfully!' => 'تم تحديث الإشعار بنجاح!',
+  'Notification status updated!' => 'تم تحديث حالة الإشعار!',
+  'Notification removed!' => 'تم حذف الإشعار!',
+  'Push notification failed!' => 'فشل إرسال الإشعار الفوري!',
+  'Failed to send notification. Please try again.' => 'فشل إرسال الإشعار. يرجى المحاولة مرة أخرى.',
+  'Failed to update notification. Please try again.' => 'فشل تحديث الإشعار. يرجى المحاولة مرة أخرى.',
+  'Failed to delete notification. Please try again.' => 'فشل حذف الإشعار. يرجى المحاولة مرة أخرى.',
+  'Select "All Branches" to send notification to all branches' => 'اختر "جميع الفروع" لإرسال الإشعار لجميع الفروع',
+
+  // Image Validation
+  'File must be an image' => 'يجب أن يكون الملف صورة',
+  'Image must be jpg, jpeg, png or gif' => 'يجب أن تكون الصورة بصيغة jpg أو jpeg أو png أو gif',
+  'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
+  'No' => 'لا يوجد',
+
+  'Wallet Top-Up Successful' => 'تم شحن المحفظه بنجاح!',
+
+  // Wallet Top-Up Notifications
+  'Wallet Top-Up Successful' => 'تم شحن المحفظة بنجاح',
+  'Your wallet has been topped up with :amount :currency' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
+  'wallet_topped_up_with_amount' => 'تم شحن محفظتك بمبلغ {amount} {currency}',
+
+  // Money Transfer Notifications - Sender
+  'Money Sent' => 'تم إرسال الأموال',
+  'You sent :amount :currency to :name' => 'لقد أرسلت :amount :currency إلى :name',
+
+  // Money Transfer Notifications - Receiver
+  'Money Received' => 'تم استلام الأموال',
+  'You received :amount :currency from :name' => 'لقد استلمت :amount :currency من :name',
+
+  // Order Notifications
+  'Order Placed Successfully' => 'تم تقديم الطلب بنجاح',
+  'Your order #:order_id has been placed' => 'تم تقديم طلبك رقم #:order_id',
+
+  // Loyalty Points Conversion
+  'Loyalty Points Converted' => 'تم تحويل نقاط الولاء',
+  'Converted :points points to :amount :currency' => 'تم تحويل :points نقطة إلى :amount :currency',
+
+  // PIN Reset Notifications
+  'Wallet PIN Reset' => 'تم إعادة تعيين رمز المحفظة',
+  'Your wallet PIN has been reset successfully' => 'تم إعادة تعيين رمز المحفظة الخاص بك بنجاح',
+
+  // Common Terms
+  'Transaction ID' => 'رقم المعاملة',
+  'Amount' => 'المبلغ',
+  'Balance' => 'الرصيد',
+  'New Balance' => 'الرصيد الجديد',
+  'Previous Balance' => 'الرصيد السابق',
+  'Date' => 'التاريخ',
+  'Time' => 'الوقت',
+  'Timestamp' => 'الوقت والتاريخ',
+  'Currency' => 'العملة',
+  'Gateway' => 'بوابة الدفع',
+  'Payment Method' => 'طريقة الدفع',
+  'Order Type' => 'نوع الطلب',
+  'Delivery Date' => 'تاريخ التوصيل',
+  'Delivery Time' => 'وقت التوصيل',
+  'Branch' => 'الفرع',
+  'Items Count' => 'عدد العناصر',
+  'Note' => 'ملاحظة',
+  'Points Used' => 'النقاط المستخدمة',
+  'Converted Amount' => 'المبلغ المحول',
+  'Remaining Points' => 'النقاط المتبقية',
+  'N/A' => 'غير متوفر',
+
+  // Email/WhatsApp/Notification Status
+  'Email sent successfully' => 'تم إرسال البريد الإلكتروني بنجاح',
+  'WhatsApp sent successfully' => 'تم إرسال رسالة واتساب بنجاح',
+  'Push notification sent' => 'تم إرسال الإشعار',
+  'Notification sent' => 'تم إرسال الإشعار',
+
+  // Error Messages
+  'Failed to send email' => 'فشل إرسال البريد الإلكتروني',
+  'Failed to send WhatsApp' => 'فشل إرسال رسالة واتساب',
+  'Failed to send push notification' => 'فشل إرسال الإشعار',
+  'Failed to store notification' => 'فشل حفظ الإشعار',
+  'Receipt generation failed' => 'فشل إنشاء الإيصال',
+
+  // Receipt Related
+  'View your receipt' => 'عرض الإيصال الخاص بك',
+  'Receipt' => 'إيصال',
+  'Customer Name' => 'اسم العميل',
+  'Account Number' => 'رقم الحساب',
+  'Tax' => 'الضريبة',
+
+  // OTP Related
+  'OTP' => 'رمز التحقق',
+  'Expiry Minutes' => 'مدة الصلاحية بالدقائق',
+  'Login OTP' => 'رمز تسجيل الدخول',
+  'PIN Reset OTP' => 'رمز إعادة تعيين الرمز السري',
+  'Wallet PIN Reset' => 'إعادة تعيين رمز المحفظة',
+
+  // User Related
+  'User Name' => 'اسم المستخدم',
+  'Sender Name' => 'اسم المرسل',
+  'Receiver Name' => 'اسم المستلم',
+  'Recipient Name' => 'اسم المستلم',
+
+  // Transaction Types
+  'wallet_topup' => 'شحن المحفظة',
+  'money_transfer_sent' => 'تحويل أموال - مرسل',
+  'money_transfer_received' => 'تحويل أموال - مستلم',
+  'order_placed' => 'تقديم طلب',
+  'loyalty_conversion' => 'تحويل نقاط الولاء',
+  'pin_reset_success' => 'نجاح إعادة تعيين الرمز',
+
+  // Image Validation (from your example)
+  'File must be an image' => 'يجب أن يكون الملف صورة',
+  'Image must be jpg, jpeg, png or gif' => 'يجب أن تكون الصورة بصيغة jpg أو jpeg أو png أو gif',
+  'Image size must not exceed 2MB' => 'يجب ألا يتجاوز حجم الصورة 2 ميجابايت',
+  'No' => 'لا يوجد',
 
   'scheduled' => 'مجدول',
   'table order' => 'طلب طاولة',
@@ -782,7 +800,7 @@
   'banner_removed' => 'تم حذف العرض!',
   'want_to_delete_banner' => 'هل تريد حذف هذا العرض؟',
   'Global' => 'عام',
-  
+
   // Form Labels
   'banner_setup' => 'إعداد العرض',
   'add_new_banner' => 'إضافة عرض جديد',
@@ -802,243 +820,243 @@
   'new_banner' => 'عرض جديد',
 
   // Report Translations
-'branch_review_report' => 'تقرير تقييمات الفرع',
-'service_review_report' => 'تقرير تقييمات الخدمة',
-'branch' => 'الفرع',
-'all_branches' => 'جميع الفروع',
-'date_range' => 'الفترة الزمنية',
-'generated' => 'تم الإنشاء',
-'total_reviews' => 'إجمالي التقييمات',
-'average_rating' => 'متوسط التقييم',
-'5_star_reviews' => 'تقييمات 5 نجوم',
-'1_star_reviews' => 'تقييمات نجمة واحدة',
+  'branch_review_report' => 'تقرير تقييمات الفرع',
+  'service_review_report' => 'تقرير تقييمات الخدمة',
+  'branch' => 'الفرع',
+  'all_branches' => 'جميع الفروع',
+  'date_range' => 'الفترة الزمنية',
+  'generated' => 'تم الإنشاء',
+  'total_reviews' => 'إجمالي التقييمات',
+  'average_rating' => 'متوسط التقييم',
+  '5_star_reviews' => 'تقييمات 5 نجوم',
+  '1_star_reviews' => 'تقييمات نجمة واحدة',
 
-// Report Translations
-'branch_review_report' => 'تقرير تقييمات الفرع',
-'service_review_report' => 'تقرير تقييمات الخدمة',
-'sales_report' => 'تقرير المبيعات',
-'product_report' => 'تقرير المنتجات',
-'order_report' => 'تقرير الطلبات',
+  // Report Translations
+  'branch_review_report' => 'تقرير تقييمات الفرع',
+  'service_review_report' => 'تقرير تقييمات الخدمة',
+  'sales_report' => 'تقرير المبيعات',
+  'product_report' => 'تقرير المنتجات',
+  'order_report' => 'تقرير الطلبات',
 
-// Common Fields
-'branch' => 'الفرع',
-'all_branches' => 'جميع الفروع',
-'date_range' => 'الفترة الزمنية',
-'generated' => 'تم الإنشاء',
-'generated_by' => 'تم الإنشاء بواسطة',
-'serial' => 'م',
-'date' => 'التاريخ',
+  // Common Fields
+  'branch' => 'الفرع',
+  'all_branches' => 'جميع الفروع',
+  'date_range' => 'الفترة الزمنية',
+  'generated' => 'تم الإنشاء',
+  'generated_by' => 'تم الإنشاء بواسطة',
+  'serial' => 'م',
+  'date' => 'التاريخ',
 
-// Statistics
-'total_reviews' => 'إجمالي التقييمات',
-'average_rating' => 'متوسط التقييم',
-'5_star_reviews' => 'تقييمات 5 نجوم',
-'1_star_reviews' => 'تقييمات نجمة واحدة',
-'total_orders' => 'إجمالي الطلبات',
-'total_items' => 'إجمالي الأصناف',
-'total_items_sold' => 'إجمالي الأصناف المباعة',
-'total_amount' => 'إجمالي المبلغ',
-'total_revenue' => 'إجمالي الإيرادات',
-'delivered' => 'تم التوصيل',
-'canceled' => 'ملغي',
+  // Statistics
+  'total_reviews' => 'إجمالي التقييمات',
+  'average_rating' => 'متوسط التقييم',
+  '5_star_reviews' => 'تقييمات 5 نجوم',
+  '1_star_reviews' => 'تقييمات نجمة واحدة',
+  'total_orders' => 'إجمالي الطلبات',
+  'total_items' => 'إجمالي الأصناف',
+  'total_items_sold' => 'إجمالي الأصناف المباعة',
+  'total_amount' => 'إجمالي المبلغ',
+  'total_revenue' => 'إجمالي الإيرادات',
+  'delivered' => 'تم التوصيل',
+  'canceled' => 'ملغي',
 
-// Order Fields
-'order_number' => 'رقم الطلب',
-'product_name' => 'اسم المنتج',
-'quantity' => 'الكمية',
-'amount' => 'المبلغ',
-'customer' => 'العميل',
-'payment_method' => 'طريقة الدفع',
-'status' => 'الحالة',
-'main_branch' => 'الفرع الرئيسي',
+  // Order Fields
+  'order_number' => 'رقم الطلب',
+  'product_name' => 'اسم المنتج',
+  'quantity' => 'الكمية',
+  'amount' => 'المبلغ',
+  'customer' => 'العميل',
+  'payment_method' => 'طريقة الدفع',
+  'status' => 'الحالة',
+  'main_branch' => 'الفرع الرئيسي',
 
-// Review Fields
-'rating' => 'التقييم',
-'comment' => 'التعليق',
-'no_comment' => 'بدون تعليق',
+  // Review Fields
+  'rating' => 'التقييم',
+  'comment' => 'التعليق',
+  'no_comment' => 'بدون تعليق',
 
-// Status
-'pending' => 'قيد الانتظار',
-'confirmed' => 'مؤكد',
-'processing' => 'قيد المعالجة',
-'out for delivery' => 'خارج للتوصيل',
-'returned' => 'مرتجع',
-'failed' => 'فاشل',
+  // Status
+  'pending' => 'قيد الانتظار',
+  'confirmed' => 'مؤكد',
+  'processing' => 'قيد المعالجة',
+  'out for delivery' => 'خارج للتوصيل',
+  'returned' => 'مرتجع',
+  'failed' => 'فاشل',
 
-// Payment Methods
-'cash on delivery' => 'الدفع عند الاستلام',
-'digital payment' => 'الدفع الإلكتروني',
+  // Payment Methods
+  'cash on delivery' => 'الدفع عند الاستلام',
+  'digital payment' => 'الدفع الإلكتروني',
 
-// Messages
-'not_available' => 'غير متوفر',
-'invalid_customer' => 'عميل غير صالح',
-'deleted' => 'محذوف',
-'no_data_available' => 'لا توجد بيانات متاحة',
-'no_reviews_found' => 'لم يتم العثور على تقييمات',
-'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
-'total' => 'الإجمالي',
+  // Messages
+  'not_available' => 'غير متوفر',
+  'invalid_customer' => 'عميل غير صالح',
+  'deleted' => 'محذوف',
+  'no_data_available' => 'لا توجد بيانات متاحة',
+  'no_reviews_found' => 'لم يتم العثور على تقييمات',
+  'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
+  'total' => 'الإجمالي',
 
-// Report Translations
-'branch_review_report' => 'تقرير تقييمات الفرع',
-'service_review_report' => 'تقرير تقييمات الخدمة',
-'sales_report' => 'تقرير المبيعات',
-'product_report' => 'تقرير المنتجات',
-'order_report' => 'تقرير الطلبات',
+  // Report Translations
+  'branch_review_report' => 'تقرير تقييمات الفرع',
+  'service_review_report' => 'تقرير تقييمات الخدمة',
+  'sales_report' => 'تقرير المبيعات',
+  'product_report' => 'تقرير المنتجات',
+  'order_report' => 'تقرير الطلبات',
 
-// Common Fields
-'branch' => 'الفرع',
-'all_branches' => 'جميع الفروع',
-'date_range' => 'الفترة الزمنية',
-'generated' => 'تم الإنشاء',
-'generated_by' => 'تم الإنشاء بواسطة',
-'serial' => 'م',
-'date' => 'التاريخ',
+  // Common Fields
+  'branch' => 'الفرع',
+  'all_branches' => 'جميع الفروع',
+  'date_range' => 'الفترة الزمنية',
+  'generated' => 'تم الإنشاء',
+  'generated_by' => 'تم الإنشاء بواسطة',
+  'serial' => 'م',
+  'date' => 'التاريخ',
 
-// Statistics
-'total_reviews' => 'إجمالي التقييمات',
-'average_rating' => 'متوسط التقييم',
-'5_star_reviews' => 'تقييمات 5 نجوم',
-'1_star_reviews' => 'تقييمات نجمة واحدة',
-'total_orders' => 'إجمالي الطلبات',
-'total_items' => 'إجمالي الأصناف',
-'total_items_sold' => 'إجمالي الأصناف المباعة',
-'total_amount' => 'إجمالي المبلغ',
-'total_revenue' => 'إجمالي الإيرادات',
-'delivered' => 'تم التوصيل',
-'canceled' => 'ملغي',
+  // Statistics
+  'total_reviews' => 'إجمالي التقييمات',
+  'average_rating' => 'متوسط التقييم',
+  '5_star_reviews' => 'تقييمات 5 نجوم',
+  '1_star_reviews' => 'تقييمات نجمة واحدة',
+  'total_orders' => 'إجمالي الطلبات',
+  'total_items' => 'إجمالي الأصناف',
+  'total_items_sold' => 'إجمالي الأصناف المباعة',
+  'total_amount' => 'إجمالي المبلغ',
+  'total_revenue' => 'إجمالي الإيرادات',
+  'delivered' => 'تم التوصيل',
+  'canceled' => 'ملغي',
 
-// Order Fields
-'order_number' => 'رقم الطلب',
-'product_name' => 'اسم المنتج',
-'quantity' => 'الكمية',
-'amount' => 'المبلغ',
-'customer' => 'العميل',
-'payment_method' => 'طريقة الدفع',
-'status' => 'الحالة',
-'main_branch' => 'الفرع الرئيسي',
+  // Order Fields
+  'order_number' => 'رقم الطلب',
+  'product_name' => 'اسم المنتج',
+  'quantity' => 'الكمية',
+  'amount' => 'المبلغ',
+  'customer' => 'العميل',
+  'payment_method' => 'طريقة الدفع',
+  'status' => 'الحالة',
+  'main_branch' => 'الفرع الرئيسي',
 
-// Review Fields
-'rating' => 'التقييم',
-'comment' => 'التعليق',
-'no_comment' => 'بدون تعليق',
+  // Review Fields
+  'rating' => 'التقييم',
+  'comment' => 'التعليق',
+  'no_comment' => 'بدون تعليق',
 
-// Status
-'pending' => 'قيد الانتظار',
-'confirmed' => 'مؤكد',
-'processing' => 'قيد المعالجة',
-'out for delivery' => 'خارج للتوصيل',
-'returned' => 'مرتجع',
-'failed' => 'فاشل',
+  // Status
+  'pending' => 'قيد الانتظار',
+  'confirmed' => 'مؤكد',
+  'processing' => 'قيد المعالجة',
+  'out for delivery' => 'خارج للتوصيل',
+  'returned' => 'مرتجع',
+  'failed' => 'فاشل',
 
-// Payment Methods
-'cash on delivery' => 'الدفع عند الاستلام',
-'digital payment' => 'الدفع الإلكتروني',
+  // Payment Methods
+  'cash on delivery' => 'الدفع عند الاستلام',
+  'digital payment' => 'الدفع الإلكتروني',
 
-// Messages
-'not_available' => 'غير متوفر',
-'invalid_customer' => 'عميل غير صالح',
-'deleted' => 'محذوف',
-'no_data_available' => 'لا توجد بيانات متاحة',
-'no_reviews_found' => 'لم يتم العثور على تقييمات',
-'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
-'total' => 'الإجمالي',
+  // Messages
+  'not_available' => 'غير متوفر',
+  'invalid_customer' => 'عميل غير صالح',
+  'deleted' => 'محذوف',
+  'no_data_available' => 'لا توجد بيانات متاحة',
+  'no_reviews_found' => 'لم يتم العثور على تقييمات',
+  'system_generated_report' => 'تقرير تم إنشاؤه تلقائياً',
+  'total' => 'الإجمالي',
 
-// DataTables Translations
-'showing' => 'إظهار',
-'to' => 'إلى',
-'of' => 'من أصل',
-'entries' => 'مدخلات',
-'show' => 'عرض',
-'search' => 'بحث',
-'first' => 'الأول',
-'last' => 'الأخير',
-'next' => 'التالي',
-'previous' => 'السابق',
-'loading' => 'جارٍ التحميل',
-'processing' => 'جارٍ المعالجة',
-'no_matching_records' => 'لم يُعثر على أية سجلات مطابقة',
-'filtered_from' => 'منقاة من مجموع',
-'total_entries' => 'مدخل إجمالي',
+  // DataTables Translations
+  'showing' => 'إظهار',
+  'to' => 'إلى',
+  'of' => 'من أصل',
+  'entries' => 'مدخلات',
+  'show' => 'عرض',
+  'search' => 'بحث',
+  'first' => 'الأول',
+  'last' => 'الأخير',
+  'next' => 'التالي',
+  'previous' => 'السابق',
+  'loading' => 'جارٍ التحميل',
+  'processing' => 'جارٍ المعالجة',
+  'no_matching_records' => 'لم يُعثر على أية سجلات مطابقة',
+  'filtered_from' => 'منقاة من مجموع',
+  'total_entries' => 'مدخل إجمالي',
 
-'name.required' => 'الاسم مطلوب.',
-'role_id.required' => 'معرف الدور مطلوب.',
-'role_id.exists' => 'معرف الدور غير موجود.',
-'branch_id.required' => 'معرف الفرع مطلوب.',
-'branch_id.exists' => 'معرف الفرع غير موجود.',
-'email.required' => 'البريد الإلكتروني مطلوب.',
-'email.email' => 'البريد الإلكتروني غير صالح.',
-'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
-'password.required' => 'كلمة المرور مطلوبة.',
-'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
-'phone.required' => 'رقم الهاتف مطلوب.',
+  'name.required' => 'الاسم مطلوب.',
+  'role_id.required' => 'معرف الدور مطلوب.',
+  'role_id.exists' => 'معرف الدور غير موجود.',
+  'branch_id.required' => 'معرف الفرع مطلوب.',
+  'branch_id.exists' => 'معرف الفرع غير موجود.',
+  'email.required' => 'البريد الإلكتروني مطلوب.',
+  'email.email' => 'البريد الإلكتروني غير صالح.',
+  'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
+  'password.required' => 'كلمة المرور مطلوبة.',
+  'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+  'phone.required' => 'رقم الهاتف مطلوب.',
 
-'access_denied' => 'تم رفض الوصول!',
-'you_are_not_allowed_to_add_employee_in_another_branch' => 'غير مسموح لك بإضافة موظف في فرع آخر!',
-'employee_added_successfully' => 'تم إضافة الموظف بنجاح!',
-'you_are_not_allowed_to_change_branch' => 'غير مسموح لك بتغيير الفرع!',
-'employee_updated_successfully' => 'تم تحديث الموظف بنجاح!',
-'employee_status_updated' => 'تم تحديث حالة الموظف!',
-'master_admin_can_not_be_deleted' => 'لا يمكن حذف المدير الرئيسي',
-'employee_deleted_successfully' => 'تم حذف الموظف بنجاح',
-'employee_is_not_deleted' => 'لم يتم حذف الموظف',
+  'access_denied' => 'تم رفض الوصول!',
+  'you_are_not_allowed_to_add_employee_in_another_branch' => 'غير مسموح لك بإضافة موظف في فرع آخر!',
+  'employee_added_successfully' => 'تم إضافة الموظف بنجاح!',
+  'you_are_not_allowed_to_change_branch' => 'غير مسموح لك بتغيير الفرع!',
+  'employee_updated_successfully' => 'تم تحديث الموظف بنجاح!',
+  'employee_status_updated' => 'تم تحديث حالة الموظف!',
+  'master_admin_can_not_be_deleted' => 'لا يمكن حذف المدير الرئيسي',
+  'employee_deleted_successfully' => 'تم حذف الموظف بنجاح',
+  'employee_is_not_deleted' => 'لم يتم حذف الموظف',
 
-// PDF Export
-'download_pdf' => 'تحميل PDF',
-'product_report' => 'تقرير المنتجات',
-'sales_report' => 'تقرير المبيعات',
-'Error' => 'خطأ',
+  // PDF Export
+  'download_pdf' => 'تحميل PDF',
+  'product_report' => 'تقرير المنتجات',
+  'sales_report' => 'تقرير المبيعات',
+  'Error' => 'خطأ',
 
-// Table Headers
-'serial' => 'م',
-'customer' => 'العميل',
-'order_number' => 'رقم الطلب',
-'rating' => 'التقييم',
-'comment' => 'التعليق',
-'date' => 'التاريخ',
-'service_type' => 'نوع الخدمة',
-'review_id' => 'رقم التقييم',
+  // Table Headers
+  'serial' => 'م',
+  'customer' => 'العميل',
+  'order_number' => 'رقم الطلب',
+  'rating' => 'التقييم',
+  'comment' => 'التعليق',
+  'date' => 'التاريخ',
+  'service_type' => 'نوع الخدمة',
+  'review_id' => 'رقم التقييم',
 
-// Service Types
-'all_services' => 'جميع الخدمات',
-'delivery' => 'التوصيل',
-'packaging' => 'التغليف',
-'customer_service' => 'خدمة العملاء',
-'food_quality' => 'جودة الطعام',
+  // Service Types
+  'all_services' => 'جميع الخدمات',
+  'delivery' => 'التوصيل',
+  'packaging' => 'التغليف',
+  'customer_service' => 'خدمة العملاء',
+  'food_quality' => 'جودة الطعام',
 
-// Service Aspects
-'service_aspect_ratings' => 'تقييمات جوانب الخدمة',
-'delivery_speed' => 'سرعة التوصيل',
-'food_temperature' => 'درجة حرارة الطعام',
-'packaging_quality' => 'جودة التغليف',
+  // Service Aspects
+  'service_aspect_ratings' => 'تقييمات جوانب الخدمة',
+  'delivery_speed' => 'سرعة التوصيل',
+  'food_temperature' => 'درجة حرارة الطعام',
+  'packaging_quality' => 'جودة التغليف',
 
-// Messages
-'no_comment' => 'لا يوجد تعليق',
-'deleted' => 'محذوف',
-'not_available' => 'غير متاح',
-'no_reviews_found' => 'لا توجد تقييمات للمعايير المحددة.',
-'system_generated_report' => 'هذا تقرير تم إنشاؤه بواسطة النظام. تم الإنشاء في',
+  // Messages
+  'no_comment' => 'لا يوجد تعليق',
+  'deleted' => 'محذوف',
+  'not_available' => 'غير متاح',
+  'no_reviews_found' => 'لا توجد تقييمات للمعايير المحددة.',
+  'system_generated_report' => 'هذا تقرير تم إنشاؤه بواسطة النظام. تم الإنشاء في',
 
-// Excel Column Headers
-'excel_review_id' => 'رقم التقييم',
-'excel_customer' => 'العميل',
-'excel_branch' => 'الفرع',
-'excel_order_id' => 'رقم الطلب',
-'excel_rating' => 'التقييم',
-'excel_comment' => 'التعليق',
-'excel_date' => 'التاريخ',
-'excel_service_type' => 'نوع الخدمة',
-  
+  // Excel Column Headers
+  'excel_review_id' => 'رقم التقييم',
+  'excel_customer' => 'العميل',
+  'excel_branch' => 'الفرع',
+  'excel_order_id' => 'رقم الطلب',
+  'excel_rating' => 'التقييم',
+  'excel_comment' => 'التعليق',
+  'excel_date' => 'التاريخ',
+  'excel_service_type' => 'نوع الخدمة',
+
   // Table Headers
   'sl' => 'م',
   'banner_image_col' => 'صورة العرض',
   'banner_type_col' => 'نوع العرض',
   'details' => 'التفاصيل',
-  
+
   // Buttons
   'add_product' => 'إضافة منتج',
   'search' => 'بحث',
   'search_by_title' => 'البحث بالعنوان',
-  
+
   // Alerts
   'loading_price' => 'جاري تحميل السعر...',
   'price_not_available' => 'السعر غير متوفر',
@@ -1581,7 +1599,7 @@
   'Order Report' => 'تقرير الطلبات',
   'Sales Report' => 'تقرير المبيعات',
   'Product Report' => 'تقرير المنتجات',
-  'All Branches' => 'جميع الفروع',  
+  'All Branches' => 'جميع الفروع',
   'Date Range' => 'نطاق التاريخ',
   'Generated On' => 'تم الإنشاء بتاريخ',
   'Generated By' => 'تم الإنشاء بواسطة',
@@ -2105,7 +2123,7 @@
   'Report generated successfully' => 'تم إنشاء التقرير بنجاح',
   'Failed to load report. Please try again.' => 'فشل تحميل التقرير. الرجاء المحاولة مرة أخرى.',
   'From date cannot be greater than To date!' => 'لا يمكن أن يكون تاريخ البداية أكبر من تاريخ النهاية!',
-  
+
   // Service Review Report Translations
   'Service_Review_Reports' => 'تقارير تقييمات الخدمات',
   'Service_Review_Report_Overview' => 'نظرة عامة على تقرير تقييمات الخدمات',
@@ -2122,7 +2140,7 @@
   'Food Quality' => 'جودة الطعام',
   'Food_Quality' => 'جودة الطعام',
   'Service Aspect Ratings' => 'تقييمات جوانب الخدمة',
-  
+
   // Table Headers
   'SL' => 'م',
   'Review ID' => 'رقم التقييم',
@@ -2138,17 +2156,17 @@
   'No comment' => 'لا يوجد تعليق',
   'No images' => 'لا توجد صور',
   'No reviews found' => 'لم يتم العثور على تقييمات',
-  
+
   // Service Review Specific
   'Service_Type' => 'نوع الخدمة',
   'Aspects' => 'الجوانب',
   'N/A' => 'غير متاح',
-  
+
   // Rating Filters
   'All' => 'الكل',
   'Star' => 'نجمة',
   'Stars' => 'نجوم',
-  
+
   // General
   'Admin' => 'المسؤول',
   'admin' => 'المسؤول',
@@ -2156,7 +2174,7 @@
   'Dashboard' => 'لوحة التحكم',
   'Show' => 'عرض',
   'Close' => 'إغلاق',
-  
+
   // PDF Report Translations
   'Total Reviews' => 'إجمالي التقييمات',
   'Average Rating' => 'متوسط التقييم',
@@ -2168,7 +2186,7 @@
   'Total Orders' => 'إجمالي الطلبات',
   'Total Items' => 'إجمالي العناصر',
   'Total Amount' => 'المبلغ الإجمالي',
-  
+
   // Additional Common Translations
   'Invalid date range!' => 'نطاق تاريخ غير صالح!',
   'Order Report' => 'تقرير الطلبات',
@@ -2180,7 +2198,7 @@
   'Date Range' => 'نطاق التاريخ',
   'Branch:' => 'الفرع:',
   'Service Type:' => 'نوع الخدمة:',
-  
+
   // Statistics
   'Total' => 'الإجمالي',
   'Delivered' => 'تم التوصيل',
@@ -2188,18 +2206,18 @@
   'Returned' => 'مرتجع',
   'Failed' => 'فشل',
   'Pending' => 'قيد الانتظار',
-  
+
   // Export Messages
   'Excel file downloaded successfully' => 'تم تنزيل ملف إكسل بنجاح',
   'PDF generated successfully' => 'تم إنشاء ملف PDF بنجاح',
   'Failed to export data' => 'فشل تصدير البيانات',
-  
+
   // Error Messages
   'Please select a date range' => 'الرجاء تحديد نطاق التاريخ',
   'Please select a branch' => 'الرجاء اختيار الفرع',
   'No data available' => 'لا توجد بيانات متاحة',
   'Error loading data' => 'خطأ في تحميل البيانات',
-  
+
   // Additional Field Names
   'Review Details' => 'تفاصيل التقييم',
   'Customer Information' => 'معلومات العميل',
@@ -2214,7 +2232,7 @@
   'Reset' => 'إعادة تعيين',
   'Apply Filter' => 'تطبيق التصفية',
   'Clear Filter' => 'مسح التصفية',
-  
+
   // Month Names (if needed)
   'January' => 'يناير',
   'February' => 'فبراير',
@@ -2228,12 +2246,12 @@
   'October' => 'أكتوبر',
   'November' => 'نوفمبر',
   'December' => 'ديسمبر',
-  
+
   // Time Formats
   'h:i A' => 'h:i A',
   'd M Y' => 'd M Y',
   'd M Y, h:i A' => 'd M Y, h:i A',
-  
+
   // Action Buttons
   'Print' => 'طباعة',
   'Export' => 'تصدير',
@@ -2243,7 +2261,7 @@
   'Save' => 'حفظ',
   'Cancel' => 'إلغاء',
   'Submit' => 'إرسال',
-  
+
   // Status Messages
   'Loading...' => 'جاري التحميل...',
   'Processing...' => 'جاري المعالجة...',
@@ -2251,7 +2269,7 @@
   'Error' => 'خطأ',
   'Warning' => 'تحذير',
   'Info' => 'معلومات',
-  
+
   // Pagination
   'Previous' => 'السابق',
   'Next' => 'التالي',
@@ -2261,12 +2279,12 @@
   'to' => 'إلى',
   'of' => 'من',
   'entries' => 'مدخلات',
-  
+
   // Form Validation
   'This field is required' => 'هذا الحقل مطلوب',
   'Please enter a valid value' => 'الرجاء إدخال قيمة صالحة',
   'Please select an option' => 'الرجاء اختيار خيار',
-  
+
   // Additional Review Related
   'Review submitted successfully' => 'تم إرسال التقييم بنجاح',
   'Review updated successfully' => 'تم تحديث التقييم بنجاح',
@@ -2276,7 +2294,7 @@
   'Write your comment' => 'اكتب تعليقك',
   'Upload images' => 'تحميل الصور',
   'Submit Review' => 'إرسال التقييم',
-  
+
   // Statistical Terms
   'Percentage' => 'النسبة المئوية',
   'Count' => 'العدد',
@@ -2285,7 +2303,7 @@
   'Maximum' => 'الحد الأقصى',
   'Total' => 'الإجمالي',
   'Sum' => 'المجموع',
-  
+
   // Report Sections
   'Summary' => 'الملخص',
   'Details' => 'التفاصيل',
@@ -2295,7 +2313,7 @@
 
   'Min Rating' => 'الحد الأدنى للتقييم',
   'Max Rating' => 'الحد الأقصى للتقييم',
-  
+
   // Additional Service Types
   'delivery' => 'التوصيل',
   'packaging' => 'التغليف',
@@ -2355,140 +2373,140 @@
   'Backup Actions' => 'إجراءات النسخ الاحتياطي',
   'Available Backups' => 'النسخ الاحتياطية المتاحة',
   'Important Information' => 'معلومات هامة',
-  
+
   // Action Buttons
   'Create New Backup' => 'إنشاء نسخة احتياطية جديدة',
   'Download' => 'تحميل',
   'Restore' => 'استعادة',
   'Delete' => 'حذف',
   'Cancel' => 'إلغاء',
-  
-// Banner Management - Arabic Translations
-'banner_list'                  => 'قائمة العروض',
-'banner_setup'                 => 'إعداد العرض',
-'add_new_banner'               => 'إضافة عرض جديد',
-'Update_Banner'                => 'تعديل العرض',
-'Update banner'                => 'تعديل العرض',
-'banner_image'                 => 'صورة العرض',
-'title'                        => 'العنوان',
-'type'                         => 'النوع',
-'products/category'            => 'المنتجات/التصنيف',
-'pricing'                      => 'التسعير',
-'dates'                        => 'التواريخ',
-'status'                       => 'الحالة',
-'action'                       => 'الإجراء',
-'single_product'               => 'منتج واحد',
-'multiple_products'            => 'عدة منتجات',
-'category'                     => 'تصنيف',
-'select_product'               => 'اختر المنتج',
-'select_at_least_one_product'  => 'اختر منتج واحد على الأقل',
-'select_category'              => 'اختر التصنيف',
-'banner_added_successfully'    => 'تم إضافة العرض بنجاح',
-'banner_updated_successfully'  => 'تم تحديث العرض بنجاح',
-'banner_removed'               => 'تم حذف العرض بنجاح',
-'want_to_delete_banner'        => 'هل تريد حذف هذا العرض؟',
-'search_by_title'              => 'البحث حسب العنوان',
-'no_date_limit'                => 'بدون حد زمني',
-'active'                       => 'نشط',
-'expired'                      => 'منتهي الصلاحية',
-'original'                     => 'السعر الأصلي',
-'offer'                        => 'السعر بعد العرض',
-'save'                         => 'التوفير',
-'from'                         => 'من',
-'to'                           => 'إلى',
-'products_in_offer'            => 'المنتجات الموجودة في العرض',
-'global_banner'                => 'بانر عام (جميع الفروع)',
-'branch_specific'              => 'خاص بفروع محددة',
-'show_in_all_branches'         => 'يظهر في جميع الفروع',
-'show_in_selected_branches_only'=> 'يظهر في الفروع المحددة فقط',
-'select_branches'              => 'اختر الفروع',
-'select_one_or_more_branches'  => 'اختر فرع واحد أو أكثر',
-'branch_availability'          => 'توفر العرض حسب الفروع',
-'offer_pricing'                => 'تسعير العرض',
-'total_original_price'         => 'إجمالي السعر الأصلي',
-'total_offer_price'            => 'إجمالي سعر العرض',
-'final_offer_price'            => 'السعر النهائي بعد العرض',
-'you_save'                     => 'توفر',
-'discount_type'                => 'نوع الخصم',
-'fixed_amount'                 => 'مبلغ ثابت',
-'percentage'                   => 'نسبة مئوية',
-'discount_amount'              => 'قيمة الخصم',
-'discount_percentage'          => 'نسبة الخصم',
-'enter_discount_amount'        => 'أدخل قيمة الخصم',
-'enter_discount_percentage'    => 'أدخل نسبة الخصم',
-'set_final_offer_price_directly'=> 'حدد سعر العرض النهائي مباشرة',
-'or'                           => 'أو',
-'start_date'                   => 'تاريخ البداية',
-'end_date'                     => 'تاريخ النهاية',
-'end_date_after_start'         => 'يجب أن يكون تاريخ النهاية مساوي أو لاحق لتاريخ البداية',
-'ratio_2_1'                    => 'النسبة المطلوبة 2:1',
-'New banner'                   => 'بانر جديد',
-'select_banner_type'           => 'اختر نوع العرض',
-'select_a_product'             => 'اختر منتج',
-'select_a_category'            => 'اختر تصنيف',
 
-// General banner messages
-'banner_added_successfully'       => 'تم إضافة العرض بنجاح',
-'banner_updated_successfully'     => 'تم تحديث العرض بنجاح',
-'banner_removed'                  => 'تم حذف العرض بنجاح',
+  // Banner Management - Arabic Translations
+  'banner_list' => 'قائمة العروض',
+  'banner_setup' => 'إعداد العرض',
+  'add_new_banner' => 'إضافة عرض جديد',
+  'Update_Banner' => 'تعديل العرض',
+  'Update banner' => 'تعديل العرض',
+  'banner_image' => 'صورة العرض',
+  'title' => 'العنوان',
+  'type' => 'النوع',
+  'products/category' => 'المنتجات/التصنيف',
+  'pricing' => 'التسعير',
+  'dates' => 'التواريخ',
+  'status' => 'الحالة',
+  'action' => 'الإجراء',
+  'single_product' => 'منتج واحد',
+  'multiple_products' => 'عدة منتجات',
+  'category' => 'تصنيف',
+  'select_product' => 'اختر المنتج',
+  'select_at_least_one_product' => 'اختر منتج واحد على الأقل',
+  'select_category' => 'اختر التصنيف',
+  'banner_added_successfully' => 'تم إضافة العرض بنجاح',
+  'banner_updated_successfully' => 'تم تحديث العرض بنجاح',
+  'banner_removed' => 'تم حذف العرض بنجاح',
+  'want_to_delete_banner' => 'هل تريد حذف هذا العرض؟',
+  'search_by_title' => 'البحث حسب العنوان',
+  'no_date_limit' => 'بدون حد زمني',
+  'active' => 'نشط',
+  'expired' => 'منتهي الصلاحية',
+  'original' => 'السعر الأصلي',
+  'offer' => 'السعر بعد العرض',
+  'save' => 'التوفير',
+  'from' => 'من',
+  'to' => 'إلى',
+  'products_in_offer' => 'المنتجات الموجودة في العرض',
+  'global_banner' => 'بانر عام (جميع الفروع)',
+  'branch_specific' => 'خاص بفروع محددة',
+  'show_in_all_branches' => 'يظهر في جميع الفروع',
+  'show_in_selected_branches_only' => 'يظهر في الفروع المحددة فقط',
+  'select_branches' => 'اختر الفروع',
+  'select_one_or_more_branches' => 'اختر فرع واحد أو أكثر',
+  'branch_availability' => 'توفر العرض حسب الفروع',
+  'offer_pricing' => 'تسعير العرض',
+  'total_original_price' => 'إجمالي السعر الأصلي',
+  'total_offer_price' => 'إجمالي سعر العرض',
+  'final_offer_price' => 'السعر النهائي بعد العرض',
+  'you_save' => 'توفر',
+  'discount_type' => 'نوع الخصم',
+  'fixed_amount' => 'مبلغ ثابت',
+  'percentage' => 'نسبة مئوية',
+  'discount_amount' => 'قيمة الخصم',
+  'discount_percentage' => 'نسبة الخصم',
+  'enter_discount_amount' => 'أدخل قيمة الخصم',
+  'enter_discount_percentage' => 'أدخل نسبة الخصم',
+  'set_final_offer_price_directly' => 'حدد سعر العرض النهائي مباشرة',
+  'or' => 'أو',
+  'start_date' => 'تاريخ البداية',
+  'end_date' => 'تاريخ النهاية',
+  'end_date_after_start' => 'يجب أن يكون تاريخ النهاية مساوي أو لاحق لتاريخ البداية',
+  'ratio_2_1' => 'النسبة المطلوبة 2:1',
+  'New banner' => 'بانر جديد',
+  'select_banner_type' => 'اختر نوع العرض',
+  'select_a_product' => 'اختر منتج',
+  'select_a_category' => 'اختر تصنيف',
 
-// Validation messages
-'title_required'                  => 'العنوان مطلوب',
-'image_required'                  => 'صورة العرض مطلوبة',
-'banner_type_required'            => 'نوع العرض مطلوب',
-'select_product'                  => 'يرجى اختيار منتج',
-'select_at_least_one_product'    => 'يرجى اختيار منتج واحد على الأقل',
-'select_category'                 => 'يرجى اختيار تصنيف',
-'end_date_after_start'            => 'تاريخ النهاية يجب أن يكون مساويًا أو لاحقًا لتاريخ البداية',
-'select_at_least_one_branch'     => 'يرجى اختيار فرع واحد على الأقل',
+  // General banner messages
+  'banner_added_successfully' => 'تم إضافة العرض بنجاح',
+  'banner_updated_successfully' => 'تم تحديث العرض بنجاح',
+  'banner_removed' => 'تم حذف العرض بنجاح',
 
-// Additional useful messages (recommended to add)
-'banner_not_found'                => 'العرض غير موجود',
-'invalid_banner_type'             => 'نوع العرض غير صالح',
-'no_products_selected'            => 'لم يتم اختيار أي منتجات',
-'image_upload_failed'             => 'فشل رفع الصورة',
-'banner_deleted_successfully'     => 'تم حذف العرض بنجاح',
+  // Validation messages
+  'title_required' => 'العنوان مطلوب',
+  'image_required' => 'صورة العرض مطلوبة',
+  'banner_type_required' => 'نوع العرض مطلوب',
+  'select_product' => 'يرجى اختيار منتج',
+  'select_at_least_one_product' => 'يرجى اختيار منتج واحد على الأقل',
+  'select_category' => 'يرجى اختيار تصنيف',
+  'end_date_after_start' => 'تاريخ النهاية يجب أن يكون مساويًا أو لاحقًا لتاريخ البداية',
+  'select_at_least_one_branch' => 'يرجى اختيار فرع واحد على الأقل',
+
+  // Additional useful messages (recommended to add)
+  'banner_not_found' => 'العرض غير موجود',
+  'invalid_banner_type' => 'نوع العرض غير صالح',
+  'no_products_selected' => 'لم يتم اختيار أي منتجات',
+  'image_upload_failed' => 'فشل رفع الصورة',
+  'banner_deleted_successfully' => 'تم حذف العرض بنجاح',
 
   // Table Headers
   'File Name' => 'اسم الملف',
   'Size' => 'الحجم',
   'Created At' => 'تاريخ الإنشاء',
   'Actions' => 'الإجراءات',
-  
+
   // Descriptions & Instructions
-  'Click to create a manual backup of your database. Automatic backups run every 7 days.' => 
-      'اضغط لإنشاء نسخة احتياطية يدوية لقاعدة البيانات. يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام.',
-  
+  'Click to create a manual backup of your database. Automatic backups run every 7 days.' =>
+    'اضغط لإنشاء نسخة احتياطية يدوية لقاعدة البيانات. يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام.',
+
   // Empty State
   'No Backups Found' => 'لم يتم العثور على نسخ احتياطية',
   'Create your first backup to get started' => 'قم بإنشاء أول نسخة احتياطية للبدء',
-  
+
   // Information Messages
-  'Backups are stored in: storage/app/backups/' => 
-      'يتم تخزين النسخ الاحتياطية في: storage/app/backups/',
-  'Automatic backups run every 7 days at 2:00 AM' => 
-      'يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام في الساعة 2:00 صباحاً',
-  'Only the last 10 backups are kept automatically' => 
-      'يتم الاحتفاظ بآخر 10 نسخ احتياطية فقط تلقائياً',
-  'Always download important backups to external storage' => 
-      'قم دائماً بتحميل النسخ الاحتياطية المهمة إلى مساحة تخزين خارجية',
-  'Restoring a backup will overwrite your current database' => 
-      'استعادة النسخة الاحتياطية ستستبدل قاعدة البيانات الحالية',
-  
+  'Backups are stored in: storage/app/backups/' =>
+    'يتم تخزين النسخ الاحتياطية في: storage/app/backups/',
+  'Automatic backups run every 7 days at 2:00 AM' =>
+    'يتم تشغيل النسخ الاحتياطي التلقائي كل 7 أيام في الساعة 2:00 صباحاً',
+  'Only the last 10 backups are kept automatically' =>
+    'يتم الاحتفاظ بآخر 10 نسخ احتياطية فقط تلقائياً',
+  'Always download important backups to external storage' =>
+    'قم دائماً بتحميل النسخ الاحتياطية المهمة إلى مساحة تخزين خارجية',
+  'Restoring a backup will overwrite your current database' =>
+    'استعادة النسخة الاحتياطية ستستبدل قاعدة البيانات الحالية',
+
   // Confirmation Dialogs
   'Are you sure?' => 'هل أنت متأكد؟',
   'You want to delete this backup?' => 'هل تريد حذف هذه النسخة الاحتياطية؟',
   'Yes, delete it!' => 'نعم، احذفها!',
-  'This will overwrite your current database! Make sure you have a recent backup.' => 
-      'سيؤدي هذا إلى استبدال قاعدة البيانات الحالية! تأكد من وجود نسخة احتياطية حديثة.',
+  'This will overwrite your current database! Make sure you have a recent backup.' =>
+    'سيؤدي هذا إلى استبدال قاعدة البيانات الحالية! تأكد من وجود نسخة احتياطية حديثة.',
   'Yes, restore it!' => 'نعم، استعدها!',
-  
+
   // Success Messages
   'Database backup created successfully!' => 'تم إنشاء النسخة الاحتياطية بنجاح!',
   'Backup deleted successfully!' => 'تم حذف النسخة الاحتياطية بنجاح!',
   'Database restored successfully!' => 'تم استعادة قاعدة البيانات بنجاح!',
   'Updated successfully!' => 'تم التحديث بنجاح!',
-  
+
   // Error Messages
   'Backup failed: ' => 'فشل النسخ الاحتياطي: ',
   'Backup file not found!' => 'لم يتم العثور على ملف النسخ الاحتياطي!',
@@ -3547,16 +3565,16 @@
   'special_system_management' => 'إعدادت النظام الخاصه',
   'is_featured' => 'مميز',
   'dashboard_management' => 'إدارة لوحة التحكم',
-'order_management' => 'إدارة الطلبات',
-'product_management' => 'إدارة المنتجات',
-'promotion_management' => 'إدارة العروض الترويجية',
-'report_and_analytics_management' => 'إدارة التقارير والتحليلات',
-'table_management' => 'إدارة الطاولات',
-'pos_management' => 'إدارة نقاط البيع',
-'help_and_support_management' => 'إدارة المساعدة والدعم',
-'user_management' => 'إدارة المستخدمين',
-'system_management' => 'إدارة النظام',
-'special_system_management' => 'إعدادات النظام الخاصة',
+  'order_management' => 'إدارة الطلبات',
+  'product_management' => 'إدارة المنتجات',
+  'promotion_management' => 'إدارة العروض الترويجية',
+  'report_and_analytics_management' => 'إدارة التقارير والتحليلات',
+  'table_management' => 'إدارة الطاولات',
+  'pos_management' => 'إدارة نقاط البيع',
+  'help_and_support_management' => 'إدارة المساعدة والدعم',
+  'user_management' => 'إدارة المستخدمين',
+  'system_management' => 'إدارة النظام',
+  'special_system_management' => 'إعدادات النظام الخاصة',
   'is_featured?' => 'مميز؟',
   'Feature status changed failed' => 'فشل تغيير حالة الميزة',
   'Feature status changed successfully' => 'تم تغيير حالة الميزة بنجاح',
@@ -3816,7 +3834,7 @@
   'Joining Date' => 'تاريخ الانضمام',
   'Total Order' => 'إجمالي الطلبات',
   'Ongoing' => 'جارٍ التنفيذ',
-  'Cancel'=>'إلغاء',
+  'Cancel' => 'إلغاء',
   'Completed' => 'مكتمل',
   'Total Order Amount' => 'إجمالي مبلغ الطلب',
   'Active/Inactive' => 'نشط/غير نشط',

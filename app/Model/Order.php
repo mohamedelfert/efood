@@ -34,6 +34,7 @@ class Order extends Model
         'table_order_id' => 'integer',
         'is_cutlery_required' => 'integer',
         'bring_change_amount' => 'float',
+        'cancel_reason' => 'string',
     ];
 
     public function details(): HasMany

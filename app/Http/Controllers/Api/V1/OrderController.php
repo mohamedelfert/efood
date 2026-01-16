@@ -563,7 +563,7 @@ class OrderController extends Controller
     //                     try {
     //                         $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
     //                         $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                            
+
     //                         if ($customer) {
     //                             $this->notificationService->sendOrderPlacedNotification(
     //                                 $customer,
@@ -574,7 +574,7 @@ class OrderController extends Controller
     //                                 ]
     //                             );
     //                         }
-                            
+
     //                         $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
     //                     } catch (\Exception $e) {
     //                         Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -747,7 +747,7 @@ class OrderController extends Controller
     //                 try {
     //                     $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
     //                     $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                        
+
     //                     if ($customer) {
     //                         $this->notificationService->sendOrderPlacedNotification(
     //                             $customer,
@@ -758,7 +758,7 @@ class OrderController extends Controller
     //                             ]
     //                         );
     //                     }
-                        
+
     //                     $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
     //                 } catch (\Exception $e) {
     //                     Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -805,7 +805,7 @@ class OrderController extends Controller
     //         try {
     //             $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
     //             $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                
+
     //             if ($customer) {
     //                 $this->notificationService->sendOrderPlacedNotification(
     //                     $customer,
@@ -816,7 +816,7 @@ class OrderController extends Controller
     //                     ]
     //                 );
     //             }
-                
+
     //             $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
     //         } catch (\Exception $e) {
     //             Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -899,11 +899,13 @@ class OrderController extends Controller
         $stockValidation = $this->validateCartInternal($request->branch_id, $request->cart);
         if (!$stockValidation['is_valid']) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'stock_validation_failed',
-                    'message' => translate('Some items are out of stock or have insufficient quantity. Please adjust your order.'),
-                    'details' => $stockValidation['invalid_items']
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'stock_validation_failed',
+                        'message' => translate('Some items are out of stock or have insufficient quantity. Please adjust your order.'),
+                        'details' => $stockValidation['invalid_items']
+                    ]
+                ]
             ], 403);
         }
 
@@ -932,6 +934,10 @@ class OrderController extends Controller
             $paymentStatus = 'paid';
         }
         $orderStatus = 'pending';
+        if (in_array($request['order_type'], ['in_car', 'take_away', 'in_restaurant', 'dine_in', 'branch'])) {
+            $orderStatus = 'confirmed';
+        }
+
         $deliveryCharge = $request['order_type'] == 'take_away' ? 0 : Helpers::get_delivery_charge(
             branchId: $request['branch_id'],
             distance: $request['distance'],
@@ -964,13 +970,15 @@ class OrderController extends Controller
                     if ($available_stock < $c['quantity']) {
                         DB::rollBack();
                         return response()->json([
-                            'errors' => [[
-                                'code' => 'insufficient_stock',
-                                'message' => translate('Insufficient stock for product :name. Only :count items available.', [
-                                    'name' => $product->name ?? 'Unknown Product',
-                                    'count' => $available_stock
-                                ])
-                            ]]
+                            'errors' => [
+                                [
+                                    'code' => 'insufficient_stock',
+                                    'message' => translate('Insufficient stock for product :name. Only :count items available.', [
+                                        'name' => $product->name ?? 'Unknown Product',
+                                        'count' => $available_stock
+                                    ])
+                                ]
+                            ]
                         ], 403);
                     }
                 }
@@ -1149,7 +1157,11 @@ class OrderController extends Controller
             if ($customer && $request->payment_method === 'wallet_payment' && !$request->is_partial) {
                 $amount = $or['order_amount'] + $or['delivery_charge'];
                 $walletTransaction = CustomerLogic::create_wallet_transaction(
-                    $or['user_id'], $amount, 'order_place', 'ORDER_' . $o_id, $o_id
+                    $or['user_id'],
+                    $amount,
+                    'order_place',
+                    'ORDER_' . $o_id,
+                    $o_id
                 );
                 if (!$walletTransaction) {
                     DB::rollBack();
@@ -1202,7 +1214,11 @@ class OrderController extends Controller
 
                 if ($walletAmount > 0) {
                     $walletTransaction = CustomerLogic::create_wallet_transaction(
-                        $or['user_id'], $walletAmount, 'order_place', 'ORDER_' . $o_id, $o_id
+                        $or['user_id'],
+                        $walletAmount,
+                        'order_place',
+                        'ORDER_' . $o_id,
+                        $o_id
                     );
                     if (!$walletTransaction) {
                         DB::rollBack();
@@ -1294,9 +1310,9 @@ class OrderController extends Controller
                             ]);
                         } else {
                             $metadata = array_merge($metadata, [
-                                'stripe_order_id' => (string)($paymentResponse['order_id'] ?? ''),
+                                'stripe_order_id' => (string) ($paymentResponse['order_id'] ?? ''),
                                 'payment_key' => $paymentResponse['payment_key'] ?? null,
-                                'stripe_transaction_id' => (string)($paymentResponse['id'] ?? ''),
+                                'stripe_transaction_id' => (string) ($paymentResponse['id'] ?? ''),
                             ]);
                         }
 
@@ -1347,7 +1363,7 @@ class OrderController extends Controller
                         try {
                             $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
                             $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                            
+
                             if ($customer) {
                                 $this->notificationService->sendOrderPlacedNotification(
                                     $customer,
@@ -1358,7 +1374,7 @@ class OrderController extends Controller
                                     ]
                                 );
                             }
-                            
+
                             $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
                         } catch (\Exception $e) {
                             Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -1472,8 +1488,8 @@ class OrderController extends Controller
                         ]);
                     } else {
                         $metadata = array_merge($metadata, [
-                            'stripe_order_id' => (string)($paymentResponse['order_id'] ?? ''),
-                            'stripe_transaction_id' => (string)($paymentResponse['id'] ?? ''),
+                            'stripe_order_id' => (string) ($paymentResponse['order_id'] ?? ''),
+                            'stripe_transaction_id' => (string) ($paymentResponse['id'] ?? ''),
                             'payment_key' => $paymentResponse['payment_key'] ?? null,
                         ]);
                     }
@@ -1532,7 +1548,7 @@ class OrderController extends Controller
                     try {
                         $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
                         $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                        
+
                         if ($customer) {
                             $this->notificationService->sendOrderPlacedNotification(
                                 $customer,
@@ -1543,7 +1559,7 @@ class OrderController extends Controller
                                 ]
                             );
                         }
-                        
+
                         $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
                     } catch (\Exception $e) {
                         Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -1590,7 +1606,7 @@ class OrderController extends Controller
             try {
                 $customer = auth('api')->user() ?? GuestUser::find($request['guest_id']);
                 $currency = Currency::where('is_primary', true)->first()->code ?? 'YER';
-                
+
                 if ($customer) {
                     $this->notificationService->sendOrderPlacedNotification(
                         $customer,
@@ -1601,7 +1617,7 @@ class OrderController extends Controller
                         ]
                     );
                 }
-                
+
                 $this->orderEmailAndNotification(request: $request, or: $or, order_id: $order_id);
             } catch (\Exception $e) {
                 Log::error('Email/Notification failed', ['error' => $e->getMessage()]);
@@ -1638,7 +1654,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
-    
+
     public function validateCart(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -2174,7 +2190,7 @@ class OrderController extends Controller
     //             }
     //         }
     //     }
-        
+
     //     $restaurantName = Helpers::get_business_settings('restaurant_name');
     //     $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $order_id);
 
@@ -2188,7 +2204,7 @@ class OrderController extends Controller
     //                 'type' => 'order_status',
     //             ];
     //             Helpers::send_push_notif_to_device($fcmToken, $data);
-                
+
     //             Log::info('Push notification sent to customer', [
     //                 'order_id' => $order_id,
     //                 'customer_name' => $customerName,
@@ -2208,7 +2224,7 @@ class OrderController extends Controller
     //         if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && (bool)auth('api')->user()) {
     //             Mail::to(auth('api')->user()->email)->send(new \App\Mail\OrderPlaced($order_id));
     //             Mail::to(auth('api')->user()->email)->send(new \App\Mail\PaymentSuccessNotification($order_id));
-                
+
     //             Log::info('Order email sent', [
     //                 'order_id' => $order_id,
     //                 'email' => auth('api')->user()->email
@@ -2233,7 +2249,7 @@ class OrderController extends Controller
 
     //         try {
     //             Helpers::send_push_notif_to_topic(data: $data, topic: "kitchen-{$or['branch_id']}", type: 'general', isNotificationPayloadRemove: true);
-                
+
     //             Log::info('Kitchen notification sent', [
     //                 'order_id' => $order_id,
     //                 'branch_id' => $or['branch_id']
@@ -2258,7 +2274,7 @@ class OrderController extends Controller
 
     //         Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'all']));
     //         Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-'. $or['branch_id'] .'-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'all']));
-            
+
     //         Log::info('Admin and branch notifications sent', [
     //             'order_id' => $order_id,
     //             'branch_id' => $or['branch_id']
@@ -2273,7 +2289,7 @@ class OrderController extends Controller
 
     private function orderEmailAndNotification($request, $or, $order_id)
     {
-        if ((bool)auth('api')->user()) {
+        if ((bool) auth('api')->user()) {
             $fcmToken = auth('api')->user()?->cm_firebase_token;
             $local = auth('api')->user()?->language_code;
             $customerName = auth('api')->user()?->name;
@@ -2299,7 +2315,7 @@ class OrderController extends Controller
                 }
             }
         }
-        
+
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $order_id);
 
@@ -2309,15 +2325,15 @@ class OrderController extends Controller
                 $data = [
                     'title' => translate('Order'),
                     'description' => $value,
-                    'order_id' => (bool)auth('api')->user() ? $order_id : null,
+                    'order_id' => (bool) auth('api')->user() ? $order_id : null,
                     'image' => '',
                     'type' => 'order_status',
                 ];
-                
+
                 // Check if Firebase is enabled before attempting push
                 if (env('FIREBASE_PUSH_ENABLED', true)) {
                     Helpers::send_push_notif_to_device($fcmToken, $data);
-                    
+
                     Log::info('Push notification sent to customer', [
                         'order_id' => $order_id,
                         'customer_name' => $customerName,
@@ -2338,20 +2354,22 @@ class OrderController extends Controller
         try {
             $emailServices = Helpers::get_business_settings('mail_config');
             $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
-            
-            if (isset($emailServices['status']) && $emailServices['status'] == 1 && 
-                $orderMailStatus == 1 && 
-                (bool)auth('api')->user() && 
-                $customerEmail) {
-                
+
+            if (
+                isset($emailServices['status']) && $emailServices['status'] == 1 &&
+                $orderMailStatus == 1 &&
+                (bool) auth('api')->user() &&
+                $customerEmail
+            ) {
+
                 // Send order placed email
                 Mail::to($customerEmail)->send(new \App\Mail\OrderPlaced($order_id));
-                
+
                 Log::info('Order email sent', [
                     'order_id' => $order_id,
                     'email' => $customerEmail
                 ]);
-                
+
                 // ✅ REMOVED: Don't send PaymentSuccessNotification here
                 // It should only be sent after successful payment callback
                 // NOT during order placement
@@ -2375,12 +2393,12 @@ class OrderController extends Controller
 
             try {
                 Helpers::send_push_notif_to_topic(
-                    data: $data, 
-                    topic: "kitchen-{$or['branch_id']}", 
-                    type: 'general', 
+                    data: $data,
+                    topic: "kitchen-{$or['branch_id']}",
+                    type: 'general',
                     isNotificationPayloadRemove: true
                 );
-                
+
                 Log::info('Kitchen notification sent', [
                     'order_id' => $order_id,
                     'branch_id' => $or['branch_id']
@@ -2405,19 +2423,19 @@ class OrderController extends Controller
 
             if (env('FIREBASE_PUSH_ENABLED', true)) {
                 Helpers::send_push_notif_to_topic(
-                    data: $data, 
-                    topic: 'admin_message', 
-                    type: 'order_request', 
+                    data: $data,
+                    topic: 'admin_message',
+                    type: 'order_request',
                     web_push_link: route('admin.orders.list', ['status' => 'all'])
                 );
-                
+
                 Helpers::send_push_notif_to_topic(
-                    data: $data, 
-                    topic: 'branch-order-'. $or['branch_id'] .'-message', 
-                    type: 'order_request', 
+                    data: $data,
+                    topic: 'branch-order-' . $or['branch_id'] . '-message',
+                    type: 'order_request',
                     web_push_link: route('branch.orders.list', ['status' => 'all'])
                 );
-                
+
                 Log::info('Admin and branch notifications sent', [
                     'order_id' => $order_id,
                     'branch_id' => $or['branch_id']
@@ -2446,8 +2464,8 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $userId = (bool)auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
-        $userType = (bool)auth('api')->user() ? 0 : 1;
+        $userId = (bool) auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
+        $userType = (bool) auth('api')->user() ? 0 : 1;
 
         $order = $this->order->where(['id' => $request['order_id'], 'user_id' => $userId, 'is_guest' => $userType])->first();
         if (!isset($order)) {
@@ -2467,14 +2485,14 @@ class OrderController extends Controller
      */
     public function getOrderList(Request $request): JsonResponse
     {
-        $userId   = auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
+        $userId = auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
         $userType = auth('api')->user() ? 0 : 1;
 
         $orderFilter = $request->input('order_filter');
         $orderFilter = $orderFilter ? trim(strtolower($orderFilter)) : null;
 
-        $limit  = $request->filled('limit')  ? (int)$request->limit  : 10;
-        $offset = $request->filled('offset') ? (int)$request->offset : 0;
+        $limit = $request->filled('limit') ? (int) $request->limit : 10;
+        $offset = $request->filled('offset') ? (int) $request->offset : 0;
 
         $ordersQuery = $this->order
             ->with(['customer', 'delivery_man.rating'])
@@ -2483,24 +2501,34 @@ class OrderController extends Controller
                 'details as total_quantity' => fn($q) => $q->select(DB::raw('sum(quantity)'))
             ])
             ->where(['user_id' => $userId, 'is_guest' => $userType])
-            ->when($orderFilter === 'in_prepare', fn($q) => 
+            ->when(
+                $orderFilter === 'in_prepare',
+                fn($q) =>
                 $q->whereIn('order_status', [
-                    'pending', 'confirmed', 'preparing', 'picked_up', 'on_the_way'
+                    'pending',
+                    'confirmed',
+                    'preparing',
+                    'picked_up',
+                    'on_the_way'
                 ])
             )
             ->when(
                 $orderFilter && $orderFilter !== 'in_prepare',
                 fn($q) => $q->where('order_status', $orderFilter)
             )
-            ->when($request->filled('search'), fn($q) => 
+            ->when(
+                $request->filled('search'),
+                fn($q) =>
                 $q->where(function ($sq) use ($request, $userType) {
                     $key = "%{$request->search}%";
                     $sq->where('id', 'like', $key)
-                    ->orWhere('order_status', 'like', $key);
+                        ->orWhere('order_status', 'like', $key);
                     if ($userType == 0) {
-                        $sq->orWhereHas('customer', fn($c) => 
+                        $sq->orWhereHas(
+                            'customer',
+                            fn($c) =>
                             $c->where('name', 'like', $key)
-                            ->orWhere('phone', 'like', $key)
+                                ->orWhere('phone', 'like', $key)
                         );
                     }
                 })
@@ -2515,14 +2543,14 @@ class OrderController extends Controller
 
             $data['deliveryman_review_count'] = DMReview::where([
                 'delivery_man_id' => $data->delivery_man_id,
-                'order_id'        => $data->id
+                'order_id' => $data->id
             ])->count();
 
-            $firstDetail      = $this->order_detail->where('order_id', $order_id)->first();
-            $product_id       = $firstDetail?->product_id ?? null;
+            $firstDetail = $this->order_detail->where('order_id', $order_id)->first();
+            $product_id = $firstDetail?->product_id ?? null;
             $data['is_product_available'] = $product_id ? ($this->product->find($product_id) ? 1 : 0) : 0;
 
-            $data['details_count'] = (int)$data->details_count;
+            $data['details_count'] = (int) $data->details_count;
 
             $productImages = $this->order_detail->where('order_id', $order_id)
                 ->pluck('product_id')
@@ -2537,7 +2565,7 @@ class OrderController extends Controller
                 ->get(['variant', 'variation'])
                 ->map(function ($detail) {
                     return [
-                        'variant'   => $detail->variant ? json_decode($detail->variant, true) : [],
+                        'variant' => $detail->variant ? json_decode($detail->variant, true) : [],
                         'variation' => $detail->variation ? json_decode($detail->variation, true) : [],
                     ];
                 })->toArray();
@@ -2547,9 +2575,9 @@ class OrderController extends Controller
 
         return response()->json([
             'total_size' => $total,
-            'limit'      => $limit,
-            'offset'     => $offset,
-            'orders'     => $ordersList->values()->toArray(),
+            'limit' => $limit,
+            'offset' => $offset,
+            'orders' => $ordersList->values()->toArray(),
         ], 200);
     }
 
@@ -2567,10 +2595,11 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $userId = (bool)auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
-        $userType = (bool)auth('api')->user() ? 0 : 1;
+        $userId = (bool) auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
+        $userType = (bool) auth('api')->user() ? 0 : 1;
 
-        $details = $this->order_detail->with(['order',
+        $details = $this->order_detail->with([
+            'order',
             'order.delivery_man' => function ($query) {
                 $query->select(
                     'id',
@@ -2582,11 +2611,16 @@ class OrderController extends Controller
                     'is_active'
                 );
             },
-            'order.delivery_man.rating', 'order.delivery_address', 'order.order_partial_payments' , 'order.offline_payment', 'order.deliveryman_review'])
+            'order.delivery_man.rating',
+            'order.delivery_address',
+            'order.order_partial_payments',
+            'order.offline_payment',
+            'order.deliveryman_review'
+        ])
             ->withCount(['reviews'])
             ->where(['order_id' => $request['order_id']])
-            ->whereHas('order', function ($q) use ($userId, $userType){
-                $q->where([ 'user_id' => $userId, 'is_guest' => $userType ]);
+            ->whereHas('order', function ($q) use ($userId, $userType) {
+                $q->where(['user_id' => $userId, 'is_guest' => $userType]);
             })
             ->get();
 
@@ -2610,16 +2644,16 @@ class OrderController extends Controller
     {
         $order = $this->order::find($request['order_id']);
 
-        if (!isset($order)){
+        if (!isset($order)) {
             return response()->json(['errors' => [['code' => 'order', 'message' => 'Order not found!']]], 404);
         }
 
-        if ($order->order_status != 'pending'){
+        if ($order->order_status != 'pending') {
             return response()->json(['errors' => [['code' => 'order', 'message' => 'Order can only cancel when order status is pending!']]], 403);
         }
 
-        $userId = (bool)auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
-        $userType = (bool)auth('api')->user() ? 0 : 1;
+        $userId = (bool) auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
+        $userType = (bool) auth('api')->user() ? 0 : 1;
 
         if ($this->order->where(['user_id' => $userId, 'is_guest' => $userType, 'id' => $request['order_id']])->first()) {
             $this->order->where(['user_id' => $userId, 'is_guest' => $userType, 'id' => $request['order_id']])->update([
