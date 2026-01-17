@@ -118,150 +118,233 @@
             @endif
 
             <div class="row digital_payment_methods g-3" id="payment-gateway-cards">
-                @foreach($data_values as $payment)
+                @foreach($paymentMethods as $payment)
                     <div class="col-md-6">
                         <div class="card h-100">
-                            <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.web-app.payment-config-update'):'javascript:'}}" 
+                            <form action="{{route('admin.business-settings.web-app.system-payment-method.update', $payment->id)}}" 
                                   method="POST"
-                                  id="{{$payment->key_name}}-form" 
                                   enctype="multipart/form-data">
                                 @csrf
                                 
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">
-                                        <span class="text-uppercase">{{str_replace('_',' ',$payment->key_name)}}</span>
+                                        <span class="text-uppercase">{{$payment->method_name}}</span>
                                     </h5>
                                     <label class="switcher mb-0">
                                         <input type="checkbox" 
-                                               name="status" 
-                                               value="1"
+                                               onclick="location.href='{{route('admin.business-settings.web-app.system-payment-method.status',[$payment->id,$payment->is_active?0:1])}}'"
                                                class="switcher_input" 
-                                               {{$payment->is_active==1?'checked':''}}>
+                                               {{$payment->is_active?'checked':''}}>
                                         <span class="switcher_control"></span>
                                     </label>
                                 </div>
 
-                                @php($additional_data = $payment->additional_data != null ? json_decode($payment->additional_data) : null)
-                                @php($liveValues = is_string($payment->live_values) ? json_decode($payment->live_values, true) : (array)$payment->live_values)
-                                @php($testValues = is_string($payment->test_values) ? json_decode($payment->test_values, true) : (array)$payment->test_values)
-                                @php($mode = $payment->mode ?? 'live')
-                                @php($currentValues = $mode == 'live' ? $liveValues : $testValues)
-                                
                                 <div class="card-body">
                                     <div class="payment--gateway-img mb-4 text-center">
                                         <img style="height: 80px; max-width: 100%; object-fit: contain"
-                                             src="{{asset('storage/app/public/payment_modules/gateway_image')}}/{{$additional_data != null ? $additional_data->gateway_image : ''}}"
+                                             src="{{asset('storage/app/public/payment_modules/gateway_image')}}/{{$payment->image}}"
                                              onerror="this.src='{{asset('public/assets/admin/img/placeholder.png')}}'"
-                                             alt="{{$payment->key_name}}">
+                                             alt="{{$payment->method_name}}">
                                     </div>
 
-                                    <input type="hidden" name="gateway" value="{{$payment->key_name}}">
-
-                                    <div class="form-group">
-                                        <label class="form-label">{{translate('Mode')}}</label>
-                                        <select class="form-control" name="mode">
-                                            <option value="live" {{$mode=='live'?'selected':''}}>{{ translate('Live') }}</option>
-                                            <option value="test" {{$mode=='test'?'selected':''}}>{{ translate('Test') }}</option>
-                                        </select>
-                                    </div>
-
-                                    @if ($payment->key_name == 'stripe')
-                                        <div class="form-group">
-                                            <label class="form-label">{{translate('Supported Country')}} <span class="text-danger">*</span></label>
-                                            <select name="supported_country" class="form-control" required>
-                                                <option value="">{{translate('Select Country')}}</option>
-                                                <option value="egypt" {{isset($currentValues['supported_country']) && $currentValues['supported_country'] == 'egypt' ? 'selected' : ''}}>Egypt</option>
-                                                <option value="KSA" {{isset($currentValues['supported_country']) && $currentValues['supported_country'] == 'KSA' ? 'selected' : ''}}>Saudi Arabia</option>
-                                                <option value="UAE" {{isset($currentValues['supported_country']) && $currentValues['supported_country'] == 'UAE' ? 'selected' : ''}}>UAE</option>
-                                                <option value="oman" {{isset($currentValues['supported_country']) && $currentValues['supported_country'] == 'oman' ? 'selected' : ''}}>Oman</option>
-                                                <option value="PAK" {{isset($currentValues['supported_country']) && $currentValues['supported_country'] == 'PAK' ? 'selected' : ''}}>Pakistan</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">{{translate('API Key')}} <span class="text-danger">*</span></label>
-                                            <input type="text" 
-                                                   class="form-control"
-                                                   name="api_key"
-                                                   placeholder="{{translate('Enter API Key')}}"
-                                                   value="{{env('APP_MODE')=='demo'?'':($currentValues['api_key'] ?? '')}}"
-                                                   >
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">{{translate('Published Key')}} <span class="text-danger">*</span></label>
-                                            <input type="text" 
-                                                   class="form-control"
-                                                   name="published_key"
-                                                   placeholder="{{translate('Enter Published Key')}}"
-                                                   value="{{env('APP_MODE')=='demo'?'':($currentValues['published_key'] ?? '')}}"
-                                                   >
-                                        </div>
-                                    @endif
-
-                                    @if ($payment->key_name == 'qib')
-                                        <div class="form-group">
-                                            <label class="form-label">{{translate('Merchant ID')}} <span class="text-danger">*</span></label>
-                                            <input type="text" 
-                                                   class="form-control"
-                                                   name="merchant_id"
-                                                   placeholder="{{translate('Enter Merchant ID')}}"
-                                                   value="{{env('APP_MODE')=='demo'?'':($currentValues['merchant_id'] ?? '')}}"
-                                                   required>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">{{translate('Secure Hash')}} <span class="text-danger">*</span></label>
-                                            <input type="text" 
-                                                   class="form-control"
-                                                   name="secure_hash"
-                                                   placeholder="{{translate('Enter Secure Hash')}}"
-                                                   value="{{env('APP_MODE')=='demo'?'':($currentValues['secure_hash'] ?? '')}}"
-                                                   required>
-                                        </div>
-                                    @endif
-
-                                    <div class="form-group">
-                                        <label class="form-label">{{translate('Payment Gateway Title')}}</label>
-                                        <input type="text" 
-                                               class="form-control"
-                                               name="gateway_title"
-                                               placeholder="{{translate('e.g., Pay with Stripe')}}"
-                                               value="{{$additional_data != null ? $additional_data->gateway_title : ''}}">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="form-label">{{translate('Gateway Logo')}}</label>
-                                        <div class="custom-file">
-                                            <input type="file" 
-                                                   class="custom-file-input" 
-                                                   name="gateway_image" 
-                                                   accept=".jpg, .png, .jpeg|image/*"
-                                                   id="gateway_image_{{$payment->key_name}}">
-                                            <label class="custom-file-label" for="gateway_image_{{$payment->key_name}}">
-                                                {{translate('Choose file')}}
-                                            </label>
-                                        </div>
-                                        <small class="form-text text-muted">
-                                            {{translate('Recommended size: 120x50 pixels')}}
-                                        </small>
-                                    </div>
-
-                                    <div class="d-flex justify-content-end gap-3 mt-4">
-                                        <button type="reset" class="btn btn-secondary">{{translate('Reset')}}</button>
-                                        <button type="{{env('APP_MODE')!='demo'?'submit':'button'}}"
-                                                class="btn btn-primary {{env('APP_MODE')=='demo'?'call-demo':''}}">
-                                            {{translate('Save Configuration')}}
-                                        </button>
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <a href="javascript:" class="btn btn-primary" onclick="editPaymentMethod(
+                                            '{{$payment->id}}',
+                                            '{{$payment->method_name}}',
+                                            '{{$payment->driver_name}}',
+                                            '{{$payment->mode}}',
+                                            '{{asset('storage/app/public/payment_modules/gateway_image')}}/{{$payment->image}}',
+                                            {{json_encode($payment->settings)}},
+                                            '{{route('admin.business-settings.web-app.system-payment-method.update', $payment->id)}}',
+                                            '{{route('admin.business-settings.web-app.system-payment-method.delete', ['id' => $payment->id])}}'
+                                        )">
+                                            <i class="tio-edit"></i> {{translate('Edit Settings')}}
+                                        </a>
                                     </div>
                                 </div>
                             </form>
                         </div>
                     </div>
                 @endforeach
+                
+                <div class="col-md-6">
+                    <div class="card h-100 border-dashed">
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                            <img src="{{asset('public/assets/admin/img/plus-icon.png')}}" alt="" class="mb-3" style="width: 50px; opacity: 0.5;">
+                            <a href="javascript:" data-toggle="modal" data-target="#addPaymentMethodModal" class="btn btn-primary">
+                                <i class="tio-add"></i> {{translate('Add New Payment Method')}}
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Add Payment Method Modal -->
+    <div class="modal fade" id="addPaymentMethodModal" tabindex="-1" role="dialog" aria-labelledby="addPaymentMethodModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPaymentMethodModalLabel">{{translate('Add New Payment Method')}}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{route('admin.business-settings.web-app.system-payment-method.store')}}" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        @csrf
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label" for="method_name">{{translate('Method Name')}}</label>
+                                    <input type="text" name="method_name" class="form-control" placeholder="{{translate('Ex: Stripe')}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label" for="driver_name">{{translate('Driver')}}</label>
+                                    <select name="driver_name" class="form-control" required>
+                                        <option value="">{{translate('Select Driver')}}</option>
+                                        @foreach($supportedDrivers as $key => $driver)
+                                            <option value="{{$key}}">{{$driver}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label" for="mode">{{translate('Mode')}}</label>
+                                    <select name="mode" class="form-control" required>
+                                        <option value="test">{{translate('Test')}}</option>
+                                        <option value="live">{{translate('Live')}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label">{{translate('Gateway Image')}}</label>
+                                    <div class="custom-file">
+                                        <input type="file" name="gateway_image" class="custom-file-input" accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" onchange="previewImage(this, '#add-gateway-image-preview')">
+                                        <label class="custom-file-label">{{translate('Choose File')}}</label>
+                                    </div>
+                                    <div class="mt-2 text-center">
+                                         <img id="add-gateway-image-preview" style="height: 50px; object-fit: contain" src="{{asset('public/assets/admin/img/placeholder.png')}}" alt="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5>{{translate('Settings / Configuration')}}</h5>
+                        <p>{{translate('Add key-value pairs for the driver configuration (e.g., api_key, secret_key, merchant_id).')}}</p>
+
+                        <div id="add-settings-container">
+                            <div class="row setting-row">
+                                <div class="col-md-5">
+                                    <div class="form-group">
+                                        <input type="text" name="keys[]" class="form-control" placeholder="{{translate('Key (e.g. api_key)')}}">
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="form-group">
+                                        <input type="text" name="values[]" class="form-control" placeholder="{{translate('Value')}}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-danger remove-row" style="display:none;"><i class="tio-remove"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-secondary mt-2" onclick="addSettingRow('#add-settings-container')"><i class="tio-add"></i> {{translate('Add Setting')}}</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{translate('Close')}}</button>
+                        <button type="submit" class="btn btn-primary">{{translate('Submit')}}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Method Modal -->
+    <div class="modal fade" id="editPaymentMethodModal" tabindex="-1" role="dialog" aria-labelledby="editPaymentMethodModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPaymentMethodModalLabel">{{translate('Edit Payment Method')}}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="edit-payment-form" action="" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        @csrf
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label" for="edit_method_name">{{translate('Method Name')}}</label>
+                                    <input type="text" name="method_name" id="edit_method_name" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label">{{translate('Driver')}}</label>
+                                    <input type="text" class="form-control" id="edit_driver_name" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label" for="edit_mode">{{translate('Mode')}}</label>
+                                    <select name="mode" id="edit_mode" class="form-control" required>
+                                        <option value="test">{{translate('Test')}}</option>
+                                        <option value="live">{{translate('Live')}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="input-label">{{translate('Gateway Image')}}</label>
+                                    <div class="custom-file">
+                                        <input type="file" name="gateway_image" class="custom-file-input" accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" onchange="previewImage(this, '#edit-gateway-image-preview')">
+                                        <label class="custom-file-label">{{translate('Choose File')}}</label>
+                                    </div>
+                                    <div class="mt-2 text-center">
+                                         <img id="edit-gateway-image-preview" style="height: 50px; object-fit: contain" src="{{asset('public/assets/admin/img/placeholder.png')}}" alt="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5>{{translate('Settings / Configuration')}}</h5>
+                        <p>{{translate('Configure the keys and values for this payment method.')}}</p>
+
+                        <div id="edit-settings-container">
+                            <!-- Populated via JS -->
+                        </div>
+
+                        <button type="button" class="btn btn-secondary mt-2" onclick="addSettingRow('#edit-settings-container')"><i class="tio-add"></i> {{translate('Add Setting')}}</button>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-between">
+                        <a href="#" id="delete-payment-method-link" class="btn btn-danger" onclick="return confirm('{{translate('Want to delete this method ?')}}')">{{translate('Delete')}}</a>
+                        <div>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{{translate('Close')}}</button>
+                            <button type="submit" class="btn btn-primary">{{translate('Update')}}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Offline Payment Warning Modal -->
     <div class="modal fade" id="offlinePaymentWarningModal" tabindex="-1" aria-hidden="true">
@@ -320,22 +403,65 @@
             }
         });
 
-        // Preview gateway image
-        $(document).on('change', 'input[name="gateway_image"]', function () {
-            var $input = $(this);
-            var $form = $input.closest('form');
-
-            if (this.files && this.files[0]) {
+        function previewImage(input, previewId) {
+            if (input.files && input.files[0]) {
                 var reader = new FileReader();
-                var $imagePreview = $form.find('.payment--gateway-img img');
-
                 reader.onload = function (e) {
-                    $imagePreview.attr('src', e.target.result);
+                    $(previewId).attr('src', e.target.result);
                 }
-
-                reader.readAsDataURL(this.files[0]);
+                reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        // Add Setting Row
+        function addSettingRow(containerId, key = '', value = '') {
+            var html = `
+                <div class="row setting-row mt-2">
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <input type="text" name="keys[]" class="form-control" placeholder="{{translate('Key')}}" value="${key}">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <input type="text" name="values[]" class="form-control" placeholder="{{translate('Value')}}" value="${value}">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger remove-row"><i class="tio-remove"></i></button>
+                    </div>
+                </div>
+            `;
+            $(containerId).append(html);
+        }
+
+        $(document).on('click', '.remove-row', function() {
+            $(this).closest('.setting-row').remove();
         });
+
+        // Edit Modal Population
+        window.editPaymentMethod = function(id, name, driver, mode, imageUrl, settings, updateUrl, deleteUrl) {
+            $('#edit_method_name').val(name);
+            $('#edit_driver_name').val(driver); // Driver name is informational only in edit
+            $('#edit_mode').val(mode);
+            $('#edit-gateway-image-preview').attr('src', imageUrl);
+            $('#edit-payment-form').attr('action', updateUrl);
+            $('#delete-payment-method-link').attr('href', deleteUrl);
+
+            $('#edit-settings-container').empty();
+            if (settings) {
+                // If settings is a string (JSON), parse it. If it's already an object, use it.
+                // In Blade, we pass it as PHP array -> json_encode -> JS object.
+                $.each(settings, function(key, value) {
+                    addSettingRow('#edit-settings-container', key, value);
+                });
+            }
+            // Add one empty row if no settings, or just always allow adding more
+            addSettingRow('#edit-settings-container'); // Add an empty row for new settings
+
+            $('#editPaymentMethodModal').modal('show');
+        };
+
 
         // Update file input label with selected filename
         $('.custom-file-input').on('change', function() {

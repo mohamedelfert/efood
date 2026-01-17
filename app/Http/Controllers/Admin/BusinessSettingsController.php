@@ -35,11 +35,10 @@ class BusinessSettingsController extends Controller
 
     public function __construct(
         private BusinessSetting $business_setting,
-        private Currency        $currency,
-        private SocialMedia     $social_media,
-        private Branch          $branch
-    )
-    {
+        private Currency $currency,
+        private SocialMedia $social_media,
+        private Branch $branch
+    ) {
     }
 
     /**
@@ -52,16 +51,16 @@ class BusinessSettingsController extends Controller
                 'value' => 1,
             ]);
         }
-        
+
         // Get maintenance mode settings with proper defaults
         $config = Helpers::get_business_settings('maintenance_mode') ?? 0;
-        
+
         // Handle maintenance duration - decode JSON if exists, otherwise use empty array
         $maintenanceDurationSetting = Helpers::get_business_settings('maintenance_duration_setup');
-        $selectedMaintenanceDuration = is_string($maintenanceDurationSetting) 
-            ? json_decode($maintenanceDurationSetting, true) 
+        $selectedMaintenanceDuration = is_string($maintenanceDurationSetting)
+            ? json_decode($maintenanceDurationSetting, true)
             : $maintenanceDurationSetting;
-        
+
         // Ensure it's an array with default values
         $selectedMaintenanceDuration = $selectedMaintenanceDuration ?? [];
         $selectedMaintenanceDuration = array_merge([
@@ -69,18 +68,18 @@ class BusinessSettingsController extends Controller
             'start_date' => null,
             'end_date' => null,
         ], $selectedMaintenanceDuration);
-        
+
         // Handle maintenance system
         $maintenanceSystemSetting = Helpers::get_business_settings('maintenance_system_setup');
         $selectedMaintenanceSystem = is_string($maintenanceSystemSetting)
             ? json_decode($maintenanceSystemSetting, true)
             : $maintenanceSystemSetting;
         $selectedMaintenanceSystem = $selectedMaintenanceSystem ?? [];
-        
+
         // Handle dates safely
         $startDate = null;
         $endDate = null;
-        
+
         try {
             if (!empty($selectedMaintenanceDuration['start_date'])) {
                 $startDate = Carbon::parse($selectedMaintenanceDuration['start_date']);
@@ -93,11 +92,11 @@ class BusinessSettingsController extends Controller
             $startDate = now();
             $endDate = now();
         }
-        
+
         // Set default dates if still null
         $startDate = $startDate ?? now();
         $endDate = $endDate ?? now();
-        
+
         return view('admin-views.business-settings.restaurant-index', compact(
             'config',
             'selectedMaintenanceDuration',
@@ -315,7 +314,7 @@ class BusinessSettingsController extends Controller
     public function mailConfig(Request $request): RedirectResponse
     {
         $request->has('status') ? $request['status'] = 1 : $request['status'] = 0;
-        $this->InsertOrUpdateBusinessData(['key' => 'mail_config'],[
+        $this->InsertOrUpdateBusinessData(['key' => 'mail_config'], [
             'value' => json_encode([
                 "status" => $request['status'],
                 "name" => $request['name'],
@@ -380,11 +379,20 @@ class BusinessSettingsController extends Controller
             }
         }
 
-        $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['stripe', 'qib'])
-            ->get();
+        $paymentMethods = \App\Models\SystemPaymentMethod::latest()->get();
 
-        return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'data_values'));
+        $supportedDrivers = [
+            'stripe' => 'Stripe',
+            'paypal' => 'PayPal',
+            'qib' => 'QIB',
+            'razorpay' => 'Razorpay',
+            'flutterwave' => 'Flutterwave',
+            'paystack' => 'Paystack',
+            'ssl_commerz' => 'SslCommerz',
+            'mercadopago' => 'MercadoPago',
+        ];
+
+        return view('admin-views.business-settings.payment-index', compact('published_status', 'payment_url', 'paymentMethods', 'supportedDrivers'));
     }
 
     public function paymentMethodStatus(Request $request): RedirectResponse
@@ -482,7 +490,7 @@ class BusinessSettingsController extends Controller
             ]);
 
             // Helper function to get array from JSON or array
-            $getArrayValue = function($value) {
+            $getArrayValue = function ($value) {
                 if (is_string($value)) {
                     $decoded = json_decode($value, true);
                     return is_array($decoded) ? $decoded : [];
@@ -520,7 +528,7 @@ class BusinessSettingsController extends Controller
 
             // Handle gateway image
             $additionalDataArray = $getArrayValue($settings->additional_data);
-            
+
             if ($request->hasFile('gateway_image')) {
                 // Delete old image
                 if (!empty($additionalDataArray['gateway_image'])) {
@@ -529,7 +537,7 @@ class BusinessSettingsController extends Controller
                         Storage::disk('public')->delete($oldPath);
                     }
                 }
-                
+
                 // Upload new image
                 $image = $request->file('gateway_image');
                 $imageName = $request->gateway . '-' . time() . '.' . $image->extension();
@@ -553,7 +561,7 @@ class BusinessSettingsController extends Controller
             $settings->mode = $request->mode;
             $settings->is_active = $request->has('status') ? 1 : 0;
             $settings->additional_data = json_encode($additionalData);
-            
+
             $saved = $settings->save();
 
             Log::info('Payment Config Saved', [
@@ -578,14 +586,14 @@ class BusinessSettingsController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             Toastr::error($e->getMessage());
             return back()->withInput()->withErrors($e->errors());
-            
+
         } catch (\Exception $e) {
             Log::error('Payment Config Update Error', [
                 'message' => $e->getMessage(),
                 'line' => $e->getLine(),
                 'file' => $e->getFile()
             ]);
-            
+
             Toastr::error(translate('An error occurred: ') . $e->getMessage());
             return back()->withInput();
         }
@@ -594,13 +602,13 @@ class BusinessSettingsController extends Controller
     public function payment_update(Request $request, string $payment_method): RedirectResponse
     {
         // Validate the payment method
-        if (!in_array($payment_method, ['stripe','qib'])) {
+        if (!in_array($payment_method, ['stripe', 'qib'])) {
             Toastr::error(translate('Invalid payment method!'));
             return back();
         }
 
         $data = Setting::where(['key_name' => $payment_method])->first();
-        
+
         if (!$data) {
             Toastr::error(translate('Payment method not found!'));
             return back();
@@ -608,31 +616,31 @@ class BusinessSettingsController extends Controller
 
         // Get the mode (live or test)
         $mode = $request->input('mode', 'live');
-        
+
         // Prepare the configuration data
         $config = [];
-        
+
         // Get all input except _token, _method, mode, status
         $inputs = $request->except(['_token', '_method', 'mode', 'status']);
-        
+
         foreach ($inputs as $key => $value) {
             $config[$key] = $value;
         }
-        
+
         $config['mode'] = $mode;
-        
+
         // Update based on mode
         if ($mode == 'live') {
             $data->live_values = json_encode($config);
         } else {
             $data->test_values = json_encode($config);
         }
-        
+
         // Update status if provided
         if ($request->has('status')) {
             $data->is_active = $request->status == 'on' ? 1 : 0;
         }
-        
+
         $data->mode = $mode;
         $data->save();
 
@@ -1685,14 +1693,16 @@ class BusinessSettingsController extends Controller
             $request['shipping_per_km'] = Helpers::get_business_settings('delivery_management')['shipping_per_km'];
         }
         if ($request['shipping_status'] == 1) {
-            $request->validate([
-                'min_shipping_charge' => 'required',
-                'shipping_per_km' => 'required',
-            ],
+            $request->validate(
+                [
+                    'min_shipping_charge' => 'required',
+                    'shipping_per_km' => 'required',
+                ],
                 [
                     'min_shipping_charge.required' => 'Minimum shipping charge is required while shipping method is active',
                     'shipping_per_km.required' => 'Shipping charge per Kilometer is required while shipping method is active',
-                ]);
+                ]
+            );
         }
 
         $this->InsertOrUpdateBusinessData(['key' => 'delivery_management'], [
@@ -2015,14 +2025,14 @@ class BusinessSettingsController extends Controller
         $id = $request->input('id');
         $existingSearchPlaceholder = null;
         foreach ($data as $key => $item) {
-            if ($item['id'] == (int)$id) {
+            if ($item['id'] == (int) $id) {
                 $existingSearchPlaceholder = $key;
                 break;
             }
         }
 
         if ($existingSearchPlaceholder !== null) {
-            $data[$existingSearchPlaceholder]['id'] = (int)$id;
+            $data[$existingSearchPlaceholder]['id'] = (int) $id;
             $data[$existingSearchPlaceholder]['placeholder_name'] = $request['placeholder_name'];
         } else {
             $newItem = [
@@ -2109,8 +2119,11 @@ class BusinessSettingsController extends Controller
             }
         }
 
-        $this->InsertOrUpdateBusinessData(['key' => 'maintenance_system_setup'], [
-            'value' => json_encode($selectedSystems)],
+        $this->InsertOrUpdateBusinessData(
+            ['key' => 'maintenance_system_setup'],
+            [
+                'value' => json_encode($selectedSystems)
+            ],
         );
 
         $this->InsertOrUpdateBusinessData(['key' => 'maintenance_duration_setup'], [
@@ -2130,7 +2143,7 @@ class BusinessSettingsController extends Controller
             ]),
         ]);
 
-        $maintenanceStatus = (integer)(Helpers::get_business_settings('maintenance_mode') ?? 0);
+        $maintenanceStatus = (integer) (Helpers::get_business_settings('maintenance_mode') ?? 0);
         $selectedMaintenanceDuration = Helpers::get_business_settings('maintenance_duration_setup') ?? [];
         $selectedMaintenanceSystem = Helpers::get_business_settings('maintenance_system_setup') ?? [];
         $isBranch = in_array('branch_panel', $selectedMaintenanceSystem) ? 1 : 0;
