@@ -381,9 +381,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
                 Route::group(['prefix' => 'system-payment-method', 'as' => 'system-payment-method.'], function () {
                     Route::get('list', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'index'])->name('index');
-                    Route::get('create', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'create'])->name('create');
                     Route::post('store', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'store'])->name('store');
-                    Route::get('edit/{id}', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'edit'])->name('edit');
                     Route::post('update/{id}', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'update'])->name('update');
                     Route::delete('delete/{id}', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'delete'])->name('delete');
                     Route::get('status/{id}/{status}', [App\Http\Controllers\Admin\SystemPaymentMethodController::class, 'status'])->name('status');

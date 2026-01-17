@@ -181,6 +181,11 @@
         </div>
     </div>
 
+    <form action="" id="delete-payment-method-form" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
     <!-- Add Payment Method Modal -->
     <div class="modal fade" id="addPaymentMethodModal" tabindex="-1" role="dialog" aria-labelledby="addPaymentMethodModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -334,7 +339,7 @@
                         <button type="button" class="btn btn-secondary mt-2" onclick="addSettingRow('#edit-settings-container')"><i class="tio-add"></i> {{translate('Add Setting')}}</button>
                     </div>
                     <div class="modal-footer d-flex justify-content-between">
-                        <a href="#" id="delete-payment-method-link" class="btn btn-danger" onclick="return confirm('{{translate('Want to delete this method ?')}}')">{{translate('Delete')}}</a>
+                        <button type="button" class="btn btn-danger" onclick="confirmDelete()">{{translate('Delete')}}</button>
                         <div>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">{{translate('Close')}}</button>
                             <button type="submit" class="btn btn-primary">{{translate('Update')}}</button>
@@ -446,7 +451,7 @@
             $('#edit_mode').val(mode);
             $('#edit-gateway-image-preview').attr('src', imageUrl);
             $('#edit-payment-form').attr('action', updateUrl);
-            $('#delete-payment-method-link').attr('href', deleteUrl);
+            $('#delete-payment-method-form').attr('action', deleteUrl);
 
             $('#edit-settings-container').empty();
             if (settings) {
@@ -461,6 +466,24 @@
 
             $('#editPaymentMethodModal').modal('show');
         };
+
+        function confirmDelete() {
+            Swal.fire({
+                title: '{{translate("Are you sure?")}}',
+                text: '{{translate("Want to delete this method ?")}}',
+                type: 'warning',
+                showCancelButton: true,
+                cancelButtonColor: 'default',
+                confirmButtonColor: '#FC6A57',
+                cancelButtonText: '{{translate("No")}}',
+                confirmButtonText: '{{translate("Yes")}}',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.value) {
+                    $('#delete-payment-method-form').submit();
+                }
+            })
+        }
 
 
         // Update file input label with selected filename

@@ -25,24 +25,6 @@ class SystemPaymentMethodController extends Controller
         return view('admin-views.system-payment-method.index', compact('paymentMethods', 'search'));
     }
 
-    public function create()
-    {
-        // Define supported drivers manually for now or fetch from helper if possible
-        // Based on PaymentGatewayHelper, we have these:
-        $supportedDrivers = [
-            'stripe' => 'Stripe',
-            'paypal' => 'PayPal',
-            'qib' => 'QIB',
-            'razorpay' => 'Razorpay',
-            'flutterwave' => 'Flutterwave',
-            'paystack' => 'Paystack',
-            'ssl_commerz' => 'SslCommerz',
-            'mercadopago' => 'MercadoPago',
-            // Add others as needed
-        ];
-
-        return view('admin-views.system-payment-method.create', compact('supportedDrivers'));
-    }
 
     public function store(Request $request)
     {
@@ -84,11 +66,6 @@ class SystemPaymentMethodController extends Controller
         return redirect()->route('admin.business-settings.web-app.payment-method');
     }
 
-    public function edit($id)
-    {
-        $method = SystemPaymentMethod::findOrFail($id);
-        return view('admin-views.system-payment-method.edit', compact('method'));
-    }
 
     public function update(Request $request, $id)
     {
