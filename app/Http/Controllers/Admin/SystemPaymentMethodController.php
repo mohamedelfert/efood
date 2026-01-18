@@ -43,7 +43,7 @@ class SystemPaymentMethodController extends Controller
             }
         }
 
-        $slug = Str::slug($request->method_name);
+        $slug = Str::slug($request->driver_name);
         if (SystemPaymentMethod::where('slug', $slug)->exists()) {
             $slug = $slug . '-' . time();
         }

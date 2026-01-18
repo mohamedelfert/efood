@@ -230,7 +230,7 @@ class ConfigController extends Controller
         $data = [];
         foreach ($methods as $method) {
             $data[] = [
-                'gateway' => $method->slug ?? $method->method_name,
+                'gateway' => $method->driver_name,
                 'gateway_title' => $method->method_name,
                 'gateway_image' => $method->image
             ];
