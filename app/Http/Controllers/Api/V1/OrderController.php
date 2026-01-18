@@ -889,6 +889,14 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
+        $order_type = $request->order_type;
+        $order_type_setting = $order_type == 'in_restaurant' ? 'dine_in' : ($order_type == 'home_delivery' ? 'delivery' : $order_type);
+        if ($order_type_setting != 'branch' && !Helpers::get_business_settings($order_type_setting)) {
+            return response()->json([
+                'errors' => [['code' => 'order_type', 'message' => translate('Requested order type is not available at the moment.')]]
+            ], 403);
+        }
+
         if (count($request['cart']) < 1) {
             return response()->json([
                 'errors' => [['code' => 'empty-cart', 'message' => translate('Cart is empty')]]

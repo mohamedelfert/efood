@@ -2042,6 +2042,8 @@
   'Ex: +9xxx-xxx-xxxx' => 'مثال: +9xxx-xxx-xxxx',
   'Ex: contact@company.com' => 'مثال: contact@company.com',
   'Business Information' => 'معلومات الأعمال',
+  'Bussiness Settings' => 'إعدادات الأعمال',
+  'Delivery Settings' => 'إعدادات التوصيل',
   'Guest Checkout' => 'الدفع كضيف',
   'Partial Payment' => 'الدفع الجزئي',
   'Combine Payment With' => 'الجمع بين الدفع مع',

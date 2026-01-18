@@ -158,6 +158,9 @@ class ConfigController extends Controller
             'country' => Helpers::get_business_settings('country') ?? 'BD',
             'self_pickup' => (boolean) Helpers::get_business_settings('self_pickup') ?? 1,
             'delivery' => (boolean) Helpers::get_business_settings('delivery') ?? 1,
+            'take_away' => (boolean) Helpers::get_business_settings('take_away') ?? 1,
+            'in_car' => (boolean) Helpers::get_business_settings('in_car') ?? 1,
+            'in_restaurant' => (boolean) Helpers::get_business_settings('dine_in') ?? 1,
             'play_store_config' => [
                 "status" => isset($playStoreConfig) && (boolean) $playStoreConfig['status'],
                 "link" => isset($playStoreConfig) ? $playStoreConfig['link'] : null,

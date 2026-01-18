@@ -155,6 +155,15 @@ class BusinessSettingsController extends Controller
         if ($request->has('toggle_veg_non_veg')) {
             $request['toggle_veg_non_veg'] = 1;
         }
+        if ($request->has('take_away')) {
+            $request['take_away'] = 1;
+        }
+        if ($request->has('in_car')) {
+            $request['in_car'] = 1;
+        }
+        if ($request->has('dine_in')) {
+            $request['dine_in'] = 1;
+        }
 
         if ($request->has('email_verification')) {
             $request['email_verification'] = 1;
@@ -285,6 +294,18 @@ class BusinessSettingsController extends Controller
 
         $this->InsertOrUpdateBusinessData(['key' => 'google_map_status'], [
             'value' => $request['google_map_status'],
+        ]);
+
+        $this->InsertOrUpdateBusinessData(['key' => 'take_away'], [
+            'value' => $request['take_away'] ?? 0,
+        ]);
+
+        $this->InsertOrUpdateBusinessData(['key' => 'in_car'], [
+            'value' => $request['in_car'] ?? 0,
+        ]);
+
+        $this->InsertOrUpdateBusinessData(['key' => 'dine_in'], [
+            'value' => $request['dine_in'] ?? 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'admin_order_notification'], [
