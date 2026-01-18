@@ -209,11 +209,13 @@ class Helpers
         $storage = [];
         if ($multi_data) {
             foreach ($data as $item) {
+                $item = self::order_status_mapping($item);
                 $item['add_on_ids'] = json_decode($item['add_on_ids']);
                 $storage[] = $item;
             }
             $data = $storage;
         } else {
+            $data = self::order_status_mapping($data);
             $data['add_on_ids'] = json_decode($data['add_on_ids']);
 
             foreach ($data->details as $detail) {
@@ -233,6 +235,39 @@ class Helpers
         }
 
         return $data;
+    }
+
+    public static function order_status_mapping($order)
+    {
+        $order_type = is_array($order) ? $order['order_type'] : $order->order_type;
+        $order_status = is_array($order) ? $order['order_status'] : $order->order_status;
+
+        $onPremiseTypes = ['in_car', 'in_restaurant', 'dine_in'];
+        $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
+
+        if (in_array($order_type, $onPremiseTypes)) {
+            if ($order_status == 'confirmed') {
+                $order_status = 'ordered';
+            } elseif ($order_status == 'processing') {
+                $order_status = 'being_prepared';
+            } elseif ($order_status == 'delivered') {
+                $order_status = 'ready_for_receipt';
+            }
+        } elseif (in_array($order_type, $offPremiseTypes)) {
+            if ($order_status == 'out_for_delivery') {
+                $order_status = 'out_to_connect';
+            } elseif ($order_status == 'delivered') {
+                $order_status = 'connected';
+            }
+        }
+
+        if (is_array($order)) {
+            $order['order_status'] = $order_status;
+        } else {
+            $order->order_status = $order_status;
+        }
+
+        return $order;
     }
 
     public static function get_business_settings($name)
@@ -528,13 +563,13 @@ class Helpers
     {
         if ($status == 'pending') {
             $data = self::get_business_settings('order_pending_message');
-        } elseif ($status == 'confirmed') {
+        } elseif ($status == 'confirmed' || $status == 'ordered') {
             $data = self::get_business_settings('order_confirmation_msg');
-        } elseif ($status == 'processing') {
+        } elseif ($status == 'processing' || $status == 'being_prepared') {
             $data = self::get_business_settings('order_processing_message');
-        } elseif ($status == 'out_for_delivery') {
+        } elseif ($status == 'out_for_delivery' || $status == 'out_to_connect' || $status == 'ready_for_receipt') {
             $data = self::get_business_settings('out_for_delivery_message');
-        } elseif ($status == 'delivered') {
+        } elseif ($status == 'delivered' || $status == 'connected') {
             $data = self::get_business_settings('order_delivered_message');
         } elseif ($status == 'delivery_boy_delivered') {
             $data = self::get_business_settings('delivery_boy_delivered_message');
@@ -999,6 +1034,10 @@ class Helpers
                 $detail['add_on_qtys'] = gettype($detail['add_on_qtys']) != 'array' ? (array) json_decode($detail['add_on_qtys'], true) : (array) $detail['add_on_qtys'];
                 $detail['add_on_prices'] = gettype($detail['add_on_prices']) != 'array' ? (array) json_decode($detail['add_on_prices'], true) : (array) $detail['add_on_prices'];
                 $detail['add_on_taxes'] = gettype($detail['add_on_taxes']) != 'array' ? (array) json_decode($detail['add_on_taxes'], true) : (array) $detail['add_on_taxes'];
+
+                if (isset($detail['order'])) {
+                    $detail['order'] = Helpers::order_status_mapping($detail['order']);
+                }
 
                 if (!isset($detail['reviews_count'])) {
                     $detail['review_count'] = Review::where(['order_id' => $detail['order_id'], 'product_id' => $detail['product_id']])->count();

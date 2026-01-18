@@ -324,6 +324,22 @@ class OrderController extends Controller
         ];
 
         switch ($order->order_type) {
+            case 'take_away':
+                $info['icon'] = 'tio-checkmark-circle';
+                $info['badge_class'] = 'badge-soft-success';
+                $info['title'] = translate('Take Away');
+                $info['description'] = translate('Customer will pick up the order');
+                $info['show_delivery_man'] = true;
+                break;
+
+            case 'self_pickup':
+                $info['icon'] = 'tio-checkmark-circle';
+                $info['badge_class'] = 'badge-soft-success';
+                $info['title'] = translate('Self Pickup');
+                $info['description'] = translate('Customer will pick up the order');
+                $info['show_delivery_man'] = true;
+                break;
+
             case 'delivery':
                 $info['icon'] = 'tio-shopping-basket';
                 $info['badge_class'] = 'badge-soft-primary';
@@ -340,13 +356,6 @@ class OrderController extends Controller
                 $info['show_car_details'] = true;
                 $info['car_registration'] = $order->car_registration_number;
                 $info['car_color'] = $order->car_color;
-                break;
-
-            case 'take_away':
-                $info['icon'] = 'tio-checkmark-circle';
-                $info['badge_class'] = 'badge-soft-success';
-                $info['title'] = translate('Take Away');
-                $info['description'] = translate('Customer will pick up the order');
                 break;
 
             case 'dine_in':
@@ -378,6 +387,23 @@ class OrderController extends Controller
     {
         $order = $this->order->find($request->id);
 
+        $onPremiseTypes = ['in_car', 'in_restaurant', 'dine_in'];
+        $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
+
+        if (in_array($order->order_type, $onPremiseTypes)) {
+            $allowedOnPremise = ['confirmed', 'processing', 'delivered', 'canceled'];
+            if (!in_array($request->order_status, $allowedOnPremise)) {
+                Toastr::warning(translate('Status not allowed for this order type'));
+                return back();
+            }
+        } elseif (in_array($order->order_type, $offPremiseTypes)) {
+            $allowedOffPremise = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
+            if (!in_array($request->order_status, $allowedOffPremise)) {
+                Toastr::warning(translate('Status not allowed for this order type'));
+                return back();
+            }
+        }
+
         if (in_array($order->order_status, ['delivered', 'failed'])) {
             Toastr::warning(translate('you_can_not_change_the_status_of ' . $order->order_status . ' order'));
             return back();
@@ -388,12 +414,9 @@ class OrderController extends Controller
             return back();
         }
 
-        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && !in_array($order['order_type'], ['take_away', 'in_car', 'dine_in', 'in_restaurant', 'self_pickup'])) {
-            Toastr::warning(translate('Please assign delivery man first!'));
-            return back();
-        }
-        if ($request->order_status == 'completed' && $order->payment_status != 'paid') {
-            Toastr::warning(translate('Please update payment status first!'));
+        // Mandatory delivery man for Off-premise when reaches 'out_for_delivery' (Out to Connect)
+        if (($request->order_status == 'out_for_delivery' || $request->order_status == 'delivered') && $order['delivery_man_id'] == null && in_array($order['order_type'], $offPremiseTypes)) {
+            Toastr::warning(translate('Please assign delivery/connection person first!'));
             return back();
         }
 
@@ -554,12 +577,12 @@ class OrderController extends Controller
         }
         $table_order = $this->table_order->where(['id' => $order->table_order_id])->first();
 
-        if ($request->order_status == 'completed' && $order->payment_status == 'paid') {
+        if (in_array($request->order_status, ['completed', 'delivered']) && $order->payment_status == 'paid') {
             if (isset($table_order->id)) {
                 $orders = $this->order->where(['table_order_id' => $table_order->id])->get();
                 $status = 1;
                 foreach ($orders as $order) {
-                    if ($order->order_status != 'completed') {
+                    if (!in_array($order->order_status, ['completed', 'delivered'])) {
                         $status = 0;
                         break;
                     }

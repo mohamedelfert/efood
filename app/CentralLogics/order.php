@@ -28,15 +28,6 @@ class OrderLogic
             ->where(['id' => $order_id])
             ->first();
 
-        if (in_array($order->order_type, ['in_car', 'take_away', 'dine_in', 'in_restaurant', 'branch'])) {
-            if ($order->order_status == 'confirmed') {
-                $order->order_status = 'order_received';
-            } elseif ($order->order_status == 'processing') {
-                $order->order_status = 'order_processing';
-            } elseif ($order->order_status == 'out_for_delivery') {
-                $order->order_status = 'order_ready';
-            }
-        }
 
         $orderDetails = OrderDetail::where('order_id', $order->id)->first();
         $productId = $orderDetails?->product_id;

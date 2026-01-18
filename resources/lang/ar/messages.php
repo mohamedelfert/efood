@@ -4388,4 +4388,9 @@
   'Since offline payment is combined with this payment method, you should change that configuration before disabling it.' => 'بما أن الدفع غير المتصل مرتبط بطريقة الدفع هذه، يجب عليك تغيير هذا التكوين قبل تعطيله.',
   'Go to Business Setup' => 'الذهاب إلى إعدادات الأعمال',
   'Got it' => 'فهمت',
+  'ready_for_receipt' => 'جاهز للاستلام',
+  'ordered' => 'تم الطلب',
+  'being_prepared' => 'قيد التحضير',
+  'out_to_connect' => 'خارج للتوصيل',
+  'connected' => 'تم التوصيل',
 );

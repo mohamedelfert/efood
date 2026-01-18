@@ -205,6 +205,23 @@ class OrderController extends Controller
             ->where(['id' => $request->id, 'branch_id' => auth('branch')->id()])
             ->first();
 
+        $onPremiseTypes = ['in_car', 'in_restaurant', 'dine_in'];
+        $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
+
+        if (in_array($order->order_type, $onPremiseTypes)) {
+            $allowedOnPremise = ['confirmed', 'processing', 'delivered', 'canceled'];
+            if (!in_array($request->order_status, $allowedOnPremise)) {
+                Toastr::warning(translate('Status not allowed for this order type'));
+                return back();
+            }
+        } elseif (in_array($order->order_type, $offPremiseTypes)) {
+            $allowedOffPremise = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
+            if (!in_array($request->order_status, $allowedOffPremise)) {
+                Toastr::warning(translate('Status not allowed for this order type'));
+                return back();
+            }
+        }
+
         if (in_array($order->order_status, ['delivered', 'failed'])) {
             Toastr::warning(translate('you_can_not_change_the_status_of ' . $order->order_status . ' order'));
             return back();
@@ -215,8 +232,9 @@ class OrderController extends Controller
             return back();
         }
 
-        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && !in_array($order['order_type'], ['take_away', 'in_car', 'dine_in', 'in_restaurant', 'self_pickup'])) {
-            Toastr::warning(translate('Please assign delivery man first!'));
+        // Mandatory delivery man for Off-premise when reaches 'out_for_delivery' (Out to Connect)
+        if (($request->order_status == 'out_for_delivery' || $request->order_status == 'delivered') && $order['delivery_man_id'] == null && in_array($order['order_type'], $offPremiseTypes)) {
+            Toastr::warning(translate('Please assign delivery/connection person first!'));
             return back();
         }
 

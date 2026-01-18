@@ -2580,6 +2580,7 @@ class OrderController extends Controller
                     ];
                 })->toArray();
 
+            $data = Helpers::order_status_mapping($data);
             return $data;
         });
 

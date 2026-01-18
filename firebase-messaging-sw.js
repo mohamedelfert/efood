@@ -4,7 +4,7 @@ importScripts('https://www.gstatic.com/firebasejs/8.3.2/firebase-messaging.js');
 firebase.initializeApp({
     apiKey: "",
     authDomain: "",
-    projectId: "",
+    projectId: "coffee-a5a44",
     storageBucket: "",
     messagingSenderId: "",
     appId: "",
