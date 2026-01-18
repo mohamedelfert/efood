@@ -47,7 +47,8 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     /**
@@ -66,7 +67,7 @@ class User extends Authenticatable
     // ===========================
     // RELATIONSHIPS
     // ===========================
-    
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'user_id');
@@ -115,7 +116,7 @@ class User extends Authenticatable
     // ===========================
     // SCOPES
     // ===========================
-    
+
     public function scopeOfType($query, $user_type)
     {
         if ($user_type != 'customer') {
@@ -131,13 +132,13 @@ class User extends Authenticatable
     public function scopeWithFcmToken($query)
     {
         return $query->whereNotNull('cm_firebase_token')
-                     ->where('cm_firebase_token', '!=', '');
+            ->where('cm_firebase_token', '!=', '');
     }
 
     // ===========================
     // FCM TOKEN METHODS
     // ===========================
-    
+
     /**
      * Check if user has valid FCM token
      */
@@ -202,6 +203,7 @@ class User extends Authenticatable
                 'description' => $data['description'] ?? $data['body'] ?? '',
                 'image' => $data['image'] ?? '',
                 'order_id' => $data['order_id'] ?? '',
+                'branch_id' => $data['branch_id'] ?? '',
                 'type' => $data['type'] ?? 'general'
             ];
 
@@ -231,7 +233,7 @@ class User extends Authenticatable
     // ===========================
     // NOTIFICATION METHODS
     // ===========================
-    
+
     /**
      * Get user's unread notifications count
      */
@@ -319,7 +321,7 @@ class User extends Authenticatable
     // ===========================
     // WALLET METHODS
     // ===========================
-    
+
     public function hasWalletBalance(float $amount): bool
     {
         return $this->wallet_balance >= $amount;
@@ -382,7 +384,7 @@ class User extends Authenticatable
     // ===========================
     // IMAGE METHODS
     // ===========================
-    
+
     public function getImageFullPathAttribute(): string
     {
         $image = $this->image ?? null;
@@ -406,7 +408,7 @@ class User extends Authenticatable
     // ===========================
     // STATIC METHODS
     // ===========================
-    
+
     public static function get_chef_branch_name($chef)
     {
         $branch = DB::table('chef_branch')->where('user_id', $chef->id)->get();
@@ -501,12 +503,12 @@ class User extends Authenticatable
 
             // Generate unique QR code string
             $qrCode = 'WALLET_' . strtoupper(Str::random(20)) . '_' . $this->id;
-            
+
             // Create filename
             $qrCodeImage = 'qr_' . $this->id . '_' . time() . '.png';
             $directory = storage_path('app/public/qr_codes');
             $fullPath = $directory . '/' . $qrCodeImage;
-            
+
             Log::info('QR code paths', [
                 'user_id' => $this->id,
                 'directory' => $directory,
@@ -517,7 +519,7 @@ class User extends Authenticatable
             // Check and create directory
             if (!file_exists($directory)) {
                 Log::info('Creating QR codes directory', ['directory' => $directory]);
-                
+
                 if (!mkdir($directory, 0775, true)) {
                     Log::error('Failed to create directory', [
                         'user_id' => $this->id,
@@ -527,7 +529,7 @@ class User extends Authenticatable
                     ]);
                     return false;
                 }
-                
+
                 // Set permissions immediately after creation
                 chmod($directory, 0775);
                 Log::info('Directory created successfully', ['directory' => $directory]);
@@ -571,7 +573,7 @@ class User extends Authenticatable
 
                 // Save to file
                 $bytesWritten = file_put_contents($fullPath, $qrCodeBinary);
-                
+
                 Log::info('QR code file written', [
                     'user_id' => $this->id,
                     'bytes_written' => $bytesWritten,

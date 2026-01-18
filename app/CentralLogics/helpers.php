@@ -74,10 +74,10 @@ class Helpers
         $match = $variations;
         $result = 0;
 
-        foreach($product as $product_variation){
-            foreach($product_variation['values'] as $option){
-                foreach($match as $variation){
-                    if($product_variation['name'] == $variation['name'] && isset($variation['values']) && in_array($option['label'], $variation['values']['label'])){
+        foreach ($product as $product_variation) {
+            foreach ($product_variation['values'] as $option) {
+                foreach ($match as $variation) {
+                    if ($product_variation['name'] == $variation['name'] && isset($variation['values']) && in_array($option['label'], $variation['values']['label'])) {
                         $result += $option['optionPrice'];
                     }
                 }
@@ -92,13 +92,13 @@ class Helpers
         $result = [];
         $variation_price = 0;
 
-        foreach($variations as $k=> $variation){
-            foreach($product_variations as  $product_variation){
-                if( isset($variation['values']) && isset($product_variation['values']) && $product_variation['name'] == $variation['name']  ){
+        foreach ($variations as $k => $variation) {
+            foreach ($product_variations as $product_variation) {
+                if (isset($variation['values']) && isset($product_variation['values']) && $product_variation['name'] == $variation['name']) {
                     $result[$k] = $product_variation;
                     $result[$k]['values'] = [];
-                    foreach($product_variation['values'] as $key=> $option){
-                        if(in_array($option['label'], $variation['values']['label'])){
+                    foreach ($product_variation['values'] as $key => $option) {
+                        if (in_array($option['label'], $variation['values']['label'])) {
                             $result[$k]['values'][] = $option;
                             $variation_price += $option['optionPrice'];
                         }
@@ -107,7 +107,7 @@ class Helpers
             }
         }
 
-        return ['price'=>$variation_price,'variations'=>$result];
+        return ['price' => $variation_price, 'variations' => $result];
     }
 
     public static function product_data_formatting($data, $multi_data = false)
@@ -272,16 +272,16 @@ class Helpers
     public static function currency_code()
     {
         $currency = BusinessSetting::where(['key' => 'currency'])->first();
-        
+
         // Add proper null checking
         if (!$currency) {
             return 'YER'; // Default fallback currency code
         }
-        
+
         if (!isset($currency->value)) {
             return 'YER'; // Default fallback if value doesn't exist
         }
-        
+
         return $currency->value;
     }
 
@@ -289,16 +289,16 @@ class Helpers
     {
         $currency_code = self::currency_code();
         $currency = Currency::where(['code' => $currency_code])->first();
-        
+
         // Add proper null checking
         if (!$currency) {
             return 'ريال'; // Default fallback symbol
         }
-        
+
         if (!isset($currency->currency_symbol)) {
             return 'ريال'; // Default fallback if symbol doesn't exist
         }
-        
+
         return $currency->currency_symbol;
     }
 
@@ -329,23 +329,23 @@ class Helpers
     public static function sendNotificationToHttp(array|null $data): bool|PromiseInterface|Response
     {
         $config = self::get_business_settings('push_notification_service_file_content');
-        $key = (array)$config;
-        if (isset($key['project_id'])){
-            $url = 'https://fcm.googleapis.com/v1/projects/'.$key['project_id'].'/messages:send';
+        $key = (array) $config;
+        if (isset($key['project_id'])) {
+            $url = 'https://fcm.googleapis.com/v1/projects/' . $key['project_id'] . '/messages:send';
             $headers = [
                 'Authorization' => 'Bearer ' . self::getAccessToken($key),
                 'Content-Type' => 'application/json',
             ];
             try {
                 return Http::withHeaders($headers)->post($url, $data);
-            }catch (\Exception $exception){
+            } catch (\Exception $exception) {
                 return false;
             }
         }
         return false;
     }
 
-    public static function getAccessToken($key):String
+    public static function getAccessToken($key): string
     {
         $jwtToken = [
             'iss' => $key['client_email'],
@@ -373,16 +373,17 @@ class Helpers
             'message' => [
                 "token" => $fcm_token,
                 "data" => [
-                    "title" => (string)$data['title'],
-                    "body" => (string)$data['description'],
-                    "image" => (string)$data['image'],
-                    "order_id" => (string)$data['order_id'],
-                    "type" => (string)$data['type'],
+                    "title" => (string) $data['title'],
+                    "body" => (string) $data['description'],
+                    "image" => (string) $data['image'],
+                    "order_id" => (string) $data['order_id'],
+                    "branch_id" => (string) ($data['branch_id'] ?? ''),
+                    "type" => (string) $data['type'],
                     "is_deliveryman_assigned" => $isDeliverymanAssigned ? "1" : "0",
                 ],
                 "notification" => [
-                    'title' => (string)$data['title'],
-                    'body' => (string)$data['description'],
+                    'title' => (string) $data['title'],
+                    'body' => (string) $data['description'],
                 ],
             ]
         ];
@@ -395,19 +396,20 @@ class Helpers
             'message' => [
                 "topic" => $topic,
                 "data" => [
-                    "title" => (string)$data['title'],
-                    "body" => (string)$data['description'],
-                    "order_id" => (string)$data['order_id'],
-                    "order_status" => (string)($data['order_status'] ?? ''),
-                    "type" => (string)$type,
-                    "image" => (string)$data['image'],
-                    "click_action" => $web_push_link ? (string)$web_push_link : '',
+                    "title" => (string) $data['title'],
+                    "body" => (string) $data['description'],
+                    "order_id" => (string) $data['order_id'],
+                    "order_status" => (string) ($data['order_status'] ?? ''),
+                    "branch_id" => (string) ($data['branch_id'] ?? ''),
+                    "type" => (string) $type,
+                    "image" => (string) $data['image'],
+                    "click_action" => $web_push_link ? (string) $web_push_link : '',
                     "is_background_sound_active" => $isNotificationPayloadRemove ? "1" : "0",
                 ],
                 "notification" => [
-                    "title" => (string)$data['title'],
-                    "body" => (string)$data['description'],
-                    "image" => (string)$data['image']
+                    "title" => (string) $data['title'],
+                    "body" => (string) $data['description'],
+                    "image" => (string) $data['image']
                 ],
                 "apns" => [
                     "payload" => [
@@ -421,9 +423,9 @@ class Helpers
 
         if (!$isNotificationPayloadRemove) {
             $postData['message']['notification'] = [
-                "title" => (string)$data['title'],
-                "body" => (string)$data['description'],
-                "image" => (string)$data['image']
+                "title" => (string) $data['title'],
+                "body" => (string) $data['description'],
+                "image" => (string) $data['image']
             ];
         }
 
@@ -452,7 +454,7 @@ class Helpers
 
     public static function new_tax_calculate($product, $price, $discount_data)
     {
-        if ($discount_data['discount'] > 0){
+        if ($discount_data['discount'] > 0) {
             if ($discount_data['discount_type'] == 'percent') {
                 $price_discount = ($price / 100) * $discount_data['discount'];
             } else {
@@ -557,7 +559,7 @@ class Helpers
         } else {
             $data['status'] = 0;
             $data['message'] = "";
-//            $data = '{"status":"0","message":""}';
+            //            $data = '{"status":"0","message":""}';
 
         }
 
@@ -594,7 +596,9 @@ class Helpers
         $path = base_path('.env');
         if (file_exists($path)) {
             file_put_contents($path, str_replace(
-                $key . '=' . env($key), $key . '=' . $value, file_get_contents($path)
+                $key . '=' . env($key),
+                $key . '=' . $value,
+                file_get_contents($path)
             ));
         }
     }
@@ -604,7 +608,9 @@ class Helpers
         $path = base_path('.env');
         if (file_exists($path)) {
             file_put_contents($path, str_replace(
-                $key_from . '=' . env($key_from), $key_to . '=' . $value, file_get_contents($path)
+                $key_from . '=' . env($key_from),
+                $key_to . '=' . $value,
+                file_get_contents($path)
             ));
         }
     }
@@ -615,7 +621,10 @@ class Helpers
             $objects = scandir($dir);
             foreach ($objects as $object) {
                 if ($object != "." && $object != "..") {
-                    if (filetype($dir . "/" . $object) == "dir") Helpers::remove_dir($dir . "/" . $object); else unlink($dir . "/" . $object);
+                    if (filetype($dir . "/" . $object) == "dir")
+                        Helpers::remove_dir($dir . "/" . $object);
+                    else
+                        unlink($dir . "/" . $object);
                 }
             }
             reset($objects);
@@ -827,12 +836,12 @@ class Helpers
         } else {
             $oldValue = env($envKey);
         }
-//        $oldValue = var_export(env($envKey), true);
+        //        $oldValue = var_export(env($envKey), true);
 
         if (strpos($str, $envKey) !== false) {
             $str = str_replace("{$envKey}={$oldValue}", "{$envKey}={$envValue}", $str);
 
-//            dd("{$envKey}={$envValue}");
+            //            dd("{$envKey}={$envValue}");
 //            dd($str);
         } else {
             $str .= "{$envKey}={$envValue}\n";
@@ -866,7 +875,7 @@ class Helpers
         try {
             if (base64_decode(json_decode($response, true)['active'])) {
                 return [
-                    'active' => (int)base64_decode(json_decode($response, true)['active'])
+                    'active' => (int) base64_decode(json_decode($response, true)['active'])
                 ];
             }
             return [
@@ -899,10 +908,10 @@ class Helpers
         $deliveryType = $branch->delivery_charge_setup->delivery_charge_type ?? 'fixed';
         $deliveryType = $deliveryType === 'area' ? 'area' : ($deliveryType === 'distance' ? 'distance' : 'fixed');
 
-        if($deliveryType == 'area'){
+        if ($deliveryType == 'area') {
             $area = DeliveryChargeByArea::find($selectedDeliveryArea);
             $deliveryCharge = $area->delivery_charge ?? 0;
-        }elseif($deliveryType == 'distance') {
+        } elseif ($deliveryType == 'distance') {
             $minDeliveryCharge = $branch->delivery_charge_setup->minimum_delivery_charge;
             $shippingChargePerKM = $branch->delivery_charge_setup->delivery_charge_per_kilometer;
             $minDistanceForFreeDelivery = $branch->delivery_charge_setup->minimum_distance_for_free_delivery;
@@ -913,7 +922,7 @@ class Helpers
                 $distanceDeliveryCharge = $shippingChargePerKM * $distance;
                 $deliveryCharge = max($distanceDeliveryCharge, $minDeliveryCharge);
             }
-        }else{
+        } else {
             $deliveryCharge = $branch->delivery_charge_setup->fixed_delivery_charge ?? 0;
         }
         return self::set_price($deliveryCharge);
@@ -957,8 +966,8 @@ class Helpers
 
     public static function module_permission_check($mod_name)
     {
-        $permission = auth('admin')->user()->role->module_access??null;
-        if (isset($permission) && in_array($mod_name, (array)json_decode($permission)) == true) {
+        $permission = auth('admin')->user()->role->module_access ?? null;
+        if (isset($permission) && in_array($mod_name, (array) json_decode($permission)) == true) {
             return true;
         }
 
@@ -970,9 +979,11 @@ class Helpers
 
     public static function file_remover(string $dir, $image)
     {
-        if (!isset($image)) return true;
+        if (!isset($image))
+            return true;
 
-        if (Storage::disk('public')->exists($dir . $image)) Storage::disk('public')->delete($dir . $image);
+        if (Storage::disk('public')->exists($dir . $image))
+            Storage::disk('public')->delete($dir . $image);
 
         return true;
     }
@@ -989,7 +1000,7 @@ class Helpers
                 $detail['add_on_prices'] = gettype($detail['add_on_prices']) != 'array' ? (array) json_decode($detail['add_on_prices'], true) : (array) $detail['add_on_prices'];
                 $detail['add_on_taxes'] = gettype($detail['add_on_taxes']) != 'array' ? (array) json_decode($detail['add_on_taxes'], true) : (array) $detail['add_on_taxes'];
 
-                if(!isset($detail['reviews_count'])) {
+                if (!isset($detail['reviews_count'])) {
                     $detail['review_count'] = Review::where(['order_id' => $detail['order_id'], 'product_id' => $detail['product_id']])->count();
                 }
 
@@ -1005,18 +1016,18 @@ class Helpers
 
     public static function product_formatter($product)
     {
-        $product['variations'] = gettype($product['variations']) != 'array' ? (array)json_decode($product['variations'], true) : (array)$product['variations'];
-        $product['add_ons'] = gettype($product['add_ons']) != 'array' ? (array)json_decode($product['add_ons'], true) : (array)$product['add_ons'];
-        $product['attributes'] = gettype($product['attributes']) != 'array' ? (array)json_decode($product['attributes'], true) : (array)$product['attributes'];
-        $product['category_ids'] = gettype($product['category_ids']) != 'array' ? (array)json_decode($product['category_ids'], true) : (array)$product['category_ids'];
-        $product['choice_options'] = gettype($product['choice_options']) != 'array' ? (array)json_decode($product['choice_options'], true) : (array)$product['choice_options'];
+        $product['variations'] = gettype($product['variations']) != 'array' ? (array) json_decode($product['variations'], true) : (array) $product['variations'];
+        $product['add_ons'] = gettype($product['add_ons']) != 'array' ? (array) json_decode($product['add_ons'], true) : (array) $product['add_ons'];
+        $product['attributes'] = gettype($product['attributes']) != 'array' ? (array) json_decode($product['attributes'], true) : (array) $product['attributes'];
+        $product['category_ids'] = gettype($product['category_ids']) != 'array' ? (array) json_decode($product['category_ids'], true) : (array) $product['category_ids'];
+        $product['choice_options'] = gettype($product['choice_options']) != 'array' ? (array) json_decode($product['choice_options'], true) : (array) $product['choice_options'];
 
         try {
             $addons = [];
             foreach ($product['add_ons'] as $add_on_id) {
                 $addon = AddOn::find($add_on_id);
                 if (isset($addon)) {
-                    $addons [] = $addon;
+                    $addons[] = $addon;
                 }
             }
             $product['add_ons'] = $addons;
@@ -1028,7 +1039,8 @@ class Helpers
         return $product;
     }
 
-    public static function generate_referer_code() {
+    public static function generate_referer_code()
+    {
         $ref_code = Str::random('20');
         if (User::where('refer_code', '=', $ref_code)->exists()) {
             return self::generate_referer_code();
@@ -1036,12 +1048,13 @@ class Helpers
         return $ref_code;
     }
 
-    public static function update_daily_product_stock() {
+    public static function update_daily_product_stock()
+    {
         $currentDay = now()->day;
         $currentMonth = now()->month;
         $products = ProductByBranch::where(['stock_type' => 'daily'])->get();
-        foreach ($products as $product){
-            if ($currentDay != $product['updated_at']->day || $currentMonth != $product['updated_at']->month){
+        foreach ($products as $product) {
+            if ($currentDay != $product['updated_at']->day || $currentMonth != $product['updated_at']->month) {
                 $product['sold_quantity'] = 0;
                 $product->save();
             }
@@ -1118,9 +1131,9 @@ class Helpers
         return $data;
     }
 
-    public static function onErrorImage($data, $src, $error_src ,$path)
+    public static function onErrorImage($data, $src, $error_src, $path)
     {
-        if(isset($data) && strlen($data) >1 && Storage::disk('public')->exists($path.$data)){
+        if (isset($data) && strlen($data) > 1 && Storage::disk('public')->exists($path . $data)) {
             return $src;
         }
         return $error_src;

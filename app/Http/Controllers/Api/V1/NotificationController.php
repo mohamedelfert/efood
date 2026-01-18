@@ -17,21 +17,22 @@ class NotificationController extends Controller
     public function getNotifications(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         if (!$user) {
             return response()->json([
                 'errors' => [['code' => 'unauthorized', 'message' => 'User not authenticated']]
             ], 401);
         }
 
-        // Get user-specific notifications
-        $userNotifications = Notification::where('user_id', $user->id)
+        // Get notifications with branch eager loaded
+        $userNotifications = Notification::with('branch')
+            ->where('user_id', $user->id)
             ->active()
             ->latest()
             ->get();
 
-        // Get admin broadcast notifications (sent to all users)
-        $broadcastNotifications = Notification::whereNull('user_id')
+        $broadcastNotifications = Notification::with('branch')
+            ->whereNull('user_id')
             ->orWhere('user_id', 0)
             ->active()
             ->latest()
@@ -43,21 +44,8 @@ class NotificationController extends Controller
             ->sortByDesc('created_at')
             ->values();
 
-        // Add additional info to each notification
-        $notifications = $allNotifications->map(function ($notification) use ($user) {
-            return [
-                'id' => $notification->id,
-                'title' => $notification->title,
-                'description' => $notification->description,
-                'image' => $notification->image_full_path ?? null,
-                'notification_type' => $notification->notification_type ?? 'general',
-                'reference_id' => $notification->reference_id ?? null,
-                'is_read' => $notification->is_read ?? false,
-                'is_broadcast' => empty($notification->user_id) || $notification->user_id == 0,
-                'created_at' => $notification->created_at,
-                'data' => $notification->data ?? null,
-            ];
-        });
+        // Transform notifications
+        $notifications = $this->transformNotifications($allNotifications);
 
         // Count unread notifications
         $unreadCount = $notifications->where('is_read', false)->count();
@@ -75,12 +63,12 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         $notification = Notification::where('id', $id)
             ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
-                      ->orWhereNull('user_id')
-                      ->orWhere('user_id', 0);
+                    ->orWhereNull('user_id')
+                    ->orWhere('user_id', 0);
             })
             ->first();
 
@@ -121,7 +109,7 @@ class NotificationController extends Controller
     public function deleteNotification(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         $notification = Notification::where('id', $id)
             ->where('user_id', $user->id) // Only user's own notifications
             ->first();
@@ -173,29 +161,64 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        $userNotifications = Notification::where('user_id', $user->id)
+        $userNotifications = Notification::with('branch')
+            ->where('user_id', $user->id)
             ->where('notification_type', $type)
             ->active()
             ->latest()
             ->get();
 
-        $broadcastNotifications = Notification::whereNull('user_id')
+        $broadcastNotifications = Notification::with('branch')
+            ->whereNull('user_id')
             ->orWhere('user_id', 0)
             ->where('notification_type', $type)
             ->active()
             ->latest()
             ->get();
 
-        $notifications = $userNotifications
+        $allNotifications = $userNotifications
             ->merge($broadcastNotifications)
             ->sortByDesc('created_at')
             ->values();
+
+        $notifications = $this->transformNotifications($allNotifications);
 
         return response()->json([
             'type' => $type,
             'total_size' => $notifications->count(),
             'notifications' => $notifications
         ], 200);
+    }
+
+    /**
+     * Helper to transform notification collection
+     */
+    private function transformNotifications($notifications)
+    {
+        return $notifications->map(function ($notification) {
+            $branchDetails = null;
+            if ($notification->branch_id && $notification->branch) {
+                $branchDetails = [
+                    'name' => $notification->branch->name,
+                    'coupons' => $notification->branch->activeCoupons()
+                ];
+            }
+
+            return [
+                'id' => $notification->id,
+                'title' => $notification->title,
+                'description' => $notification->description,
+                'image' => $notification->image_full_path ?? null,
+                'notification_type' => $notification->notification_type ?? 'general',
+                'reference_id' => $notification->reference_id ?? null,
+                'branch_id' => $notification->branch_id,
+                'branch_details' => $branchDetails,
+                'is_read' => $notification->is_read ?? false,
+                'is_broadcast' => empty($notification->user_id) || $notification->user_id == 0,
+                'created_at' => $notification->created_at,
+                'data' => $notification->data ?? null,
+            ];
+        });
     }
 
     /**
