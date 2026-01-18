@@ -117,16 +117,16 @@
                                 </div>
                                 <div class="d-flex gap-3 justify-content-sm-end my-3">
                                     <div class="text-dark font-weight-semibold">{{translate('Status')}} :</div>
-                                    @if(in_array($order['order_type'], ['in_car', 'take_away', 'dine_in', 'in_restaurant', 'branch']) && in_array($order['order_status'], ['confirmed', 'processing', 'out_for_delivery']))
+                                    @if(in_array($order['order_type'], ['in_car', 'dine_in', 'in_restaurant']) && in_array($order['order_status'], ['confirmed', 'processing', 'out_for_delivery', 'delivered']))
                                         @if($order['order_status'] == 'confirmed')
                                             <span
-                                                class="badge-soft-info px-2 rounded text-capitalize">{{translate('order_received')}}</span>
+                                                class="badge-soft-info px-2 rounded text-capitalize">{{translate('confirmed')}}</span>
                                         @elseif($order['order_status'] == 'processing')
                                             <span
-                                                class="badge-soft-warning px-2 rounded text-capitalize">{{translate('order_processing')}}</span>
-                                        @elseif($order['order_status'] == 'out_for_delivery')
+                                                class="badge-soft-warning px-2 rounded text-capitalize">{{translate('processing')}}</span>
+                                        @elseif($order['order_status'] == 'out_for_delivery' || $order['order_status'] == 'delivered')
                                             <span
-                                                class="badge-soft-warning px-2 rounded text-capitalize">{{translate('order_ready')}}</span>
+                                                class="badge-soft-success px-2 rounded text-capitalize">{{translate('ready_to_recive')}}</span>
                                         @endif
                                     @else
                                         @if($order['order_status'] == 'pending')
@@ -498,19 +498,23 @@
                                             <a class="dropdown-item" href="javascript:" data-toggle="modal"
                                                 data-target="#cancel_order_modal">{{translate('canceled')}}</a>
                                         @else
-                                            @if(in_array($order['order_type'], ['in_car', 'take_away', 'dine_in', 'in_restaurant', 'branch']))
+                                            @if(in_array($order['order_type'], ['in_car', 'dine_in', 'in_restaurant']))
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'confirmed'])}}"
-                                                    data-message="{{ translate("Change status to Order Received ?") }}"
-                                                    href="javascript:">{{translate('order_received')}}</a>
+                                                    data-message="{{ translate("Change status to confirmed ?") }}"
+                                                    href="javascript:">{{translate('confirmed')}}</a>
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'processing'])}}"
-                                                    data-message="{{ translate("Change status to Order Processing ?") }}"
-                                                    href="javascript:">{{translate('order_processing')}}</a>
+                                                    data-message="{{ translate("Change status to processing ?") }}"
+                                                    href="javascript:">{{translate('processing')}}</a>
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'out_for_delivery'])}}"
-                                                    data-message="{{ translate("Change status to Order Ready ?") }}"
-                                                    href="javascript:">{{translate('order_ready')}}</a>
+                                                    data-message="{{ translate("Change status to Ready to receive ?") }}"
+                                                    href="javascript:">{{translate('ready_to_recive')}}</a>
+                                                <a class="dropdown-item route-alert"
+                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'delivered'])}}"
+                                                    data-message="{{ translate("Complete this order ?") }}"
+                                                    href="javascript:">{{translate('completed')}}</a>
                                                 <a class="dropdown-item" href="javascript:" data-toggle="modal"
                                                     data-target="#cancel_order_modal">{{translate('canceled')}}</a>
                                             @else

@@ -675,6 +675,7 @@
   'actions' => 'Actions',
   'paid' => 'Paid',
   'unpaid' => 'Unpaid',
+  'ready_to_recive' => 'Ready to receive',
   'take_away' => 'Take away',
   'Promotion Status' => 'Promotion Status',
   'Language' => 'Language',

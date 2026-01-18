@@ -33,12 +33,13 @@ use function App\CentralLogics\translate;
 class OrderController extends Controller
 {
     public function __construct(
-        private Order           $order,
-        private User            $user,
+        private Order $order,
+        private User $user,
         private BusinessSetting $business_setting,
         private CustomerAddress $customer_addresses,
         private OrderArea $orderArea,
-    ){}
+    ) {
+    }
 
     /**
      * @param $status
@@ -173,7 +174,7 @@ class OrderController extends Controller
     public function details($id): Renderable|RedirectResponse
     {
         $order = $this->order
-            ->with(['details','order_partial_payments'])
+            ->with(['details', 'order_partial_payments'])
             ->where(['id' => $id, 'branch_id' => auth('branch')->id()])
             ->first();
 
@@ -205,7 +206,7 @@ class OrderController extends Controller
             ->first();
 
         if (in_array($order->order_status, ['delivered', 'failed'])) {
-            Toastr::warning(translate('you_can_not_change_the_status_of '. $order->order_status .' order'));
+            Toastr::warning(translate('you_can_not_change_the_status_of ' . $order->order_status . ' order'));
             return back();
         }
 
@@ -214,7 +215,7 @@ class OrderController extends Controller
             return back();
         }
 
-        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && $order['order_type'] != 'take_away') {
+        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && !in_array($order['order_type'], ['take_away', 'in_car', 'dine_in', 'in_restaurant', 'self_pickup'])) {
             Toastr::warning(translate('Please assign delivery man first!'));
             return back();
         }
@@ -225,15 +226,16 @@ class OrderController extends Controller
         }
 
         if ($request->order_status == 'delivered') {
-            if ($order->is_guest == 0){
-                if ($order->user_id) CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
+            if ($order->is_guest == 0) {
+                if ($order->user_id)
+                    CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
 
                 if ($order->transaction == null) {
                     $ol = OrderLogic::create_transaction($order, 'admin');
                 }
 
                 $user = $this->user->find($order->user_id);
-                if(isset($user)){
+                if (isset($user)) {
                     $isFirstOrder = $this->order->where(['user_id' => $user->id, 'order_status' => 'delivered'])->count('id');
                     $referredByUser = $this->user->find($user->refer_by);
 
@@ -245,9 +247,9 @@ class OrderController extends Controller
                 }
             }
 
-            if ($order['payment_method'] == 'cash_on_delivery'){
+            if ($order['payment_method'] == 'cash_on_delivery') {
                 $partialData = OrderPartialPayment::where(['order_id' => $order->id])->first();
-                if ($partialData){
+                if ($partialData) {
                     $partial = new OrderPartialPayment;
                     $partial->order_id = $order['id'];
                     $partial->paid_with = 'cash_on_delivery';
@@ -280,30 +282,34 @@ class OrderController extends Controller
             );
         }
 
-        $message = Helpers::order_status_update_message($request->order_status);
+        $messagestatus = $request->order_status;
+        if (in_array($order->order_type, ['in_car', 'dine_in', 'in_restaurant']) && $request->order_status == 'delivered') {
+            $messagestatus = 'out_for_delivery';
+        }
+        $message = Helpers::order_status_update_message($messagestatus);
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
         $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : 'Guest User';
         $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';
 
-        if ($local != 'en'){
+        if ($local != 'en') {
             $statusKey = Helpers::order_status_message_key($request->order_status);
             $translatedMessage = $this->business_setting->with('translations')->where(['key' => $statusKey])->first();
-            if (isset($translatedMessage->translations)){
-                foreach ($translatedMessage->translations as $translation){
-                    if ($local == $translation->locale){
+            if (isset($translatedMessage->translations)) {
+                foreach ($translatedMessage->translations as $translation) {
+                    if ($local == $translation->locale) {
                         $message = $translation->value;
                     }
                 }
             }
         }
 
-        $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
+        $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
 
         $customerFcmToken = null;
-        if($order->is_guest == 0){
+        if ($order->is_guest == 0) {
             $customerFcmToken = $order->customer ? $order->customer->cm_firebase_token : null;
-        }elseif($order->is_guest == 1){
+        } elseif ($order->is_guest == 1) {
             $customerFcmToken = $order->guest ? $order->guest->fcm_token : null;
         }
 
@@ -580,7 +586,8 @@ class OrderController extends Controller
             $data[$key]['Total Amount'] = Helpers::set_symbol($order['order_amount']);
             $data[$key]['Payment Status'] = $order->payment_status == 'paid' ? 'Paid' : 'Unpaid';
             $data[$key]['Order Status'] = $order['order_status'] == 'pending' ? 'Pending' : ($order['order_status'] == 'confirmed' ? 'Confirmed' : ($order['order_status'] == 'processing' ? 'Processing' : ($order['order_status'] == 'delivered' ? 'Delivered' : ($order['order_status'] == 'picked_up' ? 'Out For Delivery' : str_replace('_', ' ', $order['order_status'])))));
-        };
+        }
+        ;
         return (new FastExcel($data))->download('orders.xlsx');
     }
 
@@ -619,7 +626,7 @@ class OrderController extends Controller
 
         $orders = $this->order->with(['offline_payment'])
             ->where(['branch_id' => auth('branch')->id(), 'payment_method' => 'offline_payment'])
-            ->whereHas('offline_payment', function ($query) use($status){
+            ->whereHas('offline_payment', function ($query) use ($status) {
                 $query->where('status', $status);
             })
             ->when($request->has('search'), function ($query) use ($request) {
@@ -659,31 +666,32 @@ class OrderController extends Controller
     public function verifyOfflinePayment($order_id, $status): JsonResponse
     {
         $offlineData = OfflinePayment::where(['order_id' => $order_id])->first();
-        if (!isset($offlineData)){
+        if (!isset($offlineData)) {
             return response()->json(['status' => false], 200);
         }
         $offlineData->status = $status;
         $offlineData->save();
 
         $order = Order::find($order_id);
-        if (!isset($order)){
+        if (!isset($order)) {
             return response()->json(['status' => false], 200);
         }
 
-        if ($offlineData->status == 1){
+        if ($offlineData->status == 1) {
             $order->order_status = 'confirmed';
             $order->payment_status = 'paid';
             $order->save();
 
             $message = Helpers::order_status_update_message('confirmed');
-            $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';;
+            $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';
+            ;
 
-            if ($local != 'en'){
+            if ($local != 'en') {
                 $statusKey = Helpers::order_status_message_key('confirmed');
                 $translatedMessage = $this->business_setting->with('translations')->where(['key' => $statusKey])->first();
-                if (isset($translatedMessage->translations)){
-                    foreach ($translatedMessage->translations as $translation){
-                        if ($local == $translation->locale){
+                if (isset($translatedMessage->translations)) {
+                    foreach ($translatedMessage->translations as $translation) {
+                        if ($local == $translation->locale) {
                             $message = $translation->value;
                         }
                     }
@@ -693,12 +701,12 @@ class OrderController extends Controller
             $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
             $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : '';
 
-            $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
+            $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
 
             $customerFcmToken = null;
-            if($order->is_guest == 0){
+            if ($order->is_guest == 0) {
                 $customerFcmToken = $order->customer ? $order->customer->cm_firebase_token : null;
-            }elseif($order->is_guest == 1){
+            } elseif ($order->is_guest == 1) {
                 $customerFcmToken = $order->guest ? $order->guest->fcm_token : null;
             }
 
@@ -717,11 +725,11 @@ class OrderController extends Controller
                 //
             }
 
-        }elseif ($offlineData->status == 2){
+        } elseif ($offlineData->status == 2) {
             $customerFcmToken = null;
-            if($order->is_guest == 0){
+            if ($order->is_guest == 0) {
                 $customerFcmToken = $order->customer ? $order->customer->cm_firebase_token : null;
-            }elseif($order->is_guest == 1){
+            } elseif ($order->is_guest == 1) {
                 $customerFcmToken = $order->guest ? $order->guest->fcm_token : null;
             }
             if ($customerFcmToken != null) {
@@ -749,7 +757,7 @@ class OrderController extends Controller
         ]);
 
         $order = $this->order->find($order_id);
-        if (!$order){
+        if (!$order) {
             Toastr::warning(translate('order not found'));
             return back();
         }
@@ -769,7 +777,7 @@ class OrderController extends Controller
         }
 
         $area = DeliveryChargeByArea::where(['id' => $request['selected_area_id'], 'branch_id' => $order->branch_id])->first();
-        if (!$area){
+        if (!$area) {
             Toastr::warning(translate('Area not found'));
             return back();
         }
@@ -782,9 +790,9 @@ class OrderController extends Controller
         $orderArea->save();
 
         $customerFcmToken = null;
-        if($order->is_guest == 0){
+        if ($order->is_guest == 0) {
             $customerFcmToken = $order->customer ? $order->customer->cm_firebase_token : null;
-        }elseif($order->is_guest == 1){
+        } elseif ($order->is_guest == 1) {
             $customerFcmToken = $order->guest ? $order->guest->fcm_token : null;
         }
 

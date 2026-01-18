@@ -107,20 +107,33 @@
 
                                     <div class="d-flex gap-3 justify-content-sm-end my-3">
                                         <div class="text-dark font-weight-semibold">{{translate('Status')}} :</div>
-                                        @if($order['order_status']=='pending')
-                                            <span class="badge-soft-info px-2 rounded text-capitalize">{{translate('pending')}}</span>
-                                        @elseif($order['order_status']=='confirmed')
-                                            <span class="badge-soft-info px-2 rounded text-capitalize">{{translate('confirmed')}}</span>
-                                        @elseif($order['order_status']=='processing')
-                                            <span class="badge-soft-warning px-2 rounded text-capitalize">{{translate('processing')}}</span>
-                                        @elseif($order['order_status']=='out_for_delivery')
-                                            <span class="badge-soft-warning px-2 rounded text-capitalize">{{translate('out_for_delivery')}}</span>
-                                        @elseif($order['order_status']=='delivered')
-                                            <span class="badge-soft-success px-2 rounded text-capitalize">{{translate('delivered')}}</span>
-                                        @elseif($order['order_status']=='failed')
-                                            <span class="badge-soft-danger px-2 rounded text-capitalize">{{translate('failed_to_deliver')}}</span>
-                                        @else
-                                            <span class="badge-soft-danger px-2 rounded text-capitalize">{{str_replace('_',' ',$order['order_status'])}}</span>
+                                        @if(in_array($order['order_type'], ['in_car', 'dine_in', 'in_restaurant']) && in_array($order['order_status'], ['confirmed', 'processing', 'out_for_delivery', 'delivered']))
+                                        @if($order['order_status'] == 'confirmed')
+                                            <span
+                                                class="badge-soft-info px-2 rounded text-capitalize">{{translate('confirmed')}}</span>
+                                        @elseif($order['order_status'] == 'processing')
+                                            <span
+                                                class="badge-soft-warning px-2 rounded text-capitalize">{{translate('processing')}}</span>
+                                        @elseif($order['order_status'] == 'out_for_delivery' || $order['order_status'] == 'delivered')
+                                            <span
+                                                class="badge-soft-success px-2 rounded text-capitalize">{{translate('ready_to_recive')}}</span>
+                                        @endif
+                                    @else
+                                            @if($order['order_status']=='pending')
+                                                <span class="badge-soft-info px-2 rounded text-capitalize">{{translate('pending')}}</span>
+                                            @elseif($order['order_status']=='confirmed')
+                                                <span class="badge-soft-info px-2 rounded text-capitalize">{{translate('confirmed')}}</span>
+                                            @elseif($order['order_status']=='processing')
+                                                <span class="badge-soft-warning px-2 rounded text-capitalize">{{translate('processing')}}</span>
+                                            @elseif($order['order_status']=='out_for_delivery')
+                                                <span class="badge-soft-warning px-2 rounded text-capitalize">{{translate('out_for_delivery')}}</span>
+                                            @elseif($order['order_status']=='delivered')
+                                                <span class="badge-soft-success px-2 rounded text-capitalize">{{translate('delivered')}}</span>
+                                            @elseif($order['order_status']=='failed')
+                                                <span class="badge-soft-danger px-2 rounded text-capitalize">{{translate('failed_to_deliver')}}</span>
+                                            @else
+                                                <span class="badge-soft-danger px-2 rounded text-capitalize">{{str_replace('_',' ',$order['order_status'])}}</span>
+                                            @endif
                                         @endif
                                     </div>
 
@@ -485,40 +498,62 @@
                                                    href="javascript:">{{translate('canceled')}}</a>
                                             @else
 
-                                                @if($order['order_type'] != 'dine_in')
+                                                @if(in_array($order['order_type'], ['in_car', 'dine_in', 'in_restaurant']))
                                                     <a class="dropdown-item route-alert"
-                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'pending'])}}"
-                                                       data-message="{{ translate("Change status to pending ?") }}"
-                                                       href="javascript:">{{translate('pending')}}</a>
-                                                @endif
-
-                                                <a class="dropdown-item route-alert"
-                                                   data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'confirmed'])}}"
-                                                   data-message="{{ translate("Change status to confirmed ?") }}"
-                                                   href="javascript:">{{translate('confirmed')}}</a>
-
-                                                @if($order['order_type'] != 'dine_in')
+                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'confirmed'])}}"
+                                                       data-message="{{ translate("Change status to confirmed ?") }}"
+                                                       href="javascript:">{{translate('confirmed')}}</a>
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'processing'])}}"
                                                        data-message="{{ translate("Change status to processing ?") }}"
                                                        href="javascript:">{{translate('processing')}}</a>
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'out_for_delivery'])}}"
-                                                       data-message="{{ translate("Change status to out for delivery ?") }}"
-                                                       href="javascript:">{{translate('out_for_delivery')}}</a>
+                                                       data-message="{{ translate("Change status to Ready to receive ?") }}"
+                                                       href="javascript:">{{translate('ready_to_recive')}}</a>
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'delivered'])}}"
-                                                       data-message="{{ translate("Change status to delivered ?") }}"
-                                                       href="javascript:">{{translate('delivered')}}</a>
+                                                       data-message="{{ translate("Complete this order ?") }}"
+                                                       href="javascript:">{{translate('completed')}}</a>
                                                     <a class="dropdown-item route-alert"
-                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'returned'])}}"
-                                                       data-message="{{ translate("Change status to returned ?") }}"
-                                                       href="javascript:">{{translate('returned')}}</a>
+                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'canceled'])}}"
+                                                       data-message="{{ translate("Change status to canceled ?") }}"
+                                                       href="javascript:">{{translate('canceled')}}</a>
+                                                @else
+                                                    @if($order['order_type'] != 'dine_in')
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'pending'])}}"
+                                                           data-message="{{ translate("Change status to pending ?") }}"
+                                                           href="javascript:">{{translate('pending')}}</a>
+                                                    @endif
+
                                                     <a class="dropdown-item route-alert"
-                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'failed'])}}"
-                                                       data-message="{{ translate("Change status to failed ?") }}"
-                                                       href="javascript:">{{translate('failed')}}</a>
-                                                @endif
+                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'confirmed'])}}"
+                                                       data-message="{{ translate("Change status to confirmed ?") }}"
+                                                       href="javascript:">{{translate('confirmed')}}</a>
+
+                                                    @if($order['order_type'] != 'dine_in')
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'processing'])}}"
+                                                           data-message="{{ translate("Change status to processing ?") }}"
+                                                           href="javascript:">{{translate('processing')}}</a>
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'out_for_delivery'])}}"
+                                                           data-message="{{ translate("Change status to out for delivery ?") }}"
+                                                           href="javascript:">{{translate('out_for_delivery')}}</a>
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'delivered'])}}"
+                                                           data-message="{{ translate("Change status to delivered ?") }}"
+                                                           href="javascript:">{{translate('delivered')}}</a>
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'returned'])}}"
+                                                           data-message="{{ translate("Change status to returned ?") }}"
+                                                           href="javascript:">{{translate('returned')}}</a>
+                                                        <a class="dropdown-item route-alert"
+                                                           data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'failed'])}}"
+                                                           data-message="{{ translate("Change status to failed ?") }}"
+                                                           href="javascript:">{{translate('failed')}}</a>
+                                                    @endif
                                                 @if($order['order_type'] == 'dine_in')
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'cooking'])}}"

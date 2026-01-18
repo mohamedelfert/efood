@@ -33,6 +33,7 @@
   'order_received' => 'استلام الطلب',
   'order_processing' => 'تجهيز الطلب',
   'order_ready' => 'الطلب جاهز',
+  'ready_to_recive' => 'جاهز للاستلام',
   'failed_to_deliver' => 'فشل التوصيل',
   'order_statistics' => 'إحصائيات الطلبات',
   'This_Year' => 'هذا العام',

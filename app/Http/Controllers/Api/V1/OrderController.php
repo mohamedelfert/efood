@@ -859,7 +859,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'payment_method' => 'required|in:wallet_payment,stripe,qib,cash_on_delivery,offline_payment',
-            'order_type' => 'required|in:delivery,take_away,in_car,in_restaurant',
+            'order_type' => 'required|in:delivery,take_away,in_car,in_restaurant,dine_in,self_pickup',
             'car_color' => 'required_if:order_type,in_car|string|max:50',
             'car_registration_number' => 'required_if:order_type,in_car|string|max:50',
             'branch_id' => 'required|integer|exists:branches,id',
@@ -891,7 +891,7 @@ class OrderController extends Controller
 
         $order_type = $request->order_type;
         $order_type_setting = $order_type == 'in_restaurant' ? 'dine_in' : ($order_type == 'home_delivery' ? 'delivery' : $order_type);
-        if ($order_type_setting != 'branch' && !Helpers::get_business_settings($order_type_setting)) {
+        if (!in_array($order_type_setting, ['branch', 'in_car', 'dine_in', 'take_away', 'delivery', 'self_pickup']) && !Helpers::get_business_settings($order_type_setting)) {
             return response()->json([
                 'errors' => [['code' => 'order_type', 'message' => translate('Requested order type is not available at the moment.')]]
             ], 403);
@@ -942,8 +942,10 @@ class OrderController extends Controller
             $paymentStatus = 'paid';
         }
         $orderStatus = 'pending';
-        if (in_array($request['order_type'], ['in_car', 'take_away', 'in_restaurant', 'dine_in', 'branch'])) {
+        if (in_array($request['order_type'], ['take_away', 'branch', 'self_pickup'])) {
             $orderStatus = 'confirmed';
+        } elseif (in_array($request['order_type'], ['in_car', 'in_restaurant', 'dine_in'])) {
+            $orderStatus = 'processing';
         }
 
         $deliveryCharge = $request['order_type'] == 'take_away' ? 0 : Helpers::get_delivery_charge(

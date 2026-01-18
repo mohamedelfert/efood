@@ -388,7 +388,7 @@ class OrderController extends Controller
             return back();
         }
 
-        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && !in_array($order['order_type'], ['take_away', 'in_car', 'dine_in'])) {
+        if (($request->order_status == 'delivered' || $request->order_status == 'out_for_delivery') && $order['delivery_man_id'] == null && !in_array($order['order_type'], ['take_away', 'in_car', 'dine_in', 'in_restaurant', 'self_pickup'])) {
             Toastr::warning(translate('Please assign delivery man first!'));
             return back();
         }
@@ -459,7 +459,11 @@ class OrderController extends Controller
             );
         }
 
-        $message = Helpers::order_status_update_message($request->order_status);
+        $messagestatus = $request->order_status;
+        if (in_array($order->order_type, ['in_car', 'dine_in', 'in_restaurant']) && $request->order_status == 'delivered') {
+            $messagestatus = 'out_for_delivery';
+        }
+        $message = Helpers::order_status_update_message($messagestatus);
 
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
