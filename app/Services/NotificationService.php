@@ -42,13 +42,13 @@ class NotificationService
     public function sendLoginOTP(User $user, string $otp): array
     {
         $results = ['email' => false, 'whatsapp' => false, 'sms' => false];
-        
+
         // Email OTP
         if ($user->email) {
             try {
                 Mail::to($user->email)->send(new EmailVerification($otp, $user->language_code ?? 'en'));
                 $results['email'] = true;
-                
+
                 Log::info('Login OTP email sent', [
                     'user_id' => $user->id,
                     'email' => $user->email
@@ -71,20 +71,20 @@ class NotificationService
                     'timestamp' => now()->format('Y-m-d H:i:s')
                     // NO transaction_id here - it doesn't exist for login!
                 ];
-                
+
                 $message = $this->whatsapp->sendTemplateMessage('login_otp', $whatsappData);
-                
+
                 if ($message) {
                     $response = $this->whatsapp->sendMessage($user->phone, $message);
                     $results['whatsapp'] = $response['success'] ?? false;
-                    
+
                     Log::info('Login OTP WhatsApp sent', [
                         'user_id' => $user->id,
                         'phone' => $user->phone,
                         'success' => $results['whatsapp']
                     ]);
                 }
-                
+
             } catch (\Exception $e) {
                 Log::error('Login OTP WhatsApp failed', [
                     'user_id' => $user->id,
@@ -121,10 +121,10 @@ class NotificationService
                 try {
                     $emailServices = Helpers::get_business_settings('mail_config');
                     $mailStatus = Helpers::get_business_settings('wallet_topup_mail_status_user');
-                    
-                    if(isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1) {
+
+                    if (isset($emailServices['status']) && $emailServices['status'] == 1 && $mailStatus == 1) {
                         Mail::to($user->email)->send(new WalletTopUpNotification($notificationData, $user->language_code ?? 'en'));
-                        
+
                         Log::info('Wallet top-up email sent', [
                             'user_id' => $user->id,
                             'transaction_id' => $data['transaction_id']
@@ -142,7 +142,7 @@ class NotificationService
             if ($user->phone) {
                 try {
                     $receiptUrl = null;
-                    
+
                     // Generate receipt
                     try {
                         $receiptGenerator = app(\App\Services\ReceiptGeneratorService::class);
@@ -158,13 +158,13 @@ class NotificationService
                             'time' => now()->format('h:i A'),
                             'tax' => $data['tax'] ?? 0,
                         ];
-                        
+
                         $receiptPath = $receiptGenerator->generateReceiptImage($receiptData);
-                        
+
                         if ($receiptPath && file_exists($receiptPath)) {
                             $filename = basename($receiptPath);
                             $receiptUrl = url('storage/receipts/images/' . $filename);
-                            
+
                             // Add receipt URL to notification data
                             $notificationData['receipt_url'] = $receiptUrl;
                             $notificationData['receipt_link'] = "View your receipt: " . $receiptUrl;
@@ -178,10 +178,10 @@ class NotificationService
 
                     // Build WhatsApp message (now includes receipt URL in text)
                     $message = $this->whatsapp->sendTemplateMessage('wallet_topup', $notificationData);
-                    
+
                     // Send as text only (no file attachment)
                     $response = $this->whatsapp->sendMessage($user->phone, $message, null);
-                    
+
                     Log::info('Wallet top-up WhatsApp sent', [
                         'user_id' => $user->id,
                         'transaction_id' => $data['transaction_id'],
@@ -201,10 +201,7 @@ class NotificationService
                 try {
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Wallet Top-Up Successful'),
-                        'description' => translate('Your wallet has been topped up with :amount :currency', [
-                            'amount' => number_format($data['amount'], 2),
-                            'currency' => $data['currency'] ?? 'SAR'
-                        ]),
+                        'description' => str_replace([':amount', ':currency'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR'], translate('Your wallet has been topped up with :amount :currency')),
                         'type' => 'wallet_topup',
                         'transaction_id' => $data['transaction_id'],
                         'image' => '',
@@ -220,8 +217,8 @@ class NotificationService
 
             //  In-App Notification
             $this->storeInAppNotification($user->id, [
-                'title' => 'Wallet Top-Up Successful',
-                'description' => "Your wallet has been topped up with {$data['amount']} {$data['currency']}",
+                'title' => translate('Wallet Top-Up Successful'),
+                'description' => str_replace([':amount', ':currency'], [$data['amount'], $data['currency']], translate('Your wallet has been topped up with :amount :currency')),
                 'type' => 'wallet_topup',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
@@ -293,11 +290,7 @@ class NotificationService
                 try {
                     Helpers::send_push_notif_to_device($sender->cm_firebase_token, [
                         'title' => translate('Money Sent'),
-                        'description' => translate('You sent :amount :currency to :name', [
-                            'amount' => number_format($data['amount'], 2),
-                            'currency' => $data['currency'] ?? 'SAR',
-                            'name' => $receiver->name
-                        ]),
+                        'description' => str_replace([':amount', ':currency', ':name'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR', $receiver->name], translate('You sent :amount :currency to :name')),
                         'type' => 'money_transfer_sent',
                         'transaction_id' => $data['transaction_id'],
                         'image' => '',
@@ -310,8 +303,8 @@ class NotificationService
 
             // Sender In-App
             $this->storeInAppNotification($sender->id, [
-                'title' => 'Money Sent',
-                'description' => "You sent {$data['amount']} {$data['currency']} to {$receiver->name}",
+                'title' => translate('Money Sent'),
+                'description' => str_replace([':amount', ':currency', ':name'], [$data['amount'], $data['currency'], $receiver->name], translate('You sent :amount :currency to :name')),
                 'type' => 'money_transfer_sent',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
@@ -362,11 +355,7 @@ class NotificationService
                 try {
                     Helpers::send_push_notif_to_device($receiver->cm_firebase_token, [
                         'title' => translate('Money Received'),
-                        'description' => translate('You received :amount :currency from :name', [
-                            'amount' => number_format($data['amount'], 2),
-                            'currency' => $data['currency'] ?? 'SAR',
-                            'name' => $sender->name
-                        ]),
+                        'description' => str_replace([':amount', ':currency', ':name'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR', $sender->name], translate('You received :amount :currency from :name')),
                         'type' => 'money_transfer_received',
                         'transaction_id' => $data['transaction_id'],
                         'image' => '',
@@ -379,8 +368,8 @@ class NotificationService
 
             // Receiver In-App
             $this->storeInAppNotification($receiver->id, [
-                'title' => 'Money Received',
-                'description' => "You received {$data['amount']} {$data['currency']} from {$sender->name}",
+                'title' => translate('Money Received'),
+                'description' => str_replace([':amount', ':currency', ':name'], [$data['amount'], $data['currency'], $sender->name], translate('You received :amount :currency from :name')),
                 'type' => 'money_transfer_received',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
@@ -429,8 +418,8 @@ class NotificationService
                 try {
                     $emailServices = Helpers::get_business_settings('mail_config');
                     $orderMailStatus = Helpers::get_business_settings('place_order_mail_status_user');
-                    
-                    if(isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1) {
+
+                    if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1) {
                         Mail::to($user->email)->send(new \App\Mail\OrderPlaced($order->id));
                         Log::info('Order email sent', ['order_id' => $order->id]);
                     }
@@ -455,9 +444,7 @@ class NotificationService
                 try {
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Order Placed Successfully'),
-                        'description' => translate('Your order #:order_id has been placed', [
-                            'order_id' => $order->id
-                        ]),
+                        'description' => str_replace(':order_id', $order->id, translate('Your order #:order_id has been placed')),
                         'type' => 'order_placed',
                         'order_id' => $order->id,
                         'image' => '',
@@ -469,8 +456,8 @@ class NotificationService
 
             //  In-App Notification
             $this->storeInAppNotification($user->id, [
-                'title' => 'Order Placed Successfully',
-                'description' => "Your order #{$order->id} has been placed",
+                'title' => translate('Order Placed Successfully'),
+                'description' => str_replace(':order_id', $order->id, translate('Your order #:order_id has been placed')),
                 'type' => 'order_placed',
                 'reference_id' => $order->id,
                 'amount' => $order->order_amount,
@@ -533,11 +520,7 @@ class NotificationService
                 try {
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Loyalty Points Converted'),
-                        'description' => translate('Converted :points points to :amount :currency', [
-                            'points' => $data['points_used'],
-                            'amount' => number_format($data['converted_amount'], 2),
-                            'currency' => $data['currency']
-                        ]),
+                        'description' => str_replace([':points', ':amount', ':currency'], [$data['points_used'], number_format($data['converted_amount'], 2), $data['currency']], translate('Converted :points points to :amount :currency')),
                         'type' => 'loyalty_conversion',
                         'transaction_id' => $data['transaction_id'],
                         'image' => '',
@@ -550,8 +533,8 @@ class NotificationService
 
             // In-App
             $this->storeInAppNotification($user->id, [
-                'title' => 'Loyalty Points Converted',
-                'description' => "Converted {$data['points_used']} points to {$data['converted_amount']} {$data['currency']}",
+                'title' => translate('Loyalty Points Converted'),
+                'description' => str_replace([':points', ':amount', ':currency'], [$data['points_used'], $data['converted_amount'], $data['currency']], translate('Converted :points points to :amount :currency')),
                 'type' => 'loyalty_conversion',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['converted_amount'],
@@ -591,7 +574,7 @@ class NotificationService
     public function sendPinResetOTP(User $user, string $otp): array
     {
         $results = ['email' => false, 'whatsapp' => false];
-        
+
         // Email OTP
         if ($user->email) {
             try {
@@ -602,10 +585,10 @@ class NotificationService
                     'timestamp' => now()->format('Y-m-d H:i:s'),
                     'purpose' => 'Wallet PIN Reset'
                 ];
-                
+
                 Mail::to($user->email)->send(new \App\Mail\PinResetOTP($emailData, $user->language_code ?? 'en'));
                 $results['email'] = true;
-                
+
                 Log::info('PIN Reset OTP email sent', [
                     'user_id' => $user->id,
                     'email' => $user->email
@@ -628,24 +611,24 @@ class NotificationService
                     'timestamp' => now()->format('Y-m-d H:i:s'),
                     'purpose' => 'Wallet PIN Reset'
                 ];
-                
+
                 Log::info('Preparing PIN Reset OTP WhatsApp', [
                     'user_id' => $user->id,
                     'phone' => $user->phone,
                     'template_data' => $whatsappData
                 ]);
-                
+
                 $message = $this->whatsapp->sendTemplateMessage('pin_reset_otp', $whatsappData);
-                
+
                 Log::info('PIN Reset OTP template generated', [
                     'message_length' => strlen($message),
                     'message_preview' => substr($message, 0, 200)
                 ]);
-                
+
                 if ($message) {
                     $response = $this->whatsapp->sendMessage($user->phone, $message);
                     $results['whatsapp'] = $response['success'] ?? false;
-                    
+
                     Log::info('PIN Reset OTP WhatsApp sent', [
                         'user_id' => $user->id,
                         'phone' => $user->phone,
@@ -655,7 +638,7 @@ class NotificationService
                 } else {
                     Log::warning('PIN Reset OTP template returned empty message');
                 }
-                
+
             } catch (\Exception $e) {
                 Log::error('PIN Reset OTP WhatsApp failed', [
                     'user_id' => $user->id,
@@ -685,7 +668,7 @@ class NotificationService
             if ($user->email) {
                 try {
                     Mail::to($user->email)->send(new \App\Mail\PinResetSuccess($notificationData, $user->language_code ?? 'en'));
-                    
+
                     Log::info('PIN reset success email sent', [
                         'user_id' => $user->id
                     ]);
@@ -702,7 +685,7 @@ class NotificationService
                 try {
                     $message = $this->whatsapp->sendTemplateMessage('pin_reset_success', $notificationData);
                     $this->whatsapp->sendMessage($user->phone, $message);
-                    
+
                     Log::info('PIN reset success WhatsApp sent', [
                         'user_id' => $user->id
                     ]);
@@ -734,8 +717,8 @@ class NotificationService
 
             // In-App Notification
             $this->storeInAppNotification($user->id, [
-                'title' => 'Wallet PIN Reset',
-                'description' => 'Your wallet PIN has been reset successfully',
+                'title' => translate('Wallet PIN Reset'),
+                'description' => translate('Your wallet PIN has been reset successfully'),
                 'type' => 'pin_reset_success',
                 'reference_id' => null,
             ]);

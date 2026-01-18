@@ -28,7 +28,7 @@ class OrderPlaced extends Mailable
     {
         try {
             $order = Order::with(['customer', 'branch', 'delivery_man', 'details'])->find($this->order_id);
-            
+
             if (!$order) {
                 Log::error('Order not found for email', ['order_id' => $this->order_id]);
                 throw new \Exception('Order not found');
@@ -69,10 +69,18 @@ class OrderPlaced extends Mailable
                 foreach ($template->translations as $t) {
                     if ($t->locale === $local && $t->value) {
                         switch ($t->key) {
-                            case 'title': $title = $t->value; break;
-                            case 'body': $body = $t->value; break;
-                            case 'footer_text': $footer_text = $t->value; break;
-                            case 'copyright_text': $copyright_text = $t->value; break;
+                            case 'title':
+                                $title = $t->value;
+                                break;
+                            case 'body':
+                                $body = $t->value;
+                                break;
+                            case 'footer_text':
+                                $footer_text = $t->value;
+                                break;
+                            case 'copyright_text':
+                                $copyright_text = $t->value;
+                                break;
                         }
                     }
                 }
@@ -128,8 +136,8 @@ class OrderPlaced extends Mailable
             // Try to generate and attach PDF
             try {
                 $pdf = Pdf::loadView('email-templates.invoice', compact('order'));
-                
-                return $this->subject('Order Placed - #' . $order->id)
+
+                return $this->subject(translate('Order Placed - #') . $order->id)
                     ->view('email-templates.new-email-format-' . $template_id, $viewData)
                     ->attachData($pdf->output(), 'Invoice_Order_' . $order->id . '.pdf', [
                         'mime' => 'application/pdf',
@@ -139,9 +147,9 @@ class OrderPlaced extends Mailable
                     'order_id' => $order->id,
                     'error' => $pdfError->getMessage()
                 ]);
-                
+
                 // Send without PDF if PDF generation fails
-                return $this->subject('Order Placed - #' . $order->id)
+                return $this->subject(translate('Order Placed - #') . $order->id)
                     ->view('email-templates.new-email-format-' . $template_id, $viewData);
             }
 
@@ -151,7 +159,7 @@ class OrderPlaced extends Mailable
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             throw $e;
         }
     }

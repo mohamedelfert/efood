@@ -263,18 +263,23 @@
                                     @endif
                                 </td>
                                 <td class="text-capitalize">
-                                    @if($order['order_status']=='pending')
-                                        <span class="badge-soft-info px-2 py-1 rounded">{{translate('pending')}}</span>
-                                    @elseif($order['order_status']=='confirmed')
+                                    @php($mapped_status = Helpers::order_status_mapping($order)->order_status)
+                                    @if($mapped_status == 'pending' || $mapped_status == 'ordered')
+                                        <span class="badge-soft-info px-2 py-1 rounded">{{translate($mapped_status)}}</span>
+                                    @elseif($mapped_status == 'confirmed')
                                         <span class="badge-soft-info px-2 py-1 rounded">{{translate('confirmed')}}</span>
-                                    @elseif($order['order_status']=='processing')
-                                        <span class="badge-soft-warning px-2 py-1 rounded">{{translate('processing')}}</span>
-                                    @elseif($order['order_status']=='out_for_delivery')
-                                        <span class="badge-soft-warning px-2 py-1 rounded">{{translate('out_for_delivery')}}</span>
-                                    @elseif($order['order_status']=='delivered')
-                                        <span class="badge-soft-success px-2 py-1 rounded">{{translate('delivered')}}</span>
+                                    @elseif($mapped_status == 'processing' || $mapped_status == 'being_prepared')
+                                        <span class="badge-soft-warning px-2 py-1 rounded">{{translate($mapped_status)}}</span>
+                                    @elseif($mapped_status == 'out_for_delivery' || $mapped_status == 'out_to_connect' || $mapped_status == 'ready_for_receipt')
+                                        <span class="badge-soft-warning px-2 py-1 rounded">{{translate($mapped_status)}}</span>
+                                    @elseif($mapped_status == 'delivered' || $mapped_status == 'connected')
+                                        <span class="badge-soft-success px-2 py-1 rounded">{{translate($mapped_status)}}</span>
+                                    @elseif($mapped_status == 'failed')
+                                        <span class="badge-soft-danger px-2 py-1 rounded">{{translate("failed_to_deliver")}}</span>
+                                    @elseif($mapped_status == 'canceled')
+                                        <span class="badge-soft-danger px-2 py-1 rounded">{{translate("canceled")}}</span>
                                     @else
-                                        <span class="badge-soft-danger px-2 py-1 rounded">{{str_replace('_',' ',$order['order_status'])}}</span>
+                                        <span class="badge-soft-danger px-2 py-1 rounded">{{str_replace('_',' ',$mapped_status)}}</span>
                                     @endif
                                 </td>
                                 <td class="text-capitalize">
