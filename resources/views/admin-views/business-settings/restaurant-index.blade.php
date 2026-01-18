@@ -727,7 +727,7 @@ $selectedMaintenanceMessage = $selectedMaintenanceMessage ?? [
                                 </label>
                             </div>
                             <label class="switcher">
-                                <input readonly class="switcher_input" type="checkbox" name="delivery" {{$del == null || $del == 0 ? '' : 'checked'}} id="delivery_btn">
+                                <input class="switcher_input" type="checkbox" name="delivery" {{$del == null || $del == 0 ? '' : 'checked'}} id="delivery_btn">
                                 <span class="switcher_control"></span>
                             </label>
                         </div>

@@ -143,28 +143,6 @@ class BusinessSettingsController extends Controller
      */
     public function restaurantSetup(Request $request): RedirectResponse
     {
-        if ($request->has('self_pickup')) {
-            $request['self_pickup'] = 1;
-        }
-        if ($request->has('delivery')) {
-            $request['delivery'] = 1;
-        }
-        if ($request->has('dm_self_registration')) {
-            $request['dm_self_registration'] = 1;
-        }
-        if ($request->has('toggle_veg_non_veg')) {
-            $request['toggle_veg_non_veg'] = 1;
-        }
-        if ($request->has('take_away')) {
-            $request['take_away'] = 1;
-        }
-        if ($request->has('in_car')) {
-            $request['in_car'] = 1;
-        }
-        if ($request->has('dine_in')) {
-            $request['dine_in'] = 1;
-        }
-
         if ($request->has('email_verification')) {
             $request['email_verification'] = 1;
             $request['phone_verification'] = 0;
@@ -203,11 +181,11 @@ class BusinessSettingsController extends Controller
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'self_pickup'], [
-            'value' => $request['self_pickup'],
+            'value' => $request->has('self_pickup') ? 1 : 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'delivery'], [
-            'value' => $request['delivery'],
+            'value' => $request->has('delivery') ? 1 : 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'restaurant_open_time'], [
@@ -297,15 +275,15 @@ class BusinessSettingsController extends Controller
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'take_away'], [
-            'value' => $request['take_away'] ?? 0,
+            'value' => $request->has('take_away') ? 1 : 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'in_car'], [
-            'value' => $request['in_car'] ?? 0,
+            'value' => $request->has('in_car') ? 1 : 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'dine_in'], [
-            'value' => $request['dine_in'] ?? 0,
+            'value' => $request->has('dine_in') ? 1 : 0,
         ]);
 
         $this->InsertOrUpdateBusinessData(['key' => 'admin_order_notification'], [
