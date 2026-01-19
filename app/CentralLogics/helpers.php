@@ -250,14 +250,14 @@ class Helpers
                 $order_status = 'ordered';
             } elseif ($order_status == 'processing') {
                 $order_status = 'being_prepared';
-            } elseif ($order_status == 'delivered') {
+            } elseif ($order_status == 'completed' || $order_status == 'delivered') {
                 $order_status = 'ready_for_receipt';
             }
         } elseif (in_array($order_type, $offPremiseTypes)) {
             if ($order_status == 'out_for_delivery') {
                 $order_status = 'out_to_connect';
             } elseif ($order_status == 'delivered') {
-                $order_status = 'connected';
+                $order_status = 'completed';
             }
         }
 

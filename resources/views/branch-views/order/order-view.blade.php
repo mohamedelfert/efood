@@ -484,7 +484,7 @@
                                                        data-message="{{ translate("Change status to Being Prepared ?") }}"
                                                        href="javascript:">{{translate('being_prepared')}}</a>
                                                     <a class="dropdown-item route-alert"
-                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'delivered'])}}"
+                                                       data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'completed'])}}"
                                                        data-message="{{ translate("Change status to Ready for Receipt? (This will close the order)") }}"
                                                        href="javascript:">{{translate('ready_for_receipt')}}</a>
                                                     <a class="dropdown-item route-alert"
@@ -510,8 +510,8 @@
                                                        href="javascript:">{{translate('out_to_connect')}}</a>
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'delivered'])}}"
-                                                       data-message="{{ translate("Change status to Connected ?") }}"
-                                                       href="javascript:">{{translate('connected')}}</a>
+                                                       data-message="{{ translate("Change status to Completed ?") }}"
+                                                       href="javascript:">{{translate('completed')}}</a>
                                                     <a class="dropdown-item route-alert"
                                                        data-route="{{route('branch.orders.status',['id'=>$order['id'],'order_status'=>'returned'])}}"
                                                        data-message="{{ translate("Change status to returned ?") }}"

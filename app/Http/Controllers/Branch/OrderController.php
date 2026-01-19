@@ -209,7 +209,7 @@ class OrderController extends Controller
         $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
 
         if (in_array($order->order_type, $onPremiseTypes)) {
-            $allowedOnPremise = ['confirmed', 'processing', 'delivered', 'canceled'];
+            $allowedOnPremise = ['confirmed', 'processing', 'completed', 'canceled'];
             if (!in_array($request->order_status, $allowedOnPremise)) {
                 Toastr::warning(translate('Status not allowed for this order type'));
                 return back();
@@ -222,8 +222,13 @@ class OrderController extends Controller
             }
         }
 
-        if (in_array($order->order_status, ['delivered', 'failed'])) {
-            Toastr::warning(translate('you_can_not_change_the_status_of ' . $order->order_status . ' order'));
+        if (in_array($order->order_status, ['delivered', 'failed', 'completed'])) {
+            $statusMessages = [
+                'delivered' => translate('You can not change the status of delivered order'),
+                'failed' => translate('You can not change the status of failed order'),
+                'completed' => translate('You can not change the status of completed order'),
+            ];
+            Toastr::warning($statusMessages[$order->order_status]);
             return back();
         }
 
@@ -243,7 +248,7 @@ class OrderController extends Controller
             return back();
         }
 
-        if ($request->order_status == 'delivered') {
+        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
             if ($order->is_guest == 0) {
                 if ($order->user_id)
                     CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
@@ -279,7 +284,7 @@ class OrderController extends Controller
         }
 
         $order->order_status = $request->order_status;
-        if ($request->order_status == 'delivered') {
+        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
             $order->payment_status = 'paid';
         }
         $order->save();
