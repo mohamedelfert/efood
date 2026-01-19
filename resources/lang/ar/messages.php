@@ -2064,6 +2064,7 @@
   'You can not change the status of completed order' => 'لا يمكنك تغيير حالة الطلبات المكتملة!',
   'You can not change the status of delivered order' => 'لا يمكنك تغيير حالة الطلبات المسلمة!',
   'You can not change the status of failed order' => 'لا يمكنك تغيير حالة الطلبات الفاشلة!',
+  'Change status to Completed ?' => 'هل تريد تغيير حالة الطلب إلى "مكتمل"؟',
   'Both' => 'كلاهما',
   'Symbol position is ' => 'موضع الرمز هو ',
   'Order Settings' => 'إعدادات الطلب',
