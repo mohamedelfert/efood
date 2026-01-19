@@ -569,7 +569,7 @@ class Helpers
             $data = self::get_business_settings('order_processing_message');
         } elseif ($status == 'out_for_delivery' || $status == 'out_to_connect' || $status == 'ready_for_receipt') {
             $data = self::get_business_settings('out_for_delivery_message');
-        } elseif ($status == 'delivered' || $status == 'connected') {
+        } elseif ($status == 'delivered' || $status == 'connected' || $status == 'completed') {
             $data = self::get_business_settings('order_delivered_message');
         } elseif ($status == 'delivery_boy_delivered') {
             $data = self::get_business_settings('delivery_boy_delivered_message');
@@ -1145,7 +1145,7 @@ class Helpers
             $data = 'order_processing_message';
         } elseif ($status == 'out_for_delivery') {
             $data = 'out_for_delivery_message';
-        } elseif ($status == 'delivered') {
+        } elseif ($status == 'delivered' || $status == 'completed') {
             $data = 'order_delivered_message';
         } elseif ($status == 'delivery_boy_delivered') {
             $data = 'delivery_boy_delivered_message';
