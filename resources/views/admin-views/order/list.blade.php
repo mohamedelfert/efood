@@ -29,15 +29,78 @@
                         </div>
                         <div class="col-md-4 col-lg-3">
                             <label for="select_branch">{{translate('Select_Branch')}}</label>
-                            <select class="form-control select-branch" name="branch_id" id="select_branch">
+                            <select class="form-control" name="branch_id" onchange="this.form.submit()"
+                                id="select_branch">
                                 <option disabled selected>--- {{translate('select')}} {{translate('branch')}} ---
                                 </option>
                                 <option value="0" {{$branchId == 0 ? 'selected' : ''}}>{{translate('all')}}
-                                    {{translate('branch')}}</option>
+                                    {{translate('branch')}}
+                                </option>
                                 @foreach(\App\Model\Branch::all() as $branch)
                                     <option value="{{$branch['id']}}" {{$branchId == $branch['id'] ? 'selected' : ''}}>
-                                        {{$branch['name']}}</option>
+                                        {{$branch['name']}}
+                                    </option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <label for="select_type">{{translate('Select_Type')}}</label>
+                            <select class="form-control" name="order_type" onchange="this.form.submit()"
+                                id="select_type">
+                                <option disabled selected>--- {{translate('select')}} {{translate('type')}} ---
+                                </option>
+                                <option value="all" {{!$order_type || $order_type == 'all' ? 'selected' : ''}}>
+                                    {{translate('all')}}
+                                    {{translate('types')}}
+                                </option>
+                                <option value="take_away" {{$order_type == 'take_away' ? 'selected' : ''}}>
+                                    {{translate('take_away')}}
+                                </option>
+                                <option value="delivery" {{$order_type == 'delivery' ? 'selected' : ''}}>
+                                    {{translate('delivery')}}
+                                </option>
+                                <option value="dine_in" {{$order_type == 'dine_in' ? 'selected' : ''}}>
+                                    {{translate('dine_in')}}
+                                </option>
+                                <option value="in_car" {{$order_type == 'in_car' ? 'selected' : ''}}>
+                                    {{translate('in_car')}}
+                                </option>
+                                <option value="branch" {{$order_type == 'branch' ? 'selected' : ''}}>
+                                    {{translate('branch')}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <label for="select_status">{{translate('Select_Status')}}</label>
+                            <select class="form-control" name="order_status" onchange="this.form.submit()"
+                                id="select_status">
+                                <option disabled selected>--- {{translate('select')}} {{translate('status')}} ---
+                                </option>
+                                <option value="all" {{!$order_status_filter || $order_status_filter == 'all' ? 'selected' : ''}}>{{translate('all')}}
+                                    {{translate('statuses')}}
+                                </option>
+                                <option value="pending" {{$order_status_filter == 'pending' ? 'selected' : ''}}>
+                                    {{translate('pending')}}
+                                </option>
+                                <option value="confirmed" {{$order_status_filter == 'confirmed' ? 'selected' : ''}}>
+                                    {{translate('confirmed')}}
+                                </option>
+                                <option value="processing" {{$order_status_filter == 'processing' ? 'selected' : ''}}>
+                                    {{translate('processing')}}
+                                </option>
+                                <option value="out_for_delivery" {{$order_status_filter == 'out_for_delivery' ? 'selected' : ''}}>{{translate('out_for_delivery')}}</option>
+                                <option value="delivered" {{$order_status_filter == 'delivered' ? 'selected' : ''}}>
+                                    {{translate('delivered')}}
+                                </option>
+                                <option value="returned" {{$order_status_filter == 'returned' ? 'selected' : ''}}>
+                                    {{translate('returned')}}
+                                </option>
+                                <option value="failed" {{$order_status_filter == 'failed' ? 'selected' : ''}}>
+                                    {{translate('failed')}}
+                                </option>
+                                <option value="canceled" {{$order_status_filter == 'canceled' ? 'selected' : ''}}>
+                                    {{translate('canceled')}}
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-4 col-lg-3">
@@ -357,22 +420,22 @@
 @endsection
 
 @push('script_2')
-    {{--
-    <script>--}}
-        { { --        "use strict"; --} }
+    <!-- {{--
+        <script>--}}
+            { { --        "use strict"; --} }
 
-        {
-            { --$('.select-branch').change(function () { --}}
-            { { --            var value = $(this).val(); --} }
-            { { --filter_branch_orders(value); --} }
-            { { --        })--}
-        }
+            {
+                { --$('.select-branch').change(function () { --}}
+                { { --            var value = $(this).val(); --} }
+                { { --filter_branch_orders(value); --} }
+                { { --        })--}
+            }
 
-        {
-            { --        function filter_branch_orders(id) { --} }
-            { { --location.href = '{{url(' / ')}}/admin/orders/branch-filter/' + id; --} }
-            { { --        } --}
-        }
-        { { --    </script>--}}
+            {
+                { --        function filter_branch_orders(id) { --} }
+                { { --location.href = '{{url(' / ')}}/admin/orders/branch-filter/' + id; --} }
+                { { --        } --}
+            }
+            { { --    </script>--}} -->
 
 @endpush

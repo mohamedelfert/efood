@@ -2517,15 +2517,20 @@ class OrderController extends Controller
                 $q->whereIn('order_status', [
                     'pending',
                     'confirmed',
-                    'preparing',
-                    'picked_up',
-                    'on_the_way'
+                    'processing',
+                    'out_for_delivery',
                 ])
             )
             ->when(
                 $orderFilter && $orderFilter !== 'in_prepare',
                 fn($q) => $q->where('order_status', $orderFilter)
             )
+            ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                $query->where('order_type', $request->order_type);
+            })
+            ->when($request->has('order_status') && $request->order_status != 'all', function ($query) use ($request) {
+                $query->where('order_status', $request->order_status);
+            })
             ->when(
                 $request->filled('search'),
                 fn($q) =>

@@ -65,6 +65,9 @@ class OrderController extends Controller
         $from = $request['from'];
         $to = $request['to'];
         $branchId = $request['branch_id'];
+        $order_type = $request['order_type'];
+        $order_status_filter = $request['order_status'];
+
 
         $query = $this->order->newQuery();
 
@@ -83,6 +86,16 @@ class OrderController extends Controller
         if ($branchId && $branchId != 0) {
             $query->where('branch_id', $branchId);
             $queryParam['branch_id'] = $branchId;
+        }
+
+        if ($request->has('order_type') && $request->order_type != 'all') {
+            $query->where('order_type', $request->order_type);
+            $queryParam['order_type'] = $request->order_type;
+        }
+
+        if ($request->has('order_status') && $request->order_status != 'all') {
+            $query->where('order_status', $request->order_status);
+            $queryParam['order_status'] = $request->order_status;
         }
 
         if ($from && $to) {
@@ -110,6 +123,9 @@ class OrderController extends Controller
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
+                })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
@@ -131,6 +147,9 @@ class OrderController extends Controller
                 ->where(['order_status' => 'confirmed'])
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
+                })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
                 })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
@@ -154,6 +173,9 @@ class OrderController extends Controller
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
+                })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
@@ -176,6 +198,9 @@ class OrderController extends Controller
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
+                })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
@@ -196,6 +221,9 @@ class OrderController extends Controller
                 ->where(['order_status' => 'delivered'])
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
+                })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
                 })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
@@ -219,6 +247,9 @@ class OrderController extends Controller
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
+                })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
@@ -240,6 +271,9 @@ class OrderController extends Controller
                 ->where(['order_status' => 'returned'])
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
+                })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
                 })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
@@ -263,13 +297,26 @@ class OrderController extends Controller
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
+                ->when($request->has('order_type') && $request->order_type != 'all', function ($query) use ($request) {
+                    $query->where('order_type', $request->order_type);
+                })
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
-                })->count(),
+                })
+                ->when($request->has('search'), function ($query) use ($key) {
+                    $query->where(function ($q) use ($key) {
+                        foreach ($key as $value) {
+                            $q->orWhere('id', 'like', "%{$value}%")
+                                ->orWhere('order_status', 'like', "%{$value}%")
+                                ->orWhere('transaction_reference', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->count(),
         ];
 
         $orders = $query->notPos()->notDineIn()->latest()->paginate(Helpers::getPagination())->appends($queryParam);
-        return view('admin-views.order.list', compact('orders', 'status', 'search', 'from', 'to', 'orderCount', 'branchId'));
+        return view('admin-views.order.list', compact('orders', 'status', 'search', 'from', 'to', 'orderCount', 'branchId', 'order_type', 'order_status_filter'));
     }
 
 
