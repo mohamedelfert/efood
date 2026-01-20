@@ -243,19 +243,19 @@ class Helpers
         $order_status = is_array($order) ? $order['order_status'] : $order->order_status;
 
         $onPremiseTypes = ['in_car', 'in_restaurant', 'dine_in'];
-        $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
+        $offPremiseTypes = ['take_away', 'branch', 'self_pickup', 'delivery'];
 
         if (in_array($order_type, $onPremiseTypes)) {
-            if ($order_status == 'confirmed') {
-                $order_status = 'ordered';
-            } elseif ($order_status == 'processing') {
-                $order_status = 'being_prepared';
-            } elseif ($order_status == 'completed' || $order_status == 'delivered') {
-                $order_status = 'ready_for_receipt';
+            if ($order_status == 'processing') {
+                $order_status = 'processing';
+            } elseif ($order_status == 'delivered') {
+                $order_status = 'out_to_delivery';
+            } elseif ($order_status == 'completed') {
+                $order_status = 'completed';
             }
         } elseif (in_array($order_type, $offPremiseTypes)) {
             if ($order_status == 'out_for_delivery') {
-                $order_status = 'out_to_connect';
+                $order_status = 'out_to_delivery';
             } elseif ($order_status == 'delivered') {
                 $order_status = 'completed';
             }

@@ -942,10 +942,10 @@ class OrderController extends Controller
             $paymentStatus = 'paid';
         }
         $orderStatus = 'pending';
-        if (in_array($request['order_type'], ['take_away', 'branch', 'self_pickup'])) {
+        if (in_array($request['order_type'], ['take_away', 'branch', 'self_pickup', 'delivery'])) {
             $orderStatus = 'confirmed';
         } elseif (in_array($request['order_type'], ['in_car', 'in_restaurant', 'dine_in'])) {
-            $orderStatus = 'processing';
+            $orderStatus = 'confirmed';
         }
 
         $deliveryCharge = $request['order_type'] == 'take_away' ? 0 : Helpers::get_delivery_charge(
