@@ -110,7 +110,7 @@ class Order extends Model
 
     public function scopeEarningReport($query)
     {
-        return $query->whereIn('order_status', ['delivered', 'completed']);
+        return $query->whereIn('order_status', ['delivered']);
     }
 
     public function transaction(): HasOne
@@ -219,7 +219,7 @@ class Order extends Model
     public function walletTransactions()
     {
         return $this->hasMany(WalletTransaction::class, 'reference', 'id')
-                    ->where('transaction_type', 'order_place');
+            ->where('transaction_type', 'order_place');
     }
 
 }

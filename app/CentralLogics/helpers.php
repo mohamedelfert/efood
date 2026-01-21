@@ -247,17 +247,17 @@ class Helpers
 
         if (in_array($order_type, $onPremiseTypes)) {
             if ($order_status == 'processing') {
-                $order_status = 'processing';
+                $order_status = 'in_prepare';
             } elseif ($order_status == 'delivered') {
                 $order_status = 'out_to_delivery';
             } elseif ($order_status == 'completed') {
-                $order_status = 'completed';
+                $order_status = 'delivered';
             }
         } elseif (in_array($order_type, $offPremiseTypes)) {
             if ($order_status == 'out_for_delivery') {
                 $order_status = 'out_to_delivery';
             } elseif ($order_status == 'delivered') {
-                $order_status = 'completed';
+                $order_status = 'delivered';
             }
         }
 
@@ -565,7 +565,7 @@ class Helpers
             $data = self::get_business_settings('order_pending_message');
         } elseif ($status == 'confirmed' || $status == 'ordered') {
             $data = self::get_business_settings('order_confirmation_msg');
-        } elseif ($status == 'processing' || $status == 'being_prepared') {
+        } elseif ($status == 'processing' || $status == 'being_prepared' || $status == 'in_prepare') {
             $data = self::get_business_settings('order_processing_message');
         } elseif ($status == 'out_for_delivery' || $status == 'out_to_connect' || $status == 'ready_for_receipt') {
             $data = self::get_business_settings('out_for_delivery_message');

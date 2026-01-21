@@ -78,14 +78,14 @@
                     </div>
 
                     <div class="col-sm-6 col-lg-3">
-                        <a class="order--card h-100" href="{{route('branch.orders.list', ['status' => 'processing'])}}">
+                        <a class="order--card h-100" href="{{route('branch.orders.list', ['status' => 'in_prepare'])}}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                     <img src="{{asset('public/assets/admin/img/icons/packaging.png')}}" alt="dashboard" class="oder--card-icon">
-                                    <span>{{translate('processing')}}</span>
+                                    <span>{{translate('in_prepare')}}</span>
                                 </h6>
                                 <span class="card-title text-danger">
-                                    {{$orderCount['processing']}}
+                                    {{$orderCount['in_prepare']}}
                             </span>
                             </div>
                         </a>

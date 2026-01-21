@@ -2517,7 +2517,7 @@ class OrderController extends Controller
                 $q->whereIn('order_status', [
                     'pending',
                     'confirmed',
-                    'processing',
+                    'in_prepare',
                     'out_for_delivery',
                 ])
             )

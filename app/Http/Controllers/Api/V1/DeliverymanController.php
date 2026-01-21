@@ -22,14 +22,14 @@ use Illuminate\Validation\Rule;
 class DeliverymanController extends Controller
 {
     public function __construct(
-        private DeliveryMan     $deliveryman,
-        private Order           $order,
+        private DeliveryMan $deliveryman,
+        private Order $order,
         private DeliveryHistory $deliveryHistory,
-        private User            $user,
+        private User $user,
         private BusinessSetting $businessSetting
 
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -136,7 +136,7 @@ class DeliverymanController extends Controller
 
         $orders = $this->order
             ->with(['customer', 'order_partial_payments'])
-            ->whereIn('order_status', ['pending', 'processing', 'out_for_delivery', 'confirmed', 'done', 'cooking'])
+            ->whereIn('order_status', ['pending', 'in_prepare', 'out_for_delivery', 'confirmed', 'done', 'cooking'])
             ->where(['delivery_man_id' => $deliveryman['id']])
             ->latest()
             ->paginate($limit, ['*'], 'page', $offset);
@@ -262,37 +262,39 @@ class DeliverymanController extends Controller
 
         $customerFcmToken = null;
         $value = null;
-        if($order->is_guest == 0){
+        if ($order->is_guest == 0) {
             $customerFcmToken = $order->customer ? $order->customer->cm_firebase_token : null;
-        }elseif($order->is_guest == 1){
+        } elseif ($order->is_guest == 1) {
             $customerFcmToken = $order->guest ? $order->guest->fcm_token : null;
         }
 
         $restaurantName = Helpers::get_business_settings('restaurant_name');
         $deliverymanName = $order->delivery_man ? $order->delivery_man->name : '';
         $customerName = $order->is_guest == 0 ? ($order->customer ? $order->customer->name : '') : '';
-        $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';;
+        $local = $order->is_guest == 0 ? ($order->customer ? $order->customer->language_code : 'en') : 'en';
+        ;
 
         if ($request['status'] == 'out_for_delivery') {
             $message = Helpers::order_status_update_message('ord_start');
 
-            if ($local != 'en'){
+            if ($local != 'en') {
                 $statusKey = Helpers::order_status_message_key('ord_start');
                 $translatedMessage = $this->businessSetting->with('translations')->where(['key' => $statusKey])->first();
-                if (isset($translatedMessage->translations)){
-                    foreach ($translatedMessage->translations as $translation){
-                        if ($local == $translation->locale){
+                if (isset($translatedMessage->translations)) {
+                    foreach ($translatedMessage->translations as $translation) {
+                        if ($local == $translation->locale) {
                             $message = $translation->value;
                         }
                     }
                 }
             }
 
-            $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
+            $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
 
         } elseif ($request['status'] == 'delivered') {
-            if ($order->is_guest == 0){
-                if ($order->user_id) CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
+            if ($order->is_guest == 0) {
+                if ($order->user_id)
+                    CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
 
                 if ($order->transaction == null) {
                     $ol = OrderLogic::create_transaction($order, 'admin');
@@ -309,9 +311,9 @@ class DeliverymanController extends Controller
                 }
             }
 
-            if ($order['payment_method'] == 'cash_on_delivery'){
+            if ($order['payment_method'] == 'cash_on_delivery') {
                 $partialData = OrderPartialPayment::where(['order_id' => $order->id])->first();
-                if ($partialData){
+                if ($partialData) {
                     $partial = new OrderPartialPayment;
                     $partial->order_id = $order['id'];
                     $partial->paid_with = 'cash_on_delivery';
@@ -322,19 +324,19 @@ class DeliverymanController extends Controller
             }
 
             $message = Helpers::order_status_update_message('delivery_boy_delivered');
-            if ($local != 'en'){
+            if ($local != 'en') {
                 $statusKey = Helpers::order_status_message_key('delivery_boy_delivered');
                 $translatedMessage = $this->businessSetting->with('translations')->where(['key' => $statusKey])->first();
-                if (isset($translatedMessage->translations)){
-                    foreach ($translatedMessage->translations as $translation){
-                        if ($local == $translation->locale){
+                if (isset($translatedMessage->translations)) {
+                    foreach ($translatedMessage->translations as $translation) {
+                        if ($local == $translation->locale) {
                             $message = $translation->value;
                         }
                     }
                 }
             }
 
-            $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
+            $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, delivery_man_name: $deliverymanName, order_id: $order->id);
         }
 
         try {
@@ -399,7 +401,7 @@ class DeliverymanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'token' => 'required',
-            'status' => 'in:all,confirmed,processing,out_for_delivery,delivered,done,cooking,canceled,returned,failed,completed'
+            'status' => 'in:all,confirmed,in_prepare,out_for_delivery,delivered,done,cooking,canceled,returned,failed,completed'
         ]);
 
         if ($validator->fails()) {
@@ -413,13 +415,14 @@ class DeliverymanController extends Controller
         $deliveryman = $this->deliveryman->where(['auth_token' => $request['token']])->first();
         if (!isset($deliveryman)) {
             return response()->json([
-                'errors' => [['code' => 'delivery-man', 'message' => translate('Invalid token!')]]], 401);
+                'errors' => [['code' => 'delivery-man', 'message' => translate('Invalid token!')]]
+            ], 401);
         }
 
         $orders = $this->order
             ->with(['customer'])
             ->where(['delivery_man_id' => $deliveryman['id']])
-            ->when(($request->has('status') && $status != 'all'),function ($query) use ($status){
+            ->when(($request->has('status') && $status != 'all'), function ($query) use ($status) {
                 $query->where(['order_status' => $status]);
             })
             ->latest()
@@ -548,7 +551,7 @@ class DeliverymanController extends Controller
 
         $order = $this->order
             ->with(['customer', 'order_partial_payments'])
-            ->whereIn('order_status', ['pending', 'processing', 'out_for_delivery', 'confirmed', 'done', 'cooking'])
+            ->whereIn('order_status', ['pending', 'in_prepare', 'out_for_delivery', 'confirmed', 'done', 'cooking'])
             ->where(['delivery_man_id' => $deliveryman['id'], 'id' => $request->id])
             ->first();
 
@@ -610,7 +613,7 @@ class DeliverymanController extends Controller
         $orderStatisticsData = [
             'ongoing_assigned_orders' => (clone $orders)->whereNotIn('order_status', ['delivered', 'canceled', 'returned', 'failed'])->count(),
             'confirmed_orders' => (clone $orders)->where('order_status', 'confirmed')->count(),
-            'processing_orders' => (clone $orders)->where('order_status', 'processing')->count(),
+            'processing_orders' => (clone $orders)->where('order_status', 'in_prepare')->count(),
             'out_for_delivery_orders' => (clone $orders)->where('order_status', 'out_for_delivery')->count(),
 
             'delivered_orders' => (clone $orders)->where('order_status', 'delivered')->count(),

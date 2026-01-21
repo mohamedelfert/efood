@@ -85,7 +85,7 @@
                                 <option value="confirmed" {{$order_status_filter == 'confirmed' ? 'selected' : ''}}>
                                     {{translate('confirmed')}}
                                 </option>
-                                <option value="processing" {{$order_status_filter == 'processing' ? 'selected' : ''}}>
+                                <option value="in_prepare" {{$order_status_filter == 'in_prepare' ? 'selected' : ''}}>
                                     {{translate('processing')}}
                                 </option>
                                 <option value="out_for_delivery" {{$order_status_filter == 'out_for_delivery' ? 'selected' : ''}}>{{translate('out_for_delivery')}}</option>
@@ -160,15 +160,15 @@
                     </div>
 
                     <div class="col-sm-6 col-lg-3">
-                        <a class="order--card h-100" href="{{route('admin.orders.list', ['status' => 'processing'])}}">
+                        <a class="order--card h-100" href="{{route('admin.orders.list', ['status' => 'in_prepare'])}}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                     <img src="{{asset('public/assets/admin/img/icons/packaging.png')}}" alt=""
                                         class="oder--card-icon">
-                                    <span>{{translate('processing')}}</span>
+                                    <span>{{translate('in_prepare')}}</span>
                                 </h6>
                                 <span class="card-title text-danger">
-                                    {{$orderCount['processing']}}
+                                    {{$orderCount['in_prepare']}}
                                 </span>
                             </div>
                         </a>
@@ -421,21 +421,21 @@
 
 @push('script_2')
     <!-- {{--
-        <script>--}}
-            { { --        "use strict"; --} }
+                <script>--}}
+                    { { --        "use strict"; --} }
 
-            {
-                { --$('.select-branch').change(function () { --}}
-                { { --            var value = $(this).val(); --} }
-                { { --filter_branch_orders(value); --} }
-                { { --        })--}
-            }
+                    {
+                        { --$('.select-branch').change(function () { --}}
+                        { { --            var value = $(this).val(); --} }
+                        { { --filter_branch_orders(value); --} }
+                        { { --        })--}
+                    }
 
-            {
-                { --        function filter_branch_orders(id) { --} }
-                { { --location.href = '{{url(' / ')}}/admin/orders/branch-filter/' + id; --} }
-                { { --        } --}
-            }
-            { { --    </script>--}} -->
+                    {
+                        { --        function filter_branch_orders(id) { --} }
+                        { { --location.href = '{{url(' / ')}}/admin/orders/branch-filter/' + id; --} }
+                        { { --        } --}
+                    }
+                    { { --    </script>--}} -->
 
 @endpush

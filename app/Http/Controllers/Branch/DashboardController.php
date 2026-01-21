@@ -18,10 +18,10 @@ use Illuminate\Contracts\Support\Renderable;
 class DashboardController extends Controller
 {
     public function __construct(
-        private Order  $order,
+        private Order $order,
         private Branch $branch,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @return Renderable
@@ -40,9 +40,9 @@ class DashboardController extends Controller
             'order_status' => 'delivered',
             'branch_id' => auth('branch')->id()
         ])->select(
-            DB::raw('IFNULL(sum(order_amount),0) as sums'),
-            DB::raw('YEAR(created_at) year, MONTH(created_at) month')
-        )
+                DB::raw('IFNULL(sum(order_amount),0) as sums'),
+                DB::raw('YEAR(created_at) year, MONTH(created_at) month')
+            )
             ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
             ->groupby('year', 'month')->get()->toArray();
 
@@ -80,7 +80,7 @@ class DashboardController extends Controller
         $donut = [];
         $donutData = $this->order->where('branch_id', auth('branch')->id())->get();
         $donut['pending'] = $donutData->where('order_status', 'pending')->count();
-        $donut['ongoing'] = $donutData->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])->count();
+        $donut['ongoing'] = $donutData->whereIn('order_status', ['confirmed', 'in_prepare', 'out_for_delivery'])->count();
         $donut['delivered'] = $donutData->where('order_status', 'delivered')->count();
         $donut['canceled'] = $donutData->where('order_status', 'canceled')->count();
         $donut['returned'] = $donutData->where('order_status', 'returned')->count();
@@ -192,8 +192,8 @@ class DashboardController extends Controller
             })
             ->count();
 
-        $processing = $this->order
-            ->where(['order_status' => 'processing', 'branch_id' => auth('branch')->id()])
+        $in_prepare = $this->order
+            ->where(['order_status' => 'in_prepare', 'branch_id' => auth('branch')->id()])
             ->when($today, function ($query) {
                 return $query->whereDate('created_at', Carbon::today());
             })
@@ -265,7 +265,7 @@ class DashboardController extends Controller
         $data = [
             'pending' => $pending,
             'confirmed' => $confirmed,
-            'processing' => $processing,
+            'in_prepare' => $in_prepare,
             'out_for_delivery' => $outForDelivery,
             'delivered' => $delivered,
             'all' => $all,
@@ -378,9 +378,9 @@ class DashboardController extends Controller
 
             $earning = [];
             $earningData = $this->order->where(['order_status' => 'delivered', 'branch_id' => auth('branch')->id()])->select(
-                    DB::raw('IFNULL(sum(order_amount),0) as sums'),
-                    DB::raw('YEAR(created_at) year, MONTH(created_at) month')
-                )
+                DB::raw('IFNULL(sum(order_amount),0) as sums'),
+                DB::raw('YEAR(created_at) year, MONTH(created_at) month')
+            )
                 ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
                 ->groupby('year', 'month')->get()->toArray();
 

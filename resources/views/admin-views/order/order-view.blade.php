@@ -446,22 +446,23 @@
                                             @endif
                                             <a class="dropdown-item offline-payment-order-alert"
                                                 href="javascript:">{{translate('confirmed')}}</a>
+                                            <a class="dropdown-item offline-payment-order-alert"
+                                                href="javascript:">{{translate('in_prepare')}}</a>
                                             @if(!in_array($order['order_type'], ['in_car', 'take_away', 'dine_in', 'in_restaurant', 'branch']))
                                                 <a class="dropdown-item offline-payment-order-alert"
-                                                    href="javascript:">{{translate('processing')}}</a>
-                                                <a class="dropdown-item offline-payment-order-alert"
                                                     href="javascript:">{{translate('out_for_delivery')}}</a>
-                                                <a class="dropdown-item offline-payment-order-alert"
-                                                    href="javascript:">{{translate('delivered')}}</a>
-                                                <a class="dropdown-item route-alert"
-                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'returned'])}}"
-                                                    data-message="{{ translate("Change status to returned ?") }}"
-                                                    href="javascript:">{{translate('returned')}}</a>
-                                                <a class="dropdown-item route-alert"
-                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'failed'])}}"
-                                                    data-message="{{ translate("Change status to failed ?") }}"
-                                                    href="javascript:">{{translate('failed')}}</a>
                                             @endif
+                                            <a class="dropdown-item offline-payment-order-alert"
+                                                href="javascript:">{{translate('delivered')}}</a>
+                                            <a class="dropdown-item route-alert"
+                                                data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'returned'])}}"
+                                                data-message="{{ translate("Change status to returned ?") }}"
+                                                href="javascript:">{{translate('returned')}}</a>
+                                            <a class="dropdown-item route-alert"
+                                                data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'failed'])}}"
+                                                data-message="{{ translate("Change status to failed ?") }}"
+                                                href="javascript:">{{translate('failed')}}</a>
+
                                             <a class="dropdown-item" href="javascript:" data-toggle="modal"
                                                 data-target="#cancel_order_modal">{{translate('canceled')}}</a>
                                         @else
@@ -471,11 +472,11 @@
                                                     data-message="{{ translate("Change status to Ordered ?") }}"
                                                     href="javascript:">{{translate('ordered')}}</a>
                                                 <a class="dropdown-item route-alert"
-                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'processing'])}}"
+                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'in_prepare'])}}"
                                                     data-message="{{ translate("Change status to Being Prepared ?") }}"
                                                     href="javascript:">{{translate('being_prepared')}}</a>
                                                 <a class="dropdown-item route-alert"
-                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'completed'])}}"
+                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'delivered'])}}"
                                                     data-message="{{ translate("Change status to Ready for Receipt? (This will close the order)") }}"
                                                     href="javascript:">{{translate('ready_for_receipt')}}</a>
                                                 <a class="dropdown-item" href="javascript:" data-toggle="modal"
@@ -490,17 +491,17 @@
                                                     data-message="{{ translate("Change status to Confirmed ?") }}"
                                                     href="javascript:">{{translate('confirmed')}}</a>
                                                 <a class="dropdown-item route-alert"
-                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'processing'])}}"
+                                                    data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'in_prepare'])}}"
                                                     data-message="{{ translate("Change status to Processing ?") }}"
-                                                    href="javascript:">{{translate('processing')}}</a>
+                                                    href="javascript:">{{translate('in_prepare')}}</a>
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'out_for_delivery'])}}"
                                                     data-message="{{ translate("Change status to Out to Connect ?") }}"
                                                     href="javascript:">{{translate('out_to_connect')}}</a>
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'delivered'])}}"
-                                                    data-message="{{ translate("Change status to Completed ?") }}"
-                                                    href="javascript:">{{translate('completed')}}</a>
+                                                    data-message="{{ translate("Change status to Delivered ?") }}"
+                                                    href="javascript:">{{translate('delivered')}}</a>
                                                 <a class="dropdown-item route-alert"
                                                     data-route="{{route('admin.orders.status', ['id' => $order['id'], 'order_status' => 'returned'])}}"
                                                     data-message="{{ translate("Change status to Returned ?") }}"

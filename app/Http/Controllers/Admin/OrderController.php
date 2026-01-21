@@ -165,11 +165,11 @@ class OrderController extends Controller
                 })
                 ->count(),
 
-            'processing' => $this->order
+            'in_prepare' => $this->order
                 ->notPos()
                 ->notDineIn()
                 ->notSchedule()
-                ->where(['order_status' => 'processing'])
+                ->where(['order_status' => 'in_prepare'])
                 ->when($branchId && $branchId != 0, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
@@ -438,24 +438,27 @@ class OrderController extends Controller
         $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
 
         if (in_array($order->order_type, $onPremiseTypes)) {
-            $allowedOnPremise = ['confirmed', 'processing', 'completed', 'canceled'];
+            if ($request->order_status == 'out_for_delivery') {
+                $request->merge(['order_status' => 'delivered']);
+            }
+
+            $allowedOnPremise = ['confirmed', 'in_prepare', 'delivered', 'canceled'];
             if (!in_array($request->order_status, $allowedOnPremise)) {
                 Toastr::warning(translate('Status not allowed for this order type'));
                 return back();
             }
         } elseif (in_array($order->order_type, $offPremiseTypes)) {
-            $allowedOffPremise = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
+            $allowedOffPremise = ['pending', 'confirmed', 'in_prepare', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
             if (!in_array($request->order_status, $allowedOffPremise)) {
                 Toastr::warning(translate('Status not allowed for this order type'));
                 return back();
             }
         }
 
-        if (in_array($order->order_status, ['delivered', 'failed', 'completed'])) {
+        if (in_array($order->order_status, ['delivered', 'failed'])) {
             $statusMessages = [
                 'delivered' => translate('You can not change the status of delivered order'),
                 'failed' => translate('You can not change the status of failed order'),
-                'completed' => translate('You can not change the status of completed order'),
             ];
             Toastr::warning($statusMessages[$order->order_status]);
             return back();
@@ -472,7 +475,7 @@ class OrderController extends Controller
             return back();
         }
 
-        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
+        if ($request->order_status == 'delivered') {
             if ($order->is_guest == 0) {
                 if ($order->user_id)
                     CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
@@ -484,7 +487,6 @@ class OrderController extends Controller
                 $user = $this->user->find($order->user_id);
                 if (isset($user)) {
                     $isFirstOrder = $this->order->where(['user_id' => $user->id, 'order_status' => 'delivered'])
-                        ->orWhere(['user_id' => $user->id, 'order_status' => 'completed'])
                         ->count('id');
                     $referredByUser = $this->user->find($user->refer_by);
 
@@ -510,7 +512,7 @@ class OrderController extends Controller
         }
 
         $order->order_status = $request->order_status;
-        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
+        if ($request->order_status == 'delivered') {
             $order->payment_status = 'paid';
         }
 
@@ -537,7 +539,7 @@ class OrderController extends Controller
         }
 
         $messagestatus = $request->order_status;
-        if (in_array($order->order_type, ['in_car', 'dine_in', 'in_restaurant']) && ($request->order_status == 'delivered' || $request->order_status == 'completed')) {
+        if (in_array($order->order_type, ['in_car', 'dine_in', 'in_restaurant']) && ($request->order_status == 'delivered')) {
             $messagestatus = 'out_for_delivery';
         }
         $message = Helpers::order_status_update_message($messagestatus);
@@ -587,7 +589,7 @@ class OrderController extends Controller
         }
 
         //delivery man notification
-        if ($request->order_status == 'processing' || $request->order_status == 'out_for_delivery') {
+        if ($request->order_status == 'in_prepare' || $request->order_status == 'out_for_delivery') {
             if (isset($order->delivery_man)) {
                 $deliverymanFcmToken = $order->delivery_man->fcm_token;
             }
@@ -598,7 +600,7 @@ class OrderController extends Controller
                 if ($value) {
                     $data = [
                         'title' => translate('Order'),
-                        'description' => $request->order_status == 'processing' ? $value : $outForDeliveryValue,
+                        'description' => $request->order_status == 'in_prepare' ? $value : $outForDeliveryValue,
                         'order_id' => $order['id'],
                         'image' => '',
                         'type' => 'order_status',
@@ -631,12 +633,12 @@ class OrderController extends Controller
         }
         $table_order = $this->table_order->where(['id' => $order->table_order_id])->first();
 
-        if (in_array($request->order_status, ['completed', 'delivered']) && $order->payment_status == 'paid') {
+        if (in_array($request->order_status, ['delivered']) && $order->payment_status == 'paid') {
             if (isset($table_order->id)) {
                 $orders = $this->order->where(['table_order_id' => $table_order->id])->get();
                 $status = 1;
                 foreach ($orders as $order) {
-                    if (!in_array($order->order_status, ['completed', 'delivered'])) {
+                    if (!in_array($order->order_status, ['delivered'])) {
                         $status = 0;
                         break;
                     }

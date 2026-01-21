@@ -22,16 +22,16 @@ use Illuminate\Contracts\Support\Renderable;
 class DashboardController extends Controller
 {
     public function __construct(
-        private Order       $order,
+        private Order $order,
         private OrderDetail $orderDetail,
-        private Admin       $admin,
-        private Review      $review,
-        private User        $user,
-        private Product     $product,
-        private Category    $category,
-        private Branch      $branch
-    )
-    {}
+        private Admin $admin,
+        private Review $review,
+        private User $user,
+        private Product $product,
+        private Category $category,
+        private Branch $branch
+    ) {
+    }
 
     /**
      * @param $id
@@ -71,7 +71,8 @@ class DashboardController extends Controller
             ->get();
 
         $mostRatedProducts = $this->review->with(['product'])
-            ->select(['product_id',
+            ->select([
+                'product_id',
                 DB::raw('AVG(rating) as ratings_average'),
                 DB::raw('COUNT(rating) as total'),
             ])
@@ -106,9 +107,9 @@ class DashboardController extends Controller
         $earning_data = $this->order->where([
             'order_status' => 'delivered',
         ])->select(
-            DB::raw('IFNULL(sum(order_amount),0) as sums'),
-            DB::raw('YEAR(created_at) year, MONTH(created_at) month')
-        )
+                DB::raw('IFNULL(sum(order_amount),0) as sums'),
+                DB::raw('YEAR(created_at) year, MONTH(created_at) month')
+            )
             ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
             ->groupby('year', 'month')->get()->toArray();
         for ($inc = 1; $inc <= 12; $inc++) {
@@ -126,7 +127,7 @@ class DashboardController extends Controller
                 DB::raw('(count(id)) as total'),
                 DB::raw('YEAR(created_at) year, MONTH(created_at) month')
             )
-//            ->whereBetween('created_at', [$from, $to])
+            //            ->whereBetween('created_at', [$from, $to])
             ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
             ->groupby('year', 'month')->get()->toArray();
 
@@ -142,7 +143,7 @@ class DashboardController extends Controller
         $donut = [];
         $donutData = $this->order->all();
         $donut['pending'] = $donutData->where('order_status', 'pending')->count();
-        $donut['ongoing'] = $donutData->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])->count();
+        $donut['ongoing'] = $donutData->whereIn('order_status', ['confirmed', 'in_prepare', 'out_for_delivery'])->count();
         $donut['delivered'] = $donutData->where('order_status', 'delivered')->count();
         $donut['canceled'] = $donutData->where('order_status', 'canceled')->count();
         $donut['returned'] = $donutData->where('order_status', 'returned')->count();
@@ -194,8 +195,8 @@ class DashboardController extends Controller
                 return $query->whereMonth('created_at', Carbon::now());
             })
             ->count();
-        $processing = $this->order
-            ->where(['order_status' => 'processing'])
+        $in_prepare = $this->order
+            ->where(['order_status' => 'in_prepare'])
             ->when($today, function ($query) {
                 return $query->whereDate('created_at', Carbon::today());
             })
@@ -260,7 +261,7 @@ class DashboardController extends Controller
         return [
             'pending' => $pending,
             'confirmed' => $confirmed,
-            'processing' => $processing,
+            'in_prepare' => $in_prepare,
             'out_for_delivery' => $outForDelivery,
             'canceled' => $canceled,
             'delivered' => $delivered,
@@ -371,9 +372,9 @@ class DashboardController extends Controller
             $earningData = $this->order->where([
                 'order_status' => 'delivered',
             ])->select(
-                DB::raw('IFNULL(sum(order_amount),0) as sums'),
-                DB::raw('YEAR(created_at) year, MONTH(created_at) month')
-            )
+                    DB::raw('IFNULL(sum(order_amount),0) as sums'),
+                    DB::raw('YEAR(created_at) year, MONTH(created_at) month')
+                )
                 ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
                 ->groupby('year', 'month')->get()->toArray();
 

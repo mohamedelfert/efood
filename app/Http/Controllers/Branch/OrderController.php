@@ -112,10 +112,10 @@ class OrderController extends Controller
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
 
-            'processing' => $this->order
+            'in_prepare' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'processing', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'in_prepare', 'branch_id' => auth('branch')->id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -209,24 +209,27 @@ class OrderController extends Controller
         $offPremiseTypes = ['self_pickup', 'delivery', 'take_away'];
 
         if (in_array($order->order_type, $onPremiseTypes)) {
-            $allowedOnPremise = ['confirmed', 'processing', 'completed', 'canceled'];
+            if ($request->order_status == 'out_for_delivery') {
+                $request->merge(['order_status' => 'delivered']);
+            }
+
+            $allowedOnPremise = ['confirmed', 'in_prepare', 'delivered', 'canceled'];
             if (!in_array($request->order_status, $allowedOnPremise)) {
                 Toastr::warning(translate('Status not allowed for this order type'));
                 return back();
             }
         } elseif (in_array($order->order_type, $offPremiseTypes)) {
-            $allowedOffPremise = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
+            $allowedOffPremise = ['pending', 'confirmed', 'in_prepare', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'];
             if (!in_array($request->order_status, $allowedOffPremise)) {
                 Toastr::warning(translate('Status not allowed for this order type'));
                 return back();
             }
         }
 
-        if (in_array($order->order_status, ['delivered', 'failed', 'completed'])) {
+        if (in_array($order->order_status, ['delivered', 'failed'])) {
             $statusMessages = [
                 'delivered' => translate('You can not change the status of delivered order'),
                 'failed' => translate('You can not change the status of failed order'),
-                'completed' => translate('You can not change the status of completed order'),
             ];
             Toastr::warning($statusMessages[$order->order_status]);
             return back();
@@ -243,12 +246,9 @@ class OrderController extends Controller
             return back();
         }
 
-        if ($request->order_status == 'completed' && $order->payment_status != 'paid') {
-            Toastr::warning(translate('Please update payment status first!'));
-            return back();
-        }
 
-        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
+
+        if ($request->order_status == 'delivered') {
             if ($order->is_guest == 0) {
                 if ($order->user_id)
                     CustomerLogic::create_loyalty_point_transaction($order->user_id, $order->id, $order->order_amount, 'order_place');
@@ -284,7 +284,8 @@ class OrderController extends Controller
         }
 
         $order->order_status = $request->order_status;
-        if ($request->order_status == 'delivered' || $request->order_status == 'completed') {
+        $order->order_status = $request->order_status;
+        if ($request->order_status == 'delivered') {
             $order->payment_status = 'paid';
         }
         $order->save();
@@ -355,7 +356,7 @@ class OrderController extends Controller
         }
 
         //delivery man notification
-        if ($request->order_status == 'processing' || $request->order_status == 'out_for_delivery') {
+        if ($request->order_status == 'in_prepare' || $request->order_status == 'out_for_delivery') {
 
             if (isset($order->delivery_man)) {
                 $deliverymanFcmToken = $order->delivery_man->fcm_token;
@@ -367,7 +368,7 @@ class OrderController extends Controller
                 if ($value) {
                     $data = [
                         'title' => translate('Order'),
-                        'description' => $request->order_status == 'processing' ? $value : $outForDeliveryValue,
+                        'description' => $request->order_status == 'in_prepare' ? $value : $outForDeliveryValue,
                         'order_id' => $order['id'],
                         'image' => '',
                         'type' => 'order_status',
@@ -608,7 +609,7 @@ class OrderController extends Controller
             $data[$key]['Branch'] = $order->branch ? $order->branch->name : 'Branch Deleted';
             $data[$key]['Total Amount'] = Helpers::set_symbol($order['order_amount']);
             $data[$key]['Payment Status'] = $order->payment_status == 'paid' ? 'Paid' : 'Unpaid';
-            $data[$key]['Order Status'] = $order['order_status'] == 'pending' ? 'Pending' : ($order['order_status'] == 'confirmed' ? 'Confirmed' : ($order['order_status'] == 'processing' ? 'Processing' : ($order['order_status'] == 'delivered' ? 'Delivered' : ($order['order_status'] == 'picked_up' ? 'Out For Delivery' : str_replace('_', ' ', $order['order_status'])))));
+            $data[$key]['Order Status'] = $order['order_status'] == 'pending' ? 'Pending' : ($order['order_status'] == 'confirmed' ? 'Confirmed' : ($order['order_status'] == 'in_prepare' ? 'Processing' : ($order['order_status'] == 'delivered' ? 'Delivered' : ($order['order_status'] == 'picked_up' ? 'Out For Delivery' : str_replace('_', ' ', $order['order_status'])))));
         }
         ;
         return (new FastExcel($data))->download('orders.xlsx');
