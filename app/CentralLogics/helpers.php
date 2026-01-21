@@ -248,8 +248,8 @@ class Helpers
         if (in_array($order_type, $onPremiseTypes)) {
             if ($order_status == 'processing') {
                 $order_status = 'in_prepare';
-            } elseif ($order_status == 'delivered') {
-                $order_status = 'out_to_delivery';
+            } elseif ($order_status == 'out_for_delivery') {
+                $order_status = 'delivered';
             } elseif ($order_status == 'completed') {
                 $order_status = 'delivered';
             }
