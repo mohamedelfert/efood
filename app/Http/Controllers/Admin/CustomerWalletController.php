@@ -23,9 +23,9 @@ class CustomerWalletController extends Controller
 {
     public function __construct(
         private WalletTransaction $walletTransaction,
-        private User              $user,
-    )
-    {}
+        private User $user,
+    ) {
+    }
 
     /**
      * @return Renderable|RedirectResponse
@@ -58,25 +58,25 @@ class CustomerWalletController extends Controller
         try {
             // Get the customer
             $customer = User::findOrFail($request->customer_id);
-            
+
             // Store previous balance before transaction
             $previousBalance = $customer->wallet_balance;
-            
+
             // Create wallet transaction
             $walletTransaction = CustomerLogic::create_wallet_transaction(
-                $request->customer_id, 
-                $request->amount, 
-                'add_fund_by_admin', 
+                $request->customer_id,
+                $request->amount,
+                'add_fund_by_admin',
                 $request->referance
             );
 
             if ($walletTransaction) {
                 // Refresh customer to get updated balance
                 $customer->refresh();
-                
+
                 // Send notifications via NotificationService
                 $notificationService = app(\App\Services\NotificationService::class);
-                
+
                 $notificationService->sendWalletTopUpNotification($customer, [
                     'amount' => $request->amount,
                     'currency' => 'YER',
@@ -88,7 +88,8 @@ class CustomerWalletController extends Controller
                 ]);
 
                 return response()->json([
-                    'message' => translate('Funds added successfully and notifications sent')
+                    'message' => translate('Funds added successfully and notifications sent'),
+                    'transaction_id' => $walletTransaction->id
                 ], 200);
             }
 
@@ -165,7 +166,8 @@ class CustomerWalletController extends Controller
             })
             ->limit(8)
             ->get([DB::raw('id, CONCAT(name, " (", phone ,")") as text')]);
-        if ($request->all) $data[] = (object)['id' => false, 'text' => translate('all')];
+        if ($request->all)
+            $data[] = (object) ['id' => false, 'text' => translate('all')];
 
         return response()->json($data);
     }
@@ -181,9 +183,11 @@ class CustomerWalletController extends Controller
     {
         $query = $this->user->where('user_type', null)
             ->withCount('orders')
-            ->with(['walletTransactions' => function($q) {
-                $q->latest()->limit(1);
-            }]); // Eager load orders count
+            ->with([
+                'walletTransactions' => function ($q) {
+                    $q->latest()->limit(1);
+                }
+            ]); // Eager load orders count
 
         // Search functionality
         if ($request->search) {
@@ -191,8 +195,8 @@ class CustomerWalletController extends Controller
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
-                      ->orWhere('phone', 'like', "%{$value}%")
-                      ->orWhere('email', 'like', "%{$value}%");
+                        ->orWhere('phone', 'like', "%{$value}%")
+                        ->orWhere('email', 'like', "%{$value}%");
                 }
             });
         }
@@ -225,7 +229,7 @@ class CustomerWalletController extends Controller
         // Sorting
         $sortBy = $request->sort_by ?? 'name';
         $sortOrder = $request->sort_order ?? 'asc';
-        
+
         if ($sortBy === 'balance') {
             $query->orderBy('wallet_balance', $sortOrder);
         } else {
@@ -236,7 +240,7 @@ class CustomerWalletController extends Controller
 
         // Calculate summary statistics
         $allCustomers = $this->user->where('user_type', null);
-        
+
         $statistics = [
             'total_customers' => $allCustomers->count(),
             'total_balance' => $allCustomers->sum('wallet_balance') ?? 0,
@@ -263,9 +267,11 @@ class CustomerWalletController extends Controller
     {
         $query = $this->user->where('user_type', null)
             ->withCount('orders')
-            ->with(['walletTransactions' => function($q) {
-                $q->latest()->limit(1);
-            }]);
+            ->with([
+                'walletTransactions' => function ($q) {
+                    $q->latest()->limit(1);
+                }
+            ]);
 
         // Apply same filters as balance summary
         if ($request->search) {
@@ -273,8 +279,8 @@ class CustomerWalletController extends Controller
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
-                      ->orWhere('phone', 'like', "%{$value}%")
-                      ->orWhere('email', 'like', "%{$value}%");
+                        ->orWhere('phone', 'like', "%{$value}%")
+                        ->orWhere('email', 'like', "%{$value}%");
                 }
             });
         }
@@ -303,7 +309,7 @@ class CustomerWalletController extends Controller
 
         $sortBy = $request->sort_by ?? 'name';
         $sortOrder = $request->sort_order ?? 'asc';
-        
+
         if ($sortBy === 'balance') {
             $query->orderBy('wallet_balance', $sortOrder);
         } else {
@@ -347,11 +353,11 @@ class CustomerWalletController extends Controller
         // Date range filter
         $fromDate = null;
         $toDate = null;
-        
+
         if ($request->from && $request->to) {
             $fromDate = Carbon::parse($request->from)->startOfDay();
             $toDate = Carbon::parse($request->to)->endOfDay();
-            
+
             $query->whereBetween('created_at', [$fromDate, $toDate]);
         }
 
@@ -361,17 +367,17 @@ class CustomerWalletController extends Controller
         }
 
         $transactions = $query->orderBy('created_at', 'desc')
-                              ->paginate(Helpers::getPagination());
+            ->paginate(Helpers::getPagination());
 
         // Calculate period statistics
         $periodQuery = $this->walletTransaction->where('user_id', $customer_id);
-        
+
         if ($fromDate && $toDate) {
             $periodQuery->whereBetween('created_at', [$fromDate, $toDate]);
         }
-        
+
         $periodTransactions = $periodQuery->get();
-        
+
         $periodStats = [
             'opening_balance' => $this->calculateOpeningBalance($customer_id, $fromDate),
             'total_credit' => $periodTransactions->sum('credit') ?? 0,
@@ -386,17 +392,19 @@ class CustomerWalletController extends Controller
             ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
                 $q->whereBetween('created_at', [$fromDate, $toDate]);
             })
-            ->select('transaction_type', 
-                     DB::raw('SUM(credit) as total_credit'),
-                     DB::raw('SUM(debit) as total_debit'),
-                     DB::raw('COUNT(*) as count'))
+            ->select(
+                'transaction_type',
+                DB::raw('SUM(credit) as total_credit'),
+                DB::raw('SUM(debit) as total_debit'),
+                DB::raw('COUNT(*) as count')
+            )
             ->groupBy('transaction_type')
             ->get();
 
         return view('admin-views.customer.wallet.customer-statement', compact(
-            'customer', 
-            'transactions', 
-            'periodStats', 
+            'customer',
+            'transactions',
+            'periodStats',
             'transactionBreakdown',
             'fromDate',
             'toDate'
@@ -418,11 +426,11 @@ class CustomerWalletController extends Controller
 
         $fromDate = null;
         $toDate = null;
-        
+
         if ($request->from && $request->to) {
             $fromDate = Carbon::parse($request->from)->startOfDay();
             $toDate = Carbon::parse($request->to)->endOfDay();
-            
+
             $query->whereBetween('created_at', [$fromDate, $toDate]);
         }
 
@@ -456,9 +464,9 @@ class CustomerWalletController extends Controller
             ->toArray();
 
         return view('admin-views.customer.wallet.print-customer-statement', compact(
-            'customer', 
-            'transactions', 
-            'periodStats', 
+            'customer',
+            'transactions',
+            'periodStats',
             'transactionBreakdown',
             'businessInfo',
             'fromDate',
@@ -508,8 +516,8 @@ class CustomerWalletController extends Controller
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
-                      ->orWhere('phone', 'like', "%{$value}%")
-                      ->orWhere('email', 'like', "%{$value}%");
+                        ->orWhere('phone', 'like', "%{$value}%")
+                        ->orWhere('email', 'like', "%{$value}%");
                 }
             });
         }
@@ -541,7 +549,7 @@ class CustomerWalletController extends Controller
         $data = [];
         foreach ($customers as $index => $customer) {
             $lastTransaction = $customer->walletTransactions()->latest()->first();
-            
+
             $data[] = [
                 'SL' => $index + 1,
                 'Name' => $customer->name,
@@ -549,7 +557,7 @@ class CustomerWalletController extends Controller
                 'Email' => $customer->email ?? 'N/A',
                 'Wallet Balance' => number_format($customer->wallet_balance ?? 0, 2),
                 'Total Orders' => $customer->orders_count ?? 0,
-                'Last Transaction' => $lastTransaction ? 
+                'Last Transaction' => $lastTransaction ?
                     date('Y-m-d H:i:s', strtotime($lastTransaction->created_at)) : 'N/A',
             ];
         }
@@ -574,7 +582,7 @@ class CustomerWalletController extends Controller
         if ($request->from && $request->to) {
             $fromDate = Carbon::parse($request->from)->startOfDay();
             $toDate = Carbon::parse($request->to)->endOfDay();
-            
+
             $query->whereBetween('created_at', [$fromDate, $toDate]);
         }
 
@@ -597,8 +605,17 @@ class CustomerWalletController extends Controller
                 'Balance' => number_format($transaction->balance ?? 0, 2),
             ];
         }
-
         return (new \Rap2hpoutre\FastExcel\FastExcel($data))
             ->download('wallet_statement_' . str_replace(' ', '_', $customer->name) . '_' . date('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * @param $id
+     * @return Renderable
+     */
+    public function print_vouchers($id): Renderable
+    {
+        $transaction = $this->walletTransaction->findOrFail($id);
+        return view('admin-views.customer.wallet.print-voucher', compact('transaction'));
     }
 }

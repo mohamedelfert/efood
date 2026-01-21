@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('add_fund'))
+@section('title', translate('add_fund'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -25,7 +25,8 @@
                         <div class="col-sm-6 col-12">
                             <div class="form-group">
                                 <label class="form-label" for="customer">{{translate('customer')}}</label>
-                                <select id='customer' name="customer_id" data-placeholder="{{translate('Select_Customer')}}" class="js-data-example-ajax form-control h--45px" required>
+                                <select id='customer' name="customer_id" data-placeholder="{{translate('Select_Customer')}}"
+                                    class="js-data-example-ajax form-control h--45px" required>
 
                                 </select>
                             </div>
@@ -33,12 +34,14 @@
                         <div class="col-sm-6 col-12">
                             <div class="form-group">
                                 <label class="form-label" for="amount">{{translate('amount')}}</label>
-                                <input type="number" class="form-control h--45px" name="amount" id="amount" step=".01" required>
+                                <input type="number" class="form-control h--45px" name="amount" id="amount" step=".01"
+                                    required>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="form-group">
-                                <label class="form-label" for="referance">{{translate('reference')}} <small>({{translate('optional')}})</small></label>
+                                <label class="form-label" for="referance">{{translate('reference')}}
+                                    <small>({{translate('optional')}})</small></label>
                                 <input type="text" class="form-control h--45px" name="referance" id="referance">
                             </div>
                         </div>
@@ -65,7 +68,7 @@
 
             Swal.fire({
                 title: '{{translate('are_you_sure')}}',
-                text: '{{translate('add_fund ')}}'+$('#amount').val()+' {{Helpers::currency_code().' '.translate('to')}} '+$('#customer option:selected').text()+'{{translate('wallet')}}',
+                text: '{{translate('add_fund ')}}' + $('#amount').val() + ' {{Helpers::currency_code() . ' ' . translate('to')}} ' + $('#customer option:selected').text() + '{{translate('wallet')}}',
                 type: 'info',
                 showCancelButton: true,
                 cancelButtonColor: 'default',
@@ -102,6 +105,26 @@
                                     CloseButton: true,
                                     ProgressBar: true
                                 });
+
+                                if (data.transaction_id) {
+                                    Swal.fire({
+                                        title: '{{translate('Fund added successfully')}}',
+                                        text: '{{translate('Do you want to print the voucher?')}}',
+                                        type: 'success',
+                                        showCancelButton: true,
+                                        cancelButtonColor: 'default',
+                                        confirmButtonColor: '#007bff',
+                                        cancelButtonText: '{{translate('No')}}',
+                                        confirmButtonText: '{{translate('Print')}}',
+                                        reverseButtons: true
+                                    }).then((result) => {
+                                        if (result.value) {
+                                            var printUrl = '{{ route('admin.customer.wallet.add-fund.print', ['id' => ':id']) }}';
+                                            printUrl = printUrl.replace(':id', data.transaction_id);
+                                            window.open(printUrl, '_blank');
+                                        }
+                                    });
+                                }
                             }
                         }
                     });
@@ -134,7 +157,7 @@
             }
         });
 
-        $('#reset').click(function(){
+        $('#reset').click(function () {
             $('#customer').val(null).trigger('change');
         })
     </script>

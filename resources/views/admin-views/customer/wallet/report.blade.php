@@ -128,7 +128,8 @@
                             <th>{{translate('debit')}}</th>
                             <th>{{translate('balance')}}</th>
                             <th>{{translate('transaction_type')}}</th>
-                            <th>{{translate('created_at')}}</th>
+                             <th>{{translate('created_at')}}</th>
+                             <th class="text-center">{{translate('action')}}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -151,7 +152,16 @@
                                         {{ translate($wt->transaction_type)}}
                                     </span>
                                 </td>
-                                <td>{{date('Y/m/d '.config('timeformat'), strtotime($wt->created_at))}}</td>
+                                 <td>{{date('Y/m/d '.config('timeformat'), strtotime($wt->created_at))}}</td>
+                                <td>
+                                    <div class="btn--container justify-content-center">
+                                        <a class="btn btn-outline-info btn--icon btn-sm"
+                                           href="{{route('admin.customer.wallet.add-fund.print', ['id' => $wt->id])}}"
+                                           target="_blank" title="{{translate('print')}}">
+                                            <i class="tio-print"></i>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                         </tbody>

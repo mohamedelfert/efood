@@ -562,6 +562,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::group(['prefix' => 'wallet', 'as' => 'wallet.'], function () {
                 Route::get('add-fund', [CustomerWalletController::class, 'addFundView'])->name('add-fund');
                 Route::post('add-fund', [CustomerWalletController::class, 'addFund'])->name('add-fund-store');
+                Route::get('print-voucher/{id}', [CustomerWalletController::class, 'print_vouchers'])->name('add-fund.print');
                 Route::get('report', [CustomerWalletController::class, 'report'])->name('report');
 
                 // Balance Summary Routes
