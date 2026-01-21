@@ -2087,7 +2087,7 @@
   'Sub total' => 'المجموع الفرعي',
   'VAT / Tax' => 'الضريبه / القيمه المضافه',
   'Leave empty for global cashback' => 'اتركه فارغًا لاسترداد النقود العالمية',
-  'All Branches (Global)' => 'جميع الفروع (عالميًا)',
+  'All Branches (Global)' => 'جميع الفروع',
   'No maximum limit - full value will be given' => 'لا يوجد حد أقصى - سيتم إعطاء القيمة الكاملة',
   'No max limit' => 'لا يوجد حد أقصى',
   'wallet topup' => 'شحن المحفظه',
