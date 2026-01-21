@@ -26,7 +26,17 @@ const MANAGEMENT_SECTION = [
     'report_and_analytics_management' => 'report_and_analytics_management',
     'user_management' => 'user_management',
     'table_management' => 'table_management',
-    'system_management' => 'system_management',
+    'system_management' => 'system_management', // Keeping for backward compatibility if needed, but sidebar will use specific ones
+    'deliveryman_management' => 'deliveryman_management',
+    'branch_management' => 'branch_management',
+    'employee_management' => 'employee_management',
+    'business_setup_management' => 'business_setup_management',
+    'third_party_management' => 'third_party_management',
+    'whatsapp_management' => 'whatsapp_management',
+    'email_management' => 'email_management',
+    'currency_management' => 'currency_management',
+    'page_and_media_management' => 'page_and_media_management',
+    'system_setup_management' => 'system_setup_management',
     'special_system_management' => 'special_system_management'
 ];
 
