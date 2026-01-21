@@ -10,7 +10,7 @@ use App\Model\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 use Illuminate\Support\Facades\Log;
 
 class OrderPlaced extends Mailable
@@ -135,11 +135,31 @@ class OrderPlaced extends Mailable
 
             // Try to generate and attach PDF
             try {
-                $pdf = Pdf::loadView('email-templates.invoice', compact('order'));
+                $html = view('email-templates.invoice', compact('order'))->render();
+
+                $mpdf = new Mpdf([
+                    'mode' => 'utf-8',
+                    'format' => 'A4',
+                    'default_font_size' => 11,
+                    'default_font' => 'dejavusans',
+                    'margin_left' => 10,
+                    'margin_right' => 10,
+                    'margin_top' => 10,
+                    'margin_bottom' => 10,
+                    'margin_header' => 5,
+                    'margin_footer' => 5,
+                    'orientation' => 'P',
+                    'directionality' => 'rtl',
+                    'autoScriptToLang' => true,
+                    'autoLangToFont' => true,
+                ]);
+
+                $mpdf->WriteHTML($html);
+                $pdfOutput = $mpdf->Output('', 'S');
 
                 return $this->subject(translate('Order Placed - #') . $order->id)
                     ->view('email-templates.new-email-format-' . $template_id, $viewData)
-                    ->attachData($pdf->output(), 'Invoice_Order_' . $order->id . '.pdf', [
+                    ->attachData($pdfOutput, 'Invoice_Order_' . $order->id . '.pdf', [
                         'mime' => 'application/pdf',
                     ]);
             } catch (\Exception $pdfError) {
