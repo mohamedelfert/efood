@@ -74,7 +74,7 @@ class Notification extends Model
     {
         return $query->where(function ($q) use ($branchId) {
             $q->where('branch_id', $branchId)
-              ->orWhereNull('branch_id');
+                ->orWhereNull('branch_id');
         });
     }
 
@@ -126,8 +126,15 @@ class Notification extends Model
         $image = $this->image ?? null;
         $path = asset('public/assets/admin/img/icons/upload_img2.png');
 
-        if (!is_null($image) && Storage::disk('public')->exists('notification/' . $image)) {
-            $path = asset('storage/app/public/notification/' . $image);
+        if (!is_null($image)) {
+            if (str_starts_with($image, 'static:')) {
+                $iconName = substr($image, 7); // Remove 'static:' prefix
+                if (file_exists(public_path("assets/admin/img/icons/{$iconName}"))) {
+                    return asset("public/assets/admin/img/icons/{$iconName}");
+                }
+            } elseif (Storage::disk('public')->exists('notification/' . $image)) {
+                $path = asset('storage/app/public/notification/' . $image);
+            }
         }
         return $path;
     }

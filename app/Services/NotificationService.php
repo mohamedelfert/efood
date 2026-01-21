@@ -25,6 +25,21 @@ class NotificationService
     }
 
     /**
+     * Get icon filename for notification type
+     */
+    private function getNotificationIcon(string $type): string
+    {
+        return match ($type) {
+            'wallet_topup' => 'sales.png',
+            'sent', 'received', 'money_transfer_sent', 'money_transfer_received' => 'sales.png',
+            'order_placed' => 'pending.png',
+            'loyalty_conversion' => 'promotion.png',
+            'pin_reset_success' => 'profile.png',
+            default => 'upload_img2.png'
+        };
+    }
+
+    /**
      * Helper function to replace placeholders in translations
      */
     private function replaceTranslationPlaceholders(string $text, array $replacements): string
@@ -199,12 +214,13 @@ class NotificationService
             //  Push Notification
             if ($user->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('wallet_topup');
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Wallet Top-Up Successful'),
                         'description' => str_replace([':amount', ':currency'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR'], translate('Your wallet has been topped up with :amount :currency')),
                         'type' => 'wallet_topup',
                         'transaction_id' => $data['transaction_id'],
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                         'order_id' => '',
                     ]);
                 } catch (\Exception $e) {
@@ -223,6 +239,7 @@ class NotificationService
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
                 'currency' => $data['currency'],
+                'image' => 'static:' . $this->getNotificationIcon('wallet_topup')
             ]);
 
             Log::info('All wallet top-up notifications processed', [
@@ -288,12 +305,13 @@ class NotificationService
             // Sender Push
             if ($sender->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('money_transfer_sent');
                     Helpers::send_push_notif_to_device($sender->cm_firebase_token, [
                         'title' => translate('Money Sent'),
                         'description' => str_replace([':amount', ':currency', ':name'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR', $receiver->name], translate('You sent :amount :currency to :name')),
                         'type' => 'money_transfer_sent',
                         'transaction_id' => $data['transaction_id'],
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                         'order_id' => '',
                     ]);
                 } catch (\Exception $e) {
@@ -309,6 +327,7 @@ class NotificationService
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
                 'currency' => $data['currency'],
+                'image' => 'static:' . $this->getNotificationIcon('money_transfer_sent')
             ]);
 
             // === RECEIVER NOTIFICATIONS ===
@@ -353,12 +372,13 @@ class NotificationService
             // Receiver Push
             if ($receiver->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('money_transfer_received');
                     Helpers::send_push_notif_to_device($receiver->cm_firebase_token, [
                         'title' => translate('Money Received'),
                         'description' => str_replace([':amount', ':currency', ':name'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR', $sender->name], translate('You received :amount :currency from :name')),
                         'type' => 'money_transfer_received',
                         'transaction_id' => $data['transaction_id'],
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                         'order_id' => '',
                     ]);
                 } catch (\Exception $e) {
@@ -374,6 +394,7 @@ class NotificationService
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],
                 'currency' => $data['currency'],
+                'image' => 'static:' . $this->getNotificationIcon('money_transfer_received')
             ]);
 
             Log::info('All transfer notifications processed', [
@@ -442,12 +463,13 @@ class NotificationService
             //  Push Notification
             if ($user->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('order_placed');
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Order Placed Successfully'),
                         'description' => str_replace(':order_id', $order->id, translate('Your order #:order_id has been placed')),
                         'type' => 'order_placed',
                         'order_id' => $order->id,
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Order push failed', ['error' => $e->getMessage()]);
@@ -462,6 +484,7 @@ class NotificationService
                 'reference_id' => $order->id,
                 'amount' => $order->order_amount,
                 'currency' => $data['currency'],
+                'image' => 'static:' . $this->getNotificationIcon('order_placed')
             ]);
 
             Log::info('All order notifications processed', ['order_id' => $order->id]);
@@ -518,12 +541,13 @@ class NotificationService
             // Push
             if ($user->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('loyalty_conversion');
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Loyalty Points Converted'),
                         'description' => str_replace([':points', ':amount', ':currency'], [$data['points_used'], number_format($data['converted_amount'], 2), $data['currency']], translate('Converted :points points to :amount :currency')),
                         'type' => 'loyalty_conversion',
                         'transaction_id' => $data['transaction_id'],
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                         'order_id' => '',
                     ]);
                 } catch (\Exception $e) {
@@ -539,6 +563,7 @@ class NotificationService
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['converted_amount'],
                 'currency' => $data['currency'],
+                'image' => 'static:' . $this->getNotificationIcon('loyalty_conversion')
             ]);
 
         } catch (\Exception $e) {
@@ -560,6 +585,7 @@ class NotificationService
                 'reference_id' => $data['reference_id'] ?? null,
                 'status' => 1,
                 'is_read' => false,
+                'image' => $data['image'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -700,11 +726,12 @@ class NotificationService
             // Push Notification
             if ($user->cm_firebase_token) {
                 try {
+                    $icon = $this->getNotificationIcon('pin_reset_success');
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Wallet PIN Reset'),
                         'description' => translate('Your wallet PIN has been reset successfully'),
                         'type' => 'pin_reset_success',
-                        'image' => '',
+                        'image' => asset("public/assets/admin/img/icons/{$icon}"),
                         'order_id' => '',
                     ]);
                 } catch (\Exception $e) {
@@ -721,6 +748,7 @@ class NotificationService
                 'description' => translate('Your wallet PIN has been reset successfully'),
                 'type' => 'pin_reset_success',
                 'reference_id' => null,
+                'image' => 'static:' . $this->getNotificationIcon('pin_reset_success')
             ]);
 
         } catch (\Exception $e) {
