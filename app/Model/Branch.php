@@ -24,14 +24,20 @@ class Branch extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'preparation_time' => 'integer',
+        'wallet_balance' => 'float',
     ];
+
+    public function wallet_transactions(): HasMany
+    {
+        return $this->hasMany(BranchWalletTransaction::class);
+    }
 
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'branch_product', 'branch_id', 'product_id')
             ->withTimestamps();
     }
-    
+
     public function product_details(): HasMany
     {
         return $this->hasMany(ProductByBranch::class, 'branch_id');
@@ -74,9 +80,9 @@ class Branch extends Authenticatable
     public function activeCoupons()
     {
         return Coupon::where(function ($query) {
-                $query->where('branch_id', $this->id)
-                      ->orWhereNull('branch_id');
-            })
+            $query->where('branch_id', $this->id)
+                ->orWhereNull('branch_id');
+        })
             ->active()
             ->get();
     }

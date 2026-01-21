@@ -22,8 +22,8 @@ class BranchController extends Controller
         private DeliveryChargeSetup $deliveryChargeSetup,
         private DeliveryChargeByArea $deliveryChargeByArea,
         private TimeSchedule $timeSchedule
-    )
-    {}
+    ) {
+    }
 
     /**
      * @return Renderable
@@ -117,7 +117,7 @@ class BranchController extends Controller
             foreach ($schedules as $day => $daySchedules) {
                 foreach ($daySchedules as $schedule) {
                     $is24Hours = isset($schedule['is_24_hours']) && $schedule['is_24_hours'] == 1;
-                    
+
                     $this->timeSchedule->create([
                         'branch_id' => $branch->id,
                         'day' => $day,
@@ -148,7 +148,7 @@ class BranchController extends Controller
     public function getSchedule(Request $request): JsonResponse
     {
         $branchId = $request->branch_id;
-        
+
         if (!$branchId) {
             return response()->json(['success' => false, 'message' => '{{translate("Branch ID is required")}}'], 400);
         }
@@ -172,10 +172,10 @@ class BranchController extends Controller
     public function edit($id): Renderable
     {
         $branch = $this->branch->with('timeSchedules')->find($id);
-        
+
         // Group schedules by day
         $schedulesByDay = $branch->timeSchedules->groupBy('day');
-        
+
         return view('admin-views.branch.edit', compact('branch', 'schedulesByDay'));
     }
 
@@ -220,11 +220,11 @@ class BranchController extends Controller
             $branch->address = $request->address;
             $branch->image = $request->has('image') ? Helpers::update('branch/', $branch->image, 'png', $request->file('image')) : $branch->image;
             $branch->cover_image = $request->has('cover_image') ? Helpers::update('branch/', $branch->cover_image, 'png', $request->file('cover_image')) : $branch->cover_image;
-            
+
             if ($request['password'] != null) {
                 $branch->password = bcrypt($request->password);
             }
-            
+
             $branch->phone = $request->phone ?? '';
             $branch->preparation_time = $request->preparation_time;
             $branch->save();
@@ -239,7 +239,7 @@ class BranchController extends Controller
                 foreach ($schedules as $day => $daySchedules) {
                     foreach ($daySchedules as $schedule) {
                         $is24Hours = isset($schedule['is_24_hours']) && $schedule['is_24_hours'] == 1;
-                        
+
                         $this->timeSchedule->create([
                             'branch_id' => $branch->id,
                             'day' => $day,
@@ -317,5 +317,50 @@ class BranchController extends Controller
         $branches = $query->orderBy('id', 'DESC')->paginate(Helpers::getPagination())->appends($queryParam);
 
         return view('admin-views.branch.list', compact('branches', 'search'));
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function addFund(Request $request): JsonResponse
+    {
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id',
+            'amount' => 'required|numeric|min:0.01',
+            'reference' => 'nullable|max:255',
+        ]);
+
+        try {
+            \App\CentralLogics\BranchLogic::create_wallet_transaction(
+                $request->branch_id,
+                $request->amount,
+                'add_fund_by_admin',
+                $request->reference
+            );
+
+            return response()->json([
+                'message' => translate('Funds added successfully'),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => translate('Failed to add funds: ') . $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     * @return Renderable
+     */
+    public function walletTransactions(Request $request, $id): Renderable
+    {
+        $branch = $this->branch->findOrFail($id);
+        $transactions = \App\Model\BranchWalletTransaction::where('branch_id', $id)
+            ->latest()
+            ->paginate(Helpers::getPagination());
+
+        return view('admin-views.branch.wallet-transactions', compact('branch', 'transactions'));
     }
 }

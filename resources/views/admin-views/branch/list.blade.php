@@ -42,17 +42,18 @@
         @if(session('branch-store'))
             <div class="d-flex align-items-center gap-2 alert--message-2 fade show active" id="branch-alert">
                 <img width="28" class="align-self-start image"
-                     src="{{ asset('public/assets/admin/svg/components/CircleWavyCheck.svg') }}" alt="">
-                <div class="">
+                    src="{{ asset('public/assets/admin/svg/components/CircleWavyCheck.svg') }}" alt="">
+                <div>
                     <h6 class="title mb-2 text-truncate">{{ translate('Branch Created Successfully') }}!</h6>
-                    <p class="message">{{translate('By default delivery charge type is set to fixed. Kindly configure the delivery charge from Delivery fee setup')}} <a
-                            href="{{ route('admin.business-settings.restaurant.delivery-fee-setup') }}"
-                            class="c1">{{translate('Delivery Fee Setup')}}</a>
-                    </p>
-                </div>
-                <button type="button" class="close position-relative p-0" aria-label="Close" id="close-alert">
-                    <i class="tio-clear"></i>
-                </button>
+                    <p class="message">
+                            {{translate('By default delivery charge type is set to fixed. Kindly configure the delivery charge from Delivery fee setup')}}
+                            <a href="{{ route('admin.business-settings.restaurant.delivery-fee-setup') }}"
+                                class="c1">{{translate('Delivery Fee Setup')}}</a>
+                        </p>
+                    </div>
+                    <button type="button" class="close position-relative p-0" aria-label="Close" id="close-alert">
+                        <i class="tio-clear"></i>
+                    </button>
             </div>
         @endif
 
@@ -77,7 +78,9 @@
                     <div class="col-sm-8 col-md-6 col-lg-4">
                         <form action="#" method="GET">
                             <div class="input-group">
-                                <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('search by ID or branch name')}}" aria-label="Search" value="{{$search??''}}" required="" autocomplete="off">
+                                <input id="datatableSearch_" type="search" name="search" class="form-control"
+                                    placeholder="{{translate('search by ID or branch name')}}" aria-label="Search"
+                                    value="{{$search ?? ''}}" required="" autocomplete="off">
                                 <div class="input-group-append">
                                     <button type="submit" class="btn btn-primary">
                                         {{translate('Search')}}
@@ -93,85 +96,105 @@
                 <div class="table-responsive datatable-custom">
                     <table class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
                         <thead class="thead-light">
-                        <tr>
-                            <th>{{translate('SL')}}</th>
-                            <th>{{translate('Branch_Name')}}</th>
-                            <th>{{translate('Branch_Type')}}</th>
-                            <th>{{translate('Contact_Info')}}</th>
-                            <th>{{translate('Delivery Charge Type')}}</th>
-                            <th>{{translate('Promotion_campaign')}}</th>
-                            <th>{{translate('status')}}</th>
-                            <th class="text-center">{{translate('action')}}</th>
-                        </tr>
+                            <tr>
+                                <th>{{translate('SL')}}</th>
+                                <th>{{translate('Branch_Name')}}</th>
+                                <th>{{translate('Branch_Type')}}</th>
+                                <th>{{translate('Contact_Info')}}</th>
+                                <th>{{translate('Delivery Charge Type')}}</th>
+                                <th>{{translate('Promotion_campaign')}}</th>
+                                <th>{{translate('status')}}</th>
+                                <th>{{translate('Wallet Balance')}}</th>
+                                <th class="text-center">{{translate('action')}}</th>
+                            </tr>
                         </thead>
 
                         <tbody>
-                        @foreach($branches as $key=>$branch)
-                            <tr>
-                                <td>{{$branches->firstItem()+$key}}</td>
-                                <td>
-                                    <div class="media align-items-center gap-3 px-3">
-                                        <img width="50" class="rounded"
-                                             src="{{$branch->imageFullPath}}">
-                                        <div class="media-body d-flex align-items-center flex-wrap">
-                                            <span> {{$branch['name']}}</span>
-                                            @if($branch['id']==1)
-                                                <span class="badge badge-soft-danger">{{translate('main')}}</span>
-                                            @else
-                                                <span class="badge badge-soft-info">{{translate('sub')}}</span>
-                                            @endif
+                            @foreach($branches as $key => $branch)
+                                <tr>
+                                    <td>{{$branches->firstItem() + $key}}</td>
+                                    <td>
+                                        <div class="media align-items-center gap-3 px-3">
+                                            <img width="50" class="rounded" src="{{$branch->imageFullPath}}">
+                                            <div class="media-body d-flex align-items-center flex-wrap">
+                                                <span> {{$branch['name']}}</span>
+                                                @if($branch['id'] == 1)
+                                                    <span class="badge badge-soft-danger">{{translate('main')}}</span>
+                                                @else
+                                                    <span class="badge badge-soft-info">{{translate('sub')}}</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td>{{$branch->id == 1 ? translate('main_branch') : translate('sub_branch')}}</td>
-                                <td>
-                                    <div>
-                                        <strong><a href="mailto:{{$branch['email']}}" class="mb-0 text-dark bold fz-12">{{$branch['email']}}</a></strong><br>
-                                        <a href="tel:{{$branch['phone']}}" class="text-dark fz-12">{{$branch['phone']}}</a>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge badge-success"> {{ $branch?->delivery_charge_setup?->delivery_charge_type }} </span>
-                                </td>
-                                <td>
-                                    <label class="switcher">
-                                        <input class="switcher_input redirect-url" data-url="{{route('admin.promotion.status',[$branch['id'],$branch->branch_promotion_status?0:1])}}" type="checkbox" {{$branch->branch_promotion_status?'checked':''}}>
-                                        <span class="switcher_control"></span>
-                                    </label>
-                                </td>
-                                <td>
-                                    <div>
+                                    </td>
+                                    <td>{{$branch->id == 1 ? translate('main_branch') : translate('sub_branch')}}</td>
+                                    <td>
+                                        <div>
+                                            <strong><a href="mailto:{{$branch['email']}}"
+                                                    class="mb-0 text-dark bold fz-12">{{$branch['email']}}</a></strong><br>
+                                            <a href="tel:{{$branch['phone']}}" class="text-dark fz-12">{{$branch['phone']}}</a>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-success">
+                                            {{ $branch?->delivery_charge_setup?->delivery_charge_type }} </span>
+                                    </td>
+                                    <td>
                                         <label class="switcher">
-                                            <input class="switcher_input status-change" type="checkbox" {{$branch['status']==1? 'checked' : ''}} id="branch-{{$branch['id']}}"
-                                                   data-url="{{route('admin.branch.status',[$branch['id'],1])}}">
+                                            <input class="switcher_input redirect-url"
+                                                data-url="{{route('admin.promotion.status', [$branch['id'], $branch->branch_promotion_status ? 0 : 1])}}"
+                                                type="checkbox" {{$branch->branch_promotion_status ? 'checked' : ''}}>
                                             <span class="switcher_control"></span>
                                         </label>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if(env('APP_MODE')!='demo' || $branch['id']!=1)
-                                        <div class="d-flex justify-content-center gap-3">
-                                            <a class="btn btn-outline-secondary btn-sm square-btn"
-                                               href="{{ route('admin.business-settings.restaurant.delivery-fee-setup') }}">
-                                                <i class="tio-settings"></i>
-                                            </a>
-                                            <a class="btn btn-outline-info btn-sm edit square-btn"
-                                                href="{{route('admin.branch.edit',[$branch['id']])}}"><i class="tio-edit"></i></a>
-                                            @if($branch['id']!=1)
-                                                <button type="button" class="btn btn-outline-danger btn-sm delete square-btn form-alert"
-                                                        data-id="branch-{{$branch['id']}}" data-message="{{translate('Want to delete this branch ?')}}"><i class="tio-delete"></i></button>
-                                            @endif
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <label class="switcher">
+                                                <input class="switcher_input status-change" type="checkbox"
+                                                    {{$branch['status'] == 1 ? 'checked' : ''}} id="branch-{{$branch['id']}}"
+                                                    data-url="{{route('admin.branch.status', [$branch['id'], 1])}}">
+                                                <span class="switcher_control"></span>
+                                            </label>
                                         </div>
-                                        <form action="{{route('admin.branch.delete',[$branch['id']])}}"
-                                                method="post" id="branch-{{$branch['id']}}">
-                                            @csrf @method('delete')
-                                        </form>
-                                    @else
-                                        <label class="badge badge-soft-danger">{{translate('Not Permitted')}}</label>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
+                                    </td>
+                                    <td>
+                                        {{\App\CentralLogics\Helpers::set_symbol($branch['wallet_balance'])}}
+                                    </td>
+                                    <td>
+                                        @if(env('APP_MODE') != 'demo' || $branch['id'] != 1)
+                                            <div class="d-flex justify-content-center gap-3">
+                                                <button class="btn btn-outline-success btn-sm square-btn"
+                                                    onclick="add_fund_modal({{$branch['id']}}, '{{$branch['name']}}')">
+                                                    <i class="tio-money"></i>
+                                                </button>
+                                                <a class="btn btn-outline-info btn-sm square-btn"
+                                                    href="{{route('admin.branch.wallet-transactions', [$branch['id']])}}">
+                                                    <i class="tio-history"></i>
+                                                </a>
+                                                <a class="btn btn-outline-secondary btn-sm square-btn"
+                                                    href="{{ route('admin.business-settings.restaurant.delivery-fee-setup') }}">
+                                                    <i class="tio-settings"></i>
+                                                </a>
+                                                <a class="btn btn-outline-info btn-sm edit square-btn"
+                                                    href="{{route('admin.branch.edit', [$branch['id']])}}"><i
+                                                        class="tio-edit"></i></a>
+                                                @if($branch['id'] != 1)
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm delete square-btn form-alert"
+                                                        data-id="branch-{{$branch['id']}}"
+                                                        data-message="{{translate('Want to delete this branch ?')}}"><i
+                                                            class="tio-delete"></i></button>
+                                                @endif
+                                            </div>
+                                            <form action="{{route('admin.branch.delete', [$branch['id']])}}" method="post"
+                                                id="branch-{{$branch['id']}}">
+                                                @csrf @method('delete')
+                                            </form>
+                                        @else
+                                            <label class="badge badge-soft-danger">{{translate('Not Permitted')}}</label>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -185,10 +208,79 @@
         </div>
     </div>
 
+    <!-- Add Fund Modal -->
+    <div class="modal fade" id="addFundModal" tabindex="-1" role="dialog" aria-labelledby="addFundModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addFundModalLabel">{{translate('Add Fund to Branch')}} - <span
+                            id="branchName"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="addFundForm">
+                    @csrf
+                    <div class="modal-body">
+                        <input type="hidden" name="branch_id" id="modalBranchId">
+                        <div class="form-group">
+                            <label class="input-label">{{translate('Amount')}} <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="amount" class="form-control"
+                                placeholder="{{translate('Ex: 100')}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="input-label">{{translate('Reference')}}</label>
+                            <input type="text" name="reference" class="form-control"
+                                placeholder="{{translate('Reference')}}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{translate('Close')}}</button>
+                        <button type="submit" class="btn btn-primary">{{translate('Add Balance')}}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('script_2')
     <script>
+        function add_fund_modal(id, name) {
+            $('#modalBranchId').val(id);
+            $('#branchName').text(name);
+            $('#addFundModal').modal('show');
+        }
+
+        $('#addFundForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            $.post({
+                url: '{{route('admin.branch.add-fund')}}',
+                data: $('#addFundForm').serialize(),
+                beforeSend: function () {
+                    $('#loading').show();
+                },
+                success: function (data) {
+                    $('#addFundModal').modal('hide');
+                    toastr.success(data.message);
+                    location.reload();
+                },
+                error: function (response) {
+                    toastr.error(response.responseJSON.message);
+                },
+                complete: function () {
+                    $('#loading').hide();
+                }
+            });
+        });
+
         $(document).ready(function () {
             let alert = $('.alert--message-2');
 

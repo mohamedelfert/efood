@@ -33,6 +33,17 @@
                         </div>
                         <div class="col-sm-6 col-12">
                             <div class="form-group">
+                                <label class="form-label" for="branch">{{translate('branch')}}</label>
+                                <select id='branch' name="branch_id" class="form-control h--45px" required>
+                                    <option value="" selected disabled>{{translate('Select_Branch')}}</option>
+                                    @foreach($branches as $branch)
+                                        <option value="{{$branch['id']}}">{{$branch['name']}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-12">
+                            <div class="form-group">
                                 <label class="form-label" for="amount">{{translate('amount')}}</label>
                                 <input type="number" class="form-control h--45px" name="amount" id="amount" step=".01"
                                     required>
@@ -68,7 +79,7 @@
 
             Swal.fire({
                 title: '{{translate('are_you_sure')}}',
-                text: '{{translate('add_fund ')}}' + $('#amount').val() + ' {{Helpers::currency_code() . ' ' . translate('to')}} ' + $('#customer option:selected').text() + '{{translate('wallet')}}',
+                text: '{{translate('add_fund ')}}' + $('#amount').val() + ' {{Helpers::currency_code() . ' ' . translate('to')}} ' + $('#customer option:selected').text() + ' {{translate('wallet')}} ' + '{{translate('from')}} ' + $('#branch option:selected').text(),
                 type: 'info',
                 showCancelButton: true,
                 cancelButtonColor: 'default',

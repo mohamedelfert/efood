@@ -18,6 +18,8 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Support\Renderable;
+use App\Model\Branch;
+use App\CentralLogics\BranchLogic;
 
 class CustomerWalletController extends Controller
 {
@@ -37,7 +39,8 @@ class CustomerWalletController extends Controller
             return back();
         }
 
-        return view('admin-views.customer.wallet.add-fund');
+        $branches = Branch::active()->get();
+        return view('admin-views.customer.wallet.add-fund', compact('branches'));
     }
 
     /**
@@ -48,7 +51,8 @@ class CustomerWalletController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'customer_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric|min:0|not_in:0',
+            'amount' => 'required|numeric|min:0.01',
+            'branch_id' => 'required|exists:branches,id',
         ]);
 
         if ($validator->fails()) {
@@ -56,21 +60,33 @@ class CustomerWalletController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
             // Get the customer
             $customer = User::findOrFail($request->customer_id);
 
             // Store previous balance before transaction
             $previousBalance = $customer->wallet_balance;
 
-            // Create wallet transaction
+            // 1. Deduct from branch wallet
+            $branchTransaction = BranchLogic::create_wallet_transaction(
+                $request->branch_id,
+                $request->amount,
+                'fund_customer_wallet',
+                translate('Fund customer wallet: ') . $customer->name . ($request->referance ? ' (' . $request->referance . ')' : '')
+            );
+
+            // 2. Create customer wallet transaction
             $walletTransaction = CustomerLogic::create_wallet_transaction(
                 $request->customer_id,
                 $request->amount,
-                'add_fund_by_admin',
-                $request->referance
+                'add_fund_from_branch',
+                $request->referance . (isset($branchTransaction) ? ' [Branch ID: ' . $request->branch_id . ']' : '')
             );
 
             if ($walletTransaction) {
+                DB::commit();
+
                 // Refresh customer to get updated balance
                 $customer->refresh();
 
@@ -100,17 +116,19 @@ class CustomerWalletController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Admin add fund failed', [
                 'customer_id' => $request->customer_id,
                 'amount' => $request->amount,
+                'branch_id' => $request->branch_id,
                 'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'errors' => [
-                    'message' => translate('Something went wrong')
+                    ['message' => $e->getMessage()]
                 ]
-            ], 500);
+            ], 400);
         }
     }
 

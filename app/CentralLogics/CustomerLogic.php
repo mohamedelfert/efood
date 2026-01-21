@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Brian2694\Toastr\Facades\Toastr;
 
-class CustomerLogic{
+class CustomerLogic
+{
 
     public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $order_id = null)
     {
@@ -37,7 +38,7 @@ class CustomerLogic{
             }
 
             $current_balance = $user->wallet_balance;
-            $validTransactionTypes = ['add_fund_by_admin', 'add_fund', 'loyalty_point', 'referrer', 'add_fund_bonus', 'order_place'];
+            $validTransactionTypes = ['add_fund_by_admin', 'add_fund', 'loyalty_point', 'referrer', 'add_fund_bonus', 'order_place', 'add_fund_from_branch'];
             if (!in_array($transaction_type, $validTransactionTypes)) {
                 throw new Exception('Invalid transaction type: ' . $transaction_type);
             }
@@ -122,7 +123,7 @@ class CustomerLogic{
         }, 5); // Retry transaction up to 5 times on deadlock
     }
 
-    
+
     // public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $order_id = null)
     // {   
     //     // Validate amount
@@ -219,12 +220,11 @@ class CustomerLogic{
     //     }, 5); // Retry transaction up to 5 times on deadlock
     // }
 
-    
+
     public static function create_loyalty_point_transaction($user_id, $referance, $amount, $transaction_type)
     {
-        $settings = array_column(BusinessSetting::whereIn('key',['loyalty_point_status','loyalty_point_exchange_rate','loyalty_point_item_purchase_point'])->get()->toArray(), 'value','key');
-        if($settings['loyalty_point_status'] != 1)
-        {
+        $settings = array_column(BusinessSetting::whereIn('key', ['loyalty_point_status', 'loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point'])->get()->toArray(), 'value', 'key');
+        if ($settings['loyalty_point_status'] != 1) {
             return true;
         }
 
@@ -232,7 +232,7 @@ class CustomerLogic{
         $debit = 0;
         $user = User::find($user_id);
 
-        if (!isset($user)){
+        if (!isset($user)) {
             return false;
         }
 
@@ -242,12 +242,9 @@ class CustomerLogic{
         $loyalty_point_transaction->reference = $referance;
         $loyalty_point_transaction->type = $transaction_type;
 
-        if($transaction_type=='order_place')
-        {
-            $credit = (int)($amount * $settings['loyalty_point_item_purchase_point']/100);
-        }
-        else if($transaction_type=='point_to_wallet')
-        {
+        if ($transaction_type == 'order_place') {
+            $credit = (int) ($amount * $settings['loyalty_point_item_purchase_point'] / 100);
+        } else if ($transaction_type == 'point_to_wallet') {
             $debit = $amount;
         }
 
@@ -259,14 +256,13 @@ class CustomerLogic{
         $loyalty_point_transaction->updated_at = now();
         $user->point = $current_balance;
 
-        try{
+        try {
             DB::beginTransaction();
             $user->save();
             $loyalty_point_transaction->save();
             DB::commit();
             return true;
-        }catch(\Exception $ex)
-        {
+        } catch (\Exception $ex) {
             info($ex);
             DB::rollback();
 
@@ -283,7 +279,7 @@ class CustomerLogic{
 
         $debit = 0.0;
         $credit = 0.0;
-        $amount = BusinessSetting::where('key','ref_earning_exchange_rate')->first()->value?? 0;
+        $amount = BusinessSetting::where('key', 'ref_earning_exchange_rate')->first()->value ?? 0;
         $credit = $amount;
 
         $wallet_transaction = new WalletTransaction();
@@ -298,13 +294,12 @@ class CustomerLogic{
         $wallet_transaction->updated_at = now();
         $user->wallet_balance = $current_balance + $credit;
 
-        try{
+        try {
             DB::beginTransaction();
             $user->save();
             $wallet_transaction->save();
             DB::commit();
-        }catch(\Exception $ex)
-        {
+        } catch (\Exception $ex) {
             info($ex);
             DB::rollback();
 
@@ -312,7 +307,8 @@ class CustomerLogic{
         }
     }
 
-    public static function loyalty_point_wallet_transfer_transaction($user_id, $point, $amount) {
+    public static function loyalty_point_wallet_transfer_transaction($user_id, $point, $amount)
+    {
 
         DB::transaction(function () use ($user_id, $point, $amount) {
 
@@ -366,45 +362,45 @@ class CustomerLogic{
             $restaurant_name = Helpers::get_business_settings('restaurant_name');
             $bonus_value = '';
 
-            if ($bonus_amount > 0){
+            if ($bonus_amount > 0) {
                 $bonus_transaction = self::create_wallet_transaction($customer_id, $bonus_amount, 'add_fund_bonus', 'add-fund-bonus');
 
-                if ($bonus_transaction){
+                if ($bonus_transaction) {
                     $bonus_message = Helpers::order_status_update_message(ADD_WALLET_BONUS_MESSAGE);
 
-                    if ($local != 'en'){
+                    if ($local != 'en') {
                         $translated_message = BusinessSetting::with('translations')->where(['key' => ADD_WALLET_BONUS_MESSAGE])->first();
-                        if (isset($translated_message->translations)){
-                            foreach ($translated_message->translations as $translation){
-                                if ($local == $translation->locale){
+                        if (isset($translated_message->translations)) {
+                            foreach ($translated_message->translations as $translation) {
+                                if ($local == $translation->locale) {
                                     $bonus_message = $translation->value;
                                 }
                             }
                         }
                     }
-                    $bonus_value = Helpers::text_variable_data_format(value:$bonus_message, user_name: $customer->name, restaurant_name: $restaurant_name);
+                    $bonus_value = Helpers::text_variable_data_format(value: $bonus_message, user_name: $customer->name, restaurant_name: $restaurant_name);
                 }
             }
 
             $message = Helpers::order_status_update_message(ADD_WALLET_MESSAGE);
 
-            if ($local != 'en'){
+            if ($local != 'en') {
                 $translated_message = BusinessSetting::with('translations')->where(['key' => ADD_WALLET_MESSAGE])->first();
-                if (isset($translated_message->translations)){
-                    foreach ($translated_message->translations as $translation){
-                        if ($local == $translation->locale){
+                if (isset($translated_message->translations)) {
+                    foreach ($translated_message->translations as $translation) {
+                        if ($local == $translation->locale) {
                             $message = $translation->value;
                         }
                     }
                 }
             }
-            $value = Helpers::text_variable_data_format(value:$message, user_name: $customer->name, restaurant_name: $restaurant_name);
+            $value = Helpers::text_variable_data_format(value: $message, user_name: $customer->name, restaurant_name: $restaurant_name);
 
             try {
                 if ($value) {
                     $data = [
                         'title' => translate('wallet'),
-                        'description' => $bonus_amount > 0 ? Helpers::set_symbol($amount) . ' ' . $value. ', '. Helpers::set_symbol($bonus_amount). ' '. $bonus_value : Helpers::set_symbol($amount) . ' ' . $value,
+                        'description' => $bonus_amount > 0 ? Helpers::set_symbol($amount) . ' ' . $value . ', ' . Helpers::set_symbol($bonus_amount) . ' ' . $bonus_value : Helpers::set_symbol($amount) . ' ' . $value,
                         'order_id' => '',
                         'image' => '',
                         'type' => 'order_status',
@@ -433,11 +429,11 @@ class CustomerLogic{
 
         $bonuses = $bonuses->where('minimum_add_amount', $bonuses->max('minimum_add_amount'));
 
-        foreach ($bonuses as $key=>$item) {
-            $item->applied_bonus_amount = $item->bonus_type == 'percentage' ? ($amount*$item->bonus_amount)/100 : $item->bonus_amount;
+        foreach ($bonuses as $key => $item) {
+            $item->applied_bonus_amount = $item->bonus_type == 'percentage' ? ($amount * $item->bonus_amount) / 100 : $item->bonus_amount;
 
             //max bonus check
-            if($item->bonus_type == 'percentage' && $item->applied_bonus_amount > $item->maximum_bonus_amount) {
+            if ($item->bonus_type == 'percentage' && $item->applied_bonus_amount > $item->maximum_bonus_amount) {
                 $item->applied_bonus_amount = $item->maximum_bonus_amount;
             }
         }

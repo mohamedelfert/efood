@@ -156,6 +156,8 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::get('status/{id}/{status}', [BranchController::class, 'status'])->name('status');
             Route::get('list', [BranchController::class, 'list'])->name('list');
             Route::get('get-schedule', [BranchController::class, 'getSchedule'])->name('get-schedule');
+            Route::post('add-fund', [BranchController::class, 'addFund'])->name('add-fund');
+            Route::get('wallet-transactions/{id}', [BranchController::class, 'walletTransactions'])->name('wallet-transactions');
         });
 
         Route::group(['prefix' => 'addon', 'as' => 'addon.', 'middleware' => ['module:product_management']], function () {
