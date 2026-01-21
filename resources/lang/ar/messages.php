@@ -2037,6 +2037,8 @@
   'Cash On Delivery' => 'الدفع عند التسليم',
   'Digital Payment' => 'الدفع الرقمي',
   'Offline Payment' => 'الدفع دون اتصال',
+  'non_veg' => 'غير الخضار',
+  'veg' => 'خضار',
   'Company Information' => 'معلومات الشركة',
   'Company Name' => 'اسم الشركة',
   'Ex: ABC Company' => 'مثال: شركة ABC',
