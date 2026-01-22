@@ -42,7 +42,7 @@ class BranchLogic
                 // This would be used when an order is paid and amount should be added to branch wallet
                 $credit = $amount;
                 $new_balance = $current_balance + $credit;
-            } elseif ($transaction_type === 'cash_out' || $transaction_type === 'fund_customer_wallet') {
+            } elseif ($transaction_type === 'cash_out' || $transaction_type === 'fund_customer_wallet' || $transaction_type === 'fund_customer_cashback') {
                 if ($current_balance < $amount) {
                     throw new Exception(translate('Insufficient wallet balance.'));
                 }

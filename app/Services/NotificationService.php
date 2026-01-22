@@ -129,6 +129,7 @@ class NotificationService
                 'timestamp' => now()->format('Y-m-d H:i:s'),
                 'date' => now()->format('d/m/Y'),
                 'time' => now()->format('h:i A'),
+                'cashback_amount' => number_format($data['cashback_amount'] ?? 0, 2),
             ];
 
             //  Email Notification
@@ -217,7 +218,9 @@ class NotificationService
                     $icon = $this->getNotificationIcon('wallet_topup');
                     Helpers::send_push_notif_to_device($user->cm_firebase_token, [
                         'title' => translate('Wallet Top-Up Successful'),
-                        'description' => str_replace([':amount', ':currency'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR'], translate('Your wallet has been topped up with :amount :currency')),
+                        'description' => $data['cashback_amount'] > 0
+                            ? str_replace([':amount', ':currency', ':cashback'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR', number_format($data['cashback_amount'], 2)], translate('Your wallet has been topped up with :amount :currency and you received :cashback cashback'))
+                            : str_replace([':amount', ':currency'], [number_format($data['amount'], 2), $data['currency'] ?? 'SAR'], translate('Your wallet has been topped up with :amount :currency')),
                         'type' => 'wallet_topup',
                         'transaction_id' => $data['transaction_id'],
                         'image' => asset("public/assets/admin/img/icons/{$icon}"),
@@ -234,7 +237,9 @@ class NotificationService
             //  In-App Notification
             $this->storeInAppNotification($user->id, [
                 'title' => translate('Wallet Top-Up Successful'),
-                'description' => str_replace([':amount', ':currency'], [$data['amount'], $data['currency']], translate('Your wallet has been topped up with :amount :currency')),
+                'description' => $data['cashback_amount'] > 0
+                    ? str_replace([':amount', ':currency', ':cashback'], [$data['amount'], $data['currency'], $data['cashback_amount']], translate('Your wallet has been topped up with :amount :currency and you received :cashback cashback'))
+                    : str_replace([':amount', ':currency'], [$data['amount'], $data['currency']], translate('Your wallet has been topped up with :amount :currency')),
                 'type' => 'wallet_topup',
                 'reference_id' => $data['transaction_id'],
                 'amount' => $data['amount'],

@@ -20,12 +20,14 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Support\Renderable;
 use App\Model\Branch;
 use App\CentralLogics\BranchLogic;
+use App\Services\CashbackService;
 
 class CustomerWalletController extends Controller
 {
     public function __construct(
         private WalletTransaction $walletTransaction,
         private User $user,
+        private CashbackService $cashbackService,
     ) {
     }
 
@@ -85,6 +87,15 @@ class CustomerWalletController extends Controller
             );
 
             if ($walletTransaction) {
+                // Apply cashback if applicable
+                $cashbackAmount = $this->cashbackService->processWalletTopupCashback(
+                    $customer,
+                    $request->amount,
+                    $walletTransaction->transaction_id ?? $walletTransaction->id,
+                    $request->branch_id,
+                    'add_fund'
+                );
+
                 DB::commit();
 
                 // Refresh customer to get updated balance
@@ -101,11 +112,13 @@ class CustomerWalletController extends Controller
                     'previous_balance' => $previousBalance,
                     'added_by' => 'admin',
                     'admin_reference' => $request->referance ?? null,
+                    'cashback_amount' => $cashbackAmount ?? 0,
                 ]);
 
                 return response()->json([
                     'message' => translate('Funds added successfully and notifications sent'),
-                    'transaction_id' => $walletTransaction->id
+                    'transaction_id' => $walletTransaction->id,
+                    'cashback_amount' => $cashbackAmount ?? 0
                 ], 200);
             }
 

@@ -18,7 +18,8 @@ class CashbackSettingController extends Controller
 {
     public function __construct(
         private CashbackSetting $cashbackSetting
-    ) {}
+    ) {
+    }
 
     /**
      * Display cashback settings list
@@ -33,10 +34,10 @@ class CashbackSettingController extends Controller
             $settings = $this->cashbackSetting->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('title', 'like', "%{$value}%")
-                      ->orWhere('type', 'like', "%{$value}%")
-                      ->orWhereHas('branch', function($query) use ($value) {
-                          $query->where('name', 'like', "%{$value}%");
-                      });
+                        ->orWhere('type', 'like', "%{$value}%")
+                        ->orWhereHas('branch', function ($query) use ($value) {
+                            $query->where('name', 'like', "%{$value}%");
+                        });
                 }
             });
             $queryParam = ['search' => $request['search']];
@@ -45,7 +46,7 @@ class CashbackSettingController extends Controller
         }
 
         $settings = $settings->with('branch')->latest()->paginate(Helpers::getPagination())->appends($queryParam);
-        
+
         return view('admin-views.customer.cashback.index', compact('settings', 'search'));
     }
 
@@ -57,7 +58,7 @@ class CashbackSettingController extends Controller
         $request->validate([
             'title' => 'required|max:191',
             'branch_id' => 'nullable|exists:branches,id',
-            'type' => 'required|in:wallet_topup,order',
+            'type' => 'required|in:wallet_topup,order,add_fund',
             'cashback_type' => 'required|in:percentage,fixed',
             'cashback_value' => 'required|numeric|min:0',
             'min_amount' => 'required|numeric|min:0',
@@ -86,13 +87,13 @@ class CashbackSettingController extends Controller
             ->where('type', $request->type)
             ->where('branch_id', $request->branch_id)
             ->where('status', 1)
-            ->where(function($q) use ($request) {
+            ->where(function ($q) use ($request) {
                 $q->whereBetween('start_date', [$request->start_date, $request->end_date])
-                  ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-                  ->orWhere(function($q) use ($request) {
-                      $q->where('start_date', '<=', $request->start_date)
-                        ->where('end_date', '>=', $request->end_date);
-                  });
+                    ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('start_date', '<=', $request->start_date)
+                            ->where('end_date', '>=', $request->end_date);
+                    });
             })
             ->exists();
 
@@ -129,12 +130,12 @@ class CashbackSettingController extends Controller
     public function edit($id): View|Factory|Application
     {
         $setting = $this->cashbackSetting->with('branch')->find($id);
-        
+
         if (!$setting) {
             Toastr::error(translate('Cashback setting not found'));
             return redirect()->route('admin.customer.cashback.index');
         }
-        
+
         return view('admin-views.customer.cashback.edit', compact('setting'));
     }
 
@@ -146,7 +147,7 @@ class CashbackSettingController extends Controller
         $request->validate([
             'title' => 'required|max:191',
             'branch_id' => 'nullable|exists:branches,id',
-            'type' => 'required|in:wallet_topup,order',
+            'type' => 'required|in:wallet_topup,order,add_fund',
             'cashback_type' => 'required|in:percentage,fixed',
             'cashback_value' => 'required|numeric|min:0',
             'min_amount' => 'required|numeric|min:0',
@@ -169,13 +170,13 @@ class CashbackSettingController extends Controller
             ->where('type', $request->type)
             ->where('branch_id', $request->branch_id)
             ->where('status', 1)
-            ->where(function($q) use ($request) {
+            ->where(function ($q) use ($request) {
                 $q->whereBetween('start_date', [$request->start_date, $request->end_date])
-                  ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-                  ->orWhere(function($q) use ($request) {
-                      $q->where('start_date', '<=', $request->start_date)
-                        ->where('end_date', '>=', $request->end_date);
-                  });
+                    ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('start_date', '<=', $request->start_date)
+                            ->where('end_date', '>=', $request->end_date);
+                    });
             })
             ->exists();
 
@@ -186,12 +187,12 @@ class CashbackSettingController extends Controller
 
         try {
             $setting = $this->cashbackSetting->find($id);
-            
+
             if (!$setting) {
                 Toastr::error(translate('Cashback setting not found'));
                 return redirect()->route('admin.customer.cashback.index');
             }
-            
+
             $setting->title = $request->title;
             $setting->description = $request->description;
             $setting->branch_id = $request->branch_id;
@@ -218,12 +219,12 @@ class CashbackSettingController extends Controller
     {
         try {
             $setting = $this->cashbackSetting->find($request->id);
-            
+
             if (!$setting) {
                 Toastr::error(translate('Cashback setting not found'));
                 return back();
             }
-            
+
             $setting->status = $request->status;
             $setting->save();
 
@@ -242,12 +243,12 @@ class CashbackSettingController extends Controller
     {
         try {
             $setting = $this->cashbackSetting->find($request->id);
-            
+
             if (!$setting) {
                 Toastr::error(translate('Cashback setting not found'));
                 return back();
             }
-            
+
             $setting->delete();
 
             Toastr::success(translate('Cashback setting removed!'));

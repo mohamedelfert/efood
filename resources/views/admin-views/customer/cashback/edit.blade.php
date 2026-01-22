@@ -61,6 +61,9 @@
                                             <option value="wallet_topup" {{$setting['type']=='wallet_topup'?'selected':''}}>
                                                 {{translate('Wallet Top-up')}}
                                             </option>
+                                            <option value="add_fund" {{$setting['type']=='add_fund'?'selected':''}}>
+                                                {{translate('Add Fund (Dashboard)')}}
+                                            </option>
                                             <option value="order" {{$setting['type']=='order'?'selected':''}}>
                                                 {{translate('Orders')}}
                                             </option>

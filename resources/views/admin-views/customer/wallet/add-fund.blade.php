@@ -112,7 +112,11 @@
                                 $('#customer').val(null).trigger('change');
                                 $('#amount').val(null).trigger('change');
                                 $('#referance').val(null).trigger('change');
-                                toastr.success('{{ translate('Fund added successfully')}}', {
+                                var successMessage = '{{ translate('Fund added successfully')}}';
+                                if (data.cashback_amount > 0) {
+                                    successMessage += ' {{translate('and')}} ' + data.cashback_amount + ' {{Helpers::currency_code()}} {{translate('cashback earned')}}';
+                                }
+                                toastr.success(successMessage, {
                                     CloseButton: true,
                                     ProgressBar: true
                                 });

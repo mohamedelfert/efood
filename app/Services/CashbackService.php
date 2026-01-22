@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\CentralLogics\BranchLogic;
 use App\Models\CashbackSetting;
 use App\Model\WalletTransaction;
 use App\User;
@@ -13,17 +14,17 @@ class CashbackService
     /**
      * Process cashback for wallet top-up
      */
-    public function processWalletTopupCashback(User $user, float $amount, string $transactionId): ?float
+    public function processWalletTopupCashback(User $user, float $amount, string $transactionId, ?int $branchId = null, string $type = 'wallet_topup'): ?float
     {
         // Get best cashback setting (branch-specific or global)
-        $setting = CashbackSetting::getBestCashback('wallet_topup', $user->branch_id ?? null, $amount);
+        $setting = CashbackSetting::getBestCashback($type, $branchId ?? $user->branch_id ?? null, $amount);
 
         if (!$setting || !$setting->isApplicable($amount)) {
             return null;
         }
 
         $cashbackAmount = $setting->calculateCashback($amount);
-        
+
         if ($cashbackAmount <= 0) {
             return null;
         }
@@ -33,7 +34,8 @@ class CashbackService
             $cashbackAmount,
             'wallet_topup_cashback',
             "Cashback for wallet top-up #{$transactionId}",
-            $transactionId
+            $transactionId,
+            $branchId
         );
     }
 
@@ -50,7 +52,7 @@ class CashbackService
         }
 
         $cashbackAmount = $setting->calculateCashback($orderAmount);
-        
+
         if ($cashbackAmount <= 0) {
             return null;
         }
@@ -60,7 +62,8 @@ class CashbackService
             $cashbackAmount,
             'order_cashback',
             "Cashback for order #{$orderId}",
-            'ORDER_' . $orderId
+            'ORDER_' . $orderId,
+            $user->branch_id ?? null
         );
     }
 
@@ -72,7 +75,8 @@ class CashbackService
         float $amount,
         string $type,
         string $reference,
-        string $relatedId
+        string $relatedId,
+        ?int $branchId = null
     ): ?float {
         try {
             DB::beginTransaction();
@@ -92,6 +96,7 @@ class CashbackService
                 'metadata' => json_encode([
                     'related_transaction' => $relatedId,
                     'cashback_type' => $type,
+                    'branch_id' => $branchId,
                     'processed_at' => now()->toDateTimeString()
                 ]),
                 'created_at' => now(),
@@ -99,6 +104,16 @@ class CashbackService
             ]);
 
             $user->increment('wallet_balance', $amount);
+
+            // Deduct from branch wallet if applicable
+            if ($branchId) {
+                BranchLogic::create_wallet_transaction(
+                    $branchId,
+                    $amount,
+                    'fund_customer_cashback',
+                    $reference
+                );
+            }
 
             DB::commit();
 
@@ -113,7 +128,7 @@ class CashbackService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Cashback credit failed', [
                 'user_id' => $user->id,
                 'amount' => $amount,
@@ -201,13 +216,13 @@ class CashbackService
             ->orderBy('created_at', 'desc');
 
         $total = $query->count();
-        
+
         $transactions = $query->offset($offset)
             ->limit($limit)
             ->get()
             ->map(function ($transaction) {
                 $metadata = json_decode($transaction->metadata, true) ?? [];
-                
+
                 return [
                     'id' => $transaction->id,
                     'transaction_id' => $transaction->transaction_id,
