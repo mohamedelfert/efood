@@ -1,66 +1,71 @@
 <?php
 
-use App\CentralLogics\Helpers;
-use Illuminate\Support\Facades\App;
+namespace App\CentralLogics {
 
-// if(!function_exists('translate')) {
-//     function  translate($key)
-//     {
-//         $local = session()->has('local') ? session('local') : 'en';
-//         App::setLocale($local);
+    use Illuminate\Support\Facades\App;
 
-//         $lang_array = include(base_path('resources/lang/' . $local . '/messages.php'));
-//         $processed_key = ucfirst(str_replace('_', ' ', Helpers::remove_invalid_charcaters($key)));
+    if (!function_exists('App\CentralLogics\translate')) {
+        function translate($key)
+        {
+            $local = session()->has('local') ? session('local') : 'en';
+            App::setLocale($local);
 
-//         if (!array_key_exists($key, $lang_array)) {
-//             $lang_array[$key] = $processed_key;
-//             $str = "<?php return " . var_export($lang_array, true) . ";";
-//             file_put_contents(base_path('resources/lang/' . $local . '/messages.php'), $str);
-//             $result = $processed_key;
-//         } else {
-//             $result = __('messages.' . $key);
-//         }
-//         return $result;
-//     }
-// }
+            $langFile = base_path("resources/lang/{$local}/messages.php");
+            $lang_array = file_exists($langFile) ? include($langFile) : [];
 
-if (!function_exists('translate')) {
-    function translate($key)
-    {
-        $local = session()->has('local') ? session('local') : 'en';
-        App::setLocale($local);
+            $processed_key = ucfirst(str_replace('_', ' ', \App\CentralLogics\Helpers::remove_invalid_charcaters($key)));
 
-        $langFile = base_path("resources/lang/{$local}/messages.php");
-        $lang_array = file_exists($langFile) ? include($langFile) : [];
+            if (!array_key_exists($key, $lang_array)) {
+                $result = $processed_key;
+            } else {
+                $result = __('messages.' . $key);
+            }
 
-        $processed_key = ucfirst(str_replace('_', ' ', \App\CentralLogics\Helpers::remove_invalid_charcaters($key)));
-
-        if (!array_key_exists($key, $lang_array)) {
-            $result = $processed_key;
-        } else {
-            $result = __('messages.' . $key);
+            return $result;
         }
+    }
 
-        return $result;
+    if (!function_exists('App\CentralLogics\auth_branch')) {
+        function auth_branch()
+        {
+            if (auth('branch')->check()) {
+                return auth('branch')->user();
+            }
+            return auth('admin')->user();
+        }
+    }
+
+    if (!function_exists('App\CentralLogics\auth_branch_id')) {
+        function auth_branch_id()
+        {
+            if (auth('branch')->check()) {
+                return auth('branch')->id();
+            }
+            return auth('admin')->user()->branch_id ?? null;
+        }
     }
 }
 
-if (!function_exists('auth_branch')) {
-    function auth_branch()
-    {
-        if (auth('branch')->check()) {
-            return auth('branch')->user();
+// Global namespace wrappers for backward compatibility
+namespace {
+    if (!function_exists('translate')) {
+        function translate($key)
+        {
+            return \App\CentralLogics\translate($key);
         }
-        return auth('admin')->user();
     }
-}
 
-if (!function_exists('auth_branch_id')) {
-    function auth_branch_id()
-    {
-        if (auth('branch')->check()) {
-            return auth('branch')->id();
+    if (!function_exists('auth_branch')) {
+        function auth_branch()
+        {
+            return \App\CentralLogics\auth_branch();
         }
-        return auth('admin')->user()->branch_id ?? null;
+    }
+
+    if (!function_exists('auth_branch_id')) {
+        function auth_branch_id()
+        {
+            return \App\CentralLogics\auth_branch_id();
+        }
     }
 }
