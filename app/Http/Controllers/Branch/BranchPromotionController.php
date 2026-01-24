@@ -14,10 +14,10 @@ use Illuminate\Contracts\Support\Renderable;
 class BranchPromotionController extends Controller
 {
     public function __construct(
-        private Branch          $branch,
+        private Branch $branch,
         private BranchPromotion $branchPromotion,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -27,10 +27,10 @@ class BranchPromotionController extends Controller
     {
         $search = $request['search'];
         $key = explode(' ', $request['search']);
-        $branch = $this->branch->where('id', auth('branch')->user()->id)->first();
+        $branch = $this->branch->where('id', auth_branch_id())->first();
 
         $promotions = $this->branchPromotion
-            ->where('branch_id', auth('branch')->user()->id)
+            ->where('branch_id', auth_branch_id())
             ->when($search != null, function ($query) use ($key) {
                 $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
@@ -53,8 +53,9 @@ class BranchPromotionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $promotion = $this->branchPromotion;
-        $promotion->branch_id = auth('branch')->user()->id;
-        $promotion->promotion_type = $request->banner_type;;
+        $promotion->branch_id = auth_branch_id();
+        $promotion->promotion_type = $request->banner_type;
+        ;
         if ($request->video) {
             $promotion->promotion_name = $request->video;
         }
@@ -84,8 +85,9 @@ class BranchPromotionController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $promotion = $this->branchPromotion->find($request->id);
-        $promotion->branch_id = auth('branch')->user()->id;
-        $promotion->promotion_type = $request->banner_type;;
+        $promotion->branch_id = auth_branch_id();
+        $promotion->promotion_type = $request->banner_type;
+        ;
         if ($request->video) {
             $promotion->promotion_name = $request->video;
         }

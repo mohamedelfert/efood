@@ -22,9 +22,10 @@ use Box\Spout\Writer\Exception\WriterNotOpenedException;
 class EmployeeController extends Controller
 {
     public function __construct(
-        private Admin     $admin,
+        private Admin $admin,
         private AdminRole $admin_role
-    ){}
+    ) {
+    }
 
     // دالة لجلب الفروع المتاحة (الجديدة)
     private function getAvailableBranches()
@@ -51,27 +52,28 @@ class EmployeeController extends Controller
         $rules = [
             'name' => 'required',
             'role_id' => 'required|exists:admin_roles,id',
-            'branch_id' => 'required|exists:branches,id',
+            'branch_id' => 'required',
             'email' => 'required|email|unique:admins,email',
             'password' => 'required|min:8',
             'phone' => 'required',
         ];
 
         $messages = [
-            'name.required' => 'الاسم مطلوب.',
-            'role_id.required' => 'معرف الدور مطلوب.',
-            'role_id.exists' => 'معرف الدور غير موجود.',
-            'branch_id.required' => 'معرف الفرع مطلوب.',
-            'branch_id.exists' => 'معرف الفرع غير موجود.',
-            'email.required' => 'البريد الإلكتروني مطلوب.',
-            'email.email' => 'البريد الإلكتروني غير صالح.',
-            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
-            'password.required' => 'كلمة المرور مطلوبة.',
-            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
-            'phone.required' => 'رقم الهاتف مطلوب.',
+            'name.required' => translate('Name is required!'),
+            'role_id.required' => translate('Role is required!'),
+            'role_id.exists' => translate('Selected role is invalid!'),
+            'branch_id.required' => translate('Branch is required!'),
+            'email.required' => translate('Email is required!'),
+            'email.email' => translate('Invalid email address!'),
+            'email.unique' => translate('Email is already taken!'),
+            'password.required' => translate('Password is required!'),
+            'password.min' => translate('Password must be at least 8 characters!'),
+            'phone.required' => translate('Phone is required!'),
         ];
 
         $request->validate($rules, $messages);
+
+        $branch_id = ($request->branch_id == 0 || $request->branch_id == null) ? null : $request->branch_id;
 
         $role = $this->admin_role->findOrFail($request->role_id);
 
@@ -83,7 +85,7 @@ class EmployeeController extends Controller
         $user = auth('admin')->user();
 
         // تقييد مدير الفرع: لا يمكنه إضافة موظف في فرع آخر
-        if ($user->admin_role_id != 1 && $request->branch_id != $user->branch_id) {
+        if ($user->admin_role_id != 1 && $branch_id != $user->branch_id) {
             Toastr::error(translate('You are not allowed to add employee in another branch!'));
             return back();
         }
@@ -93,7 +95,7 @@ class EmployeeController extends Controller
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
-            'branch_id' => $request->branch_id,
+            'branch_id' => $branch_id,
             'password' => bcrypt($request->password),
             'status' => 1,
             'created_at' => now(),
@@ -120,8 +122,8 @@ class EmployeeController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -159,26 +161,27 @@ class EmployeeController extends Controller
         $rules = [
             'name' => 'required',
             'role_id' => 'required|exists:admin_roles,id',
-            'branch_id' => 'required|exists:branches,id',
-            'email' => 'required|email|unique:admins,email,'.$id,
+            'branch_id' => 'required',
+            'email' => 'required|email|unique:admins,email,' . $id,
             'phone' => 'required',
         ];
 
         $messages = [
-            'name.required' => 'الاسم مطلوب.',
-            'role_id.required' => 'معرف الدور مطلوب.',
-            'role_id.exists' => 'معرف الدور غير موجود.',
-            'branch_id.required' => 'معرف الفرع مطلوب.',
-            'branch_id.exists' => 'معرف الفرع غير موجود.',
-            'email.required' => 'البريد الإلكتروني مطلوب.',
-            'email.email' => 'البريد الإلكتروني غير صالح.',
-            'email.unique' => 'البريد الإلكتروني مستخدم بالفعل.',
-            'phone.required' => 'رقم الهاتف مطلوب.',
+            'name.required' => translate('Name is required!'),
+            'role_id.required' => translate('Role is required!'),
+            'role_id.exists' => translate('Selected role is invalid!'),
+            'branch_id.required' => translate('Branch is required!'),
+            'email.required' => translate('Email is required!'),
+            'email.email' => translate('Invalid email address!'),
+            'email.unique' => translate('Email is already taken!'),
+            'phone.required' => translate('Phone is required!'),
         ];
 
         $request->validate($rules, $messages);
 
-        if ($user->admin_role_id != 1 && $request->branch_id != $user->branch_id) {
+        $branch_id = ($request->branch_id == 0 || $request->branch_id == null) ? null : $request->branch_id;
+
+        if ($user->admin_role_id != 1 && $branch_id != $user->branch_id) {
             Toastr::error(translate('You are not allowed to change branch!'));
             return back();
         }
@@ -190,7 +193,7 @@ class EmployeeController extends Controller
             'phone' => $request->phone,
             'email' => $request->email,
             'admin_role_id' => $request->role_id,
-            'branch_id' => $request->branch_id,
+            'branch_id' => $branch_id,
             'password' => $password,
             'updated_at' => now(),
         ]);
@@ -268,7 +271,7 @@ class EmployeeController extends Controller
     private function handleIdentityImages($request)
     {
         if ($request->hasFile('identity_image')) {
-            return json_encode(array_map(function($img) {
+            return json_encode(array_map(function ($img) {
                 return Helpers::upload('admin/', 'png', $img);
             }, $request->file('identity_image')));
         }

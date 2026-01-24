@@ -16,7 +16,7 @@ class BranchMiddleware
      */
     public function handle($request, Closure $next)
     {
-        if (Auth::guard('branch')->check()) {
+        if (Auth::guard('branch')->check() || (Auth::guard('admin')->check() && Auth::guard('admin')->user()->branch_id)) {
             return $next($request);
         }
         return redirect()->route('branch.auth.login');

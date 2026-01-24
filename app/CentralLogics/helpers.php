@@ -1197,21 +1197,3 @@ class Helpers
 //     return $result;
 // }
 
-function translate($key)
-{
-    $local = session()->has('local') ? session('local') : 'ar';
-    App::setLocale($local);
-
-    $langFile = base_path("resources/lang/{$local}/messages.php");
-    $lang_array = file_exists($langFile) ? include($langFile) : [];
-
-    $processed_key = ucfirst(str_replace('_', ' ', \App\CentralLogics\Helpers::remove_invalid_charcaters($key)));
-
-    if (!array_key_exists($key, $lang_array)) {
-        $result = $processed_key;
-    } else {
-        $result = __('messages.' . $key);
-    }
-
-    return $result;
-}

@@ -53,22 +53,22 @@ class OrderController extends Controller
         $from = $request['from'];
         $to = $request['to'];
 
-        $this->order->where(['checked' => 0, 'branch_id' => auth('branch')->id()])->update(['checked' => 1]);
+        $this->order->where(['checked' => 0, 'branch_id' => auth_branch_id()])->update(['checked' => 1]);
 
         if ($status == 'all') {
             $orders = $this->order
                 ->with(['customer'])
-                ->where(['branch_id' => auth('branch')->id()]);
+                ->where(['branch_id' => auth_branch_id()]);
 
         } elseif ($status == 'schedule') {
             $orders = $this->order
                 ->whereDate('delivery_date', '>', \Carbon\Carbon::now()->format('Y-m-d'))
-                ->where(['branch_id' => auth('branch')->id()]);
+                ->where(['branch_id' => auth_branch_id()]);
 
         } else {
             $orders = $this->order
                 ->with(['customer'])
-                ->where(['order_status' => $status, 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => $status, 'branch_id' => auth_branch_id()])
                 ->whereDate('delivery_date', '<=', \Carbon\Carbon::now()->format('Y-m-d'));
         }
 
@@ -78,7 +78,7 @@ class OrderController extends Controller
         if ($request->has('search')) {
             $key = explode(' ', $request['search']);
             $orders = $this->order
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->whereDate('delivery_date', '<=', Carbon::now()->format('Y-m-d'))
                 ->where(function ($q) use ($key) {
                     foreach ($key as $value) {
@@ -99,7 +99,7 @@ class OrderController extends Controller
             'pending' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'pending', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'pending', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -107,7 +107,7 @@ class OrderController extends Controller
             'confirmed' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'confirmed', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'confirmed', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -115,7 +115,7 @@ class OrderController extends Controller
             'in_prepare' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'in_prepare', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'in_prepare', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -123,7 +123,7 @@ class OrderController extends Controller
             'out_for_delivery' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'out_for_delivery', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'out_for_delivery', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -131,7 +131,7 @@ class OrderController extends Controller
             'delivered' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'delivered', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'delivered', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -139,7 +139,7 @@ class OrderController extends Controller
             'canceled' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'canceled', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'canceled', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -147,7 +147,7 @@ class OrderController extends Controller
             'returned' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'returned', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'returned', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -155,7 +155,7 @@ class OrderController extends Controller
             'failed' => $this->order
                 ->notPos()
                 ->notSchedule()
-                ->where(['order_status' => 'failed', 'branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'failed', 'branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -175,7 +175,7 @@ class OrderController extends Controller
     {
         $order = $this->order
             ->with(['details', 'order_partial_payments'])
-            ->where(['id' => $id, 'branch_id' => auth('branch')->id()])
+            ->where(['id' => $id, 'branch_id' => auth_branch_id()])
             ->first();
 
         if (!isset($order)) {
@@ -202,7 +202,7 @@ class OrderController extends Controller
     public function status(Request $request): RedirectResponse
     {
         $order = $this->order
-            ->where(['id' => $request->id, 'branch_id' => auth('branch')->id()])
+            ->where(['id' => $request->id, 'branch_id' => auth_branch_id()])
             ->first();
 
         $onPremiseTypes = ['in_car', 'in_restaurant', 'dine_in'];
@@ -482,7 +482,7 @@ class OrderController extends Controller
         if ($delivery_man_id == 0) {
             return response()->json([], 401);
         }
-        $order = $this->order->where(['id' => $order_id, 'branch_id' => auth('branch')->id()])->first();
+        $order = $this->order->where(['id' => $order_id, 'branch_id' => auth_branch_id()])->first();
         if ($order->order_status == 'pending' || $order->order_status == 'delivered' || $order->order_status == 'returned' || $order->order_status == 'failed' || $order->order_status == 'canceled' || $order->order_status == 'scheduled') {
             return response()->json(['status' => false], 200);
         }
@@ -520,7 +520,7 @@ class OrderController extends Controller
      */
     public function paymentStatus(Request $request): RedirectResponse
     {
-        $order = $this->order->where(['id' => $request->id, 'branch_id' => auth('branch')->id()])->first();
+        $order = $this->order->where(['id' => $request->id, 'branch_id' => auth_branch_id()])->first();
         if ($request->payment_status == 'paid' && $order['transaction_reference'] == null && $order['payment_method'] != 'cash_on_delivery' && $order['order_type'] != 'dine_in' && !in_array($order['payment_method'], ['cash_on_delivery', 'wallet_payment', 'offline_payment', 'cash'])) {
             Toastr::warning(translate('Add your payment reference code first!'));
             return back();
@@ -570,7 +570,7 @@ class OrderController extends Controller
      */
     public function generateInvoice($id): Renderable
     {
-        $order = $this->order->with(['order_partial_payments'])->where(['id' => $id, 'branch_id' => auth('branch')->id()])->first();
+        $order = $this->order->with(['order_partial_payments'])->where(['id' => $id, 'branch_id' => auth_branch_id()])->first();
         $address = $order->delivery_address ?? CustomerAddress::find($order->delivery_address_id);
         $order->address = $address;
         return view('branch-views.order.invoice', compact('order'));
@@ -583,7 +583,7 @@ class OrderController extends Controller
      */
     public function addPaymentReferenceCode(Request $request, $id): RedirectResponse
     {
-        $this->order->where(['id' => $id, 'branch_id' => auth('branch')->id()])->update([
+        $this->order->where(['id' => $id, 'branch_id' => auth_branch_id()])->update([
             'transaction_reference' => $request['transaction_reference']
         ]);
 
@@ -650,7 +650,7 @@ class OrderController extends Controller
         $status = $statusMapping[$status];
 
         $orders = $this->order->with(['offline_payment'])
-            ->where(['branch_id' => auth('branch')->id(), 'payment_method' => 'offline_payment'])
+            ->where(['branch_id' => auth_branch_id(), 'payment_method' => 'offline_payment'])
             ->whereHas('offline_payment', function ($query) use ($status) {
                 $query->where('status', $status);
             })

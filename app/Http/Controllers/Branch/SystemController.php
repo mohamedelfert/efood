@@ -11,15 +11,15 @@ class SystemController extends Controller
 {
     public function __construct(
         private Order $order
-    )
-    {}
+    ) {
+    }
 
     /**
      * @return JsonResponse
      */
     public function restaurantData(): JsonResponse
     {
-        $newOrder = $this->order->where(['branch_id' => auth('branch')->id(), 'checked' => 0])->count();
+        $newOrder = $this->order->where(['branch_id' => auth_branch_id(), 'checked' => 0])->count();
 
         return response()->json([
             'success' => 1,

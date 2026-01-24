@@ -95,12 +95,27 @@ class LoginController extends Controller
             Session::forget('default_captcha_code_branch');
         }
 
-        if (auth('branch')->attempt([
-            'email' => $request->email,
-            'password' => $request->password,
-            'status' => 1
-        ], $request->remember)) {
+        if (
+            auth('branch')->attempt([
+                'email' => $request->email,
+                'password' => $request->password,
+                'status' => 1
+            ], $request->remember)
+        ) {
             return redirect()->route('branch.dashboard');
+        }
+
+        if (
+            auth('admin')->attempt([
+                'email' => $request->email,
+                'password' => $request->password,
+                'status' => 1
+            ], $request->remember)
+        ) {
+            if (auth('admin')->user()->branch_id) {
+                return redirect()->route('branch.dashboard');
+            }
+            auth('admin')->logout();
         }
 
         return redirect()->back()->withInput($request->only('email', 'remember'))
@@ -113,6 +128,7 @@ class LoginController extends Controller
     public function logout(): RedirectResponse
     {
         auth()->guard('branch')->logout();
+        auth()->guard('admin')->logout();
         return redirect()->route('branch.auth.login');
     }
 }

@@ -45,3 +45,22 @@ if (!function_exists('translate')) {
     }
 }
 
+if (!function_exists('auth_branch')) {
+    function auth_branch()
+    {
+        if (auth('branch')->check()) {
+            return auth('branch')->user();
+        }
+        return auth('admin')->user();
+    }
+}
+
+if (!function_exists('auth_branch_id')) {
+    function auth_branch_id()
+    {
+        if (auth('branch')->check()) {
+            return auth('branch')->id();
+        }
+        return auth('admin')->user()->branch_id ?? null;
+    }
+}

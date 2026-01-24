@@ -34,15 +34,15 @@ use function App\CentralLogics\translate;
 class POSController extends Controller
 {
     public function __construct(
-        private Category        $category,
-        private Order           $order,
-        private User            $user,
-        private Table           $table,
-        private Product         $product,
-        private Branch          $branch,
+        private Category $category,
+        private Order $order,
+        private User $user,
+        private Table $table,
+        private Product $product,
+        private Branch $branch,
         private ProductByBranch $product_by_Branch,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -59,14 +59,16 @@ class POSController extends Controller
 
         $products = $this->product
             ->with('product_by_branch')
-            ->with(['product_by_branch' => function ($q) {
-                $q->where(['is_available' => 1, 'branch_id' => auth('branch')->id()]);
-            }])
+            ->with([
+                'product_by_branch' => function ($q) {
+                    $q->where(['is_available' => 1, 'branch_id' => auth_branch_id()]);
+                }
+            ])
             ->whereHas('product_by_branch', function ($q) {
-                $q->where(['is_available' => 1, 'branch_id' => auth('branch')->id()]);
+                $q->where(['is_available' => 1, 'branch_id' => auth_branch_id()]);
             })
             ->when($request->has('category_id') && $request['category_id'] != 0, function ($query) use ($request) {
-                $query->whereJsonContains('category_ids', [['id' => (string)$request['category_id']]]);
+                $query->whereJsonContains('category_ids', [['id' => (string) $request['category_id']]]);
             })
             ->when($keyword, function ($query) use ($key) {
                 return $query->where(function ($q) use ($key) {
@@ -79,8 +81,8 @@ class POSController extends Controller
             ->latest()
             ->paginate(Helpers::getPagination());
 
-        $branch = $this->branch->find(auth('branch')->id());
-        $tables = $this->table->where(['branch_id' => auth('branch')->id()])->get();
+        $branch = $this->branch->find(auth_branch_id());
+        $tables = $this->table->where(['branch_id' => auth_branch_id()])->get();
 
         return view('branch-views.pos.index', compact('categories', 'products', 'category', 'keyword', 'branch', 'tables', 'selectedTable', 'selectedCustomer'));
     }
@@ -115,7 +117,7 @@ class POSController extends Controller
             }
         }
 
-        $branchProduct = $this->product_by_Branch->where(['product_id' => $request->id, 'branch_id' => auth('branch')->id()])->first();
+        $branchProduct = $this->product_by_Branch->where(['product_id' => $request->id, 'branch_id' => auth_branch_id()])->first();
 
         if (isset($branchProduct)) {
             $branchProductVariations = $branchProduct->variations;
@@ -152,7 +154,7 @@ class POSController extends Controller
             ->limit(8)
             ->get([DB::raw('id, CONCAT(name, " (", phone ,")") as text')]);
 
-        $data[] = (object)['id' => false, 'text' => translate('walk_in_customer')];
+        $data[] = (object) ['id' => false, 'text' => translate('walk_in_customer')];
 
         return response()->json($data);
     }
@@ -245,7 +247,7 @@ class POSController extends Controller
         $variationPrice = 0;
         $addonTotalTax = 0;
 
-        $branchProduct = $this->product_by_Branch->where(['product_id' => $request->id, 'branch_id' => auth('branch')->id()])->first();
+        $branchProduct = $this->product_by_Branch->where(['product_id' => $request->id, 'branch_id' => auth_branch_id()])->first();
         $branchProductPrice = 0;
         $discountData = [];
 
@@ -312,8 +314,8 @@ class POSController extends Controller
 
                 $add_on = AddOn::find($id);
                 $data['add_on_prices'][] = $add_on['price'];
-                $addonTax = ($add_on['price'] * $add_on['tax']/100);
-                $addonTotalTax += (($add_on['price'] * $add_on['tax']/100) * $request['addon-quantity' . $id]);
+                $addonTax = ($add_on['price'] * $add_on['tax'] / 100);
+                $addonTotalTax += (($add_on['price'] * $add_on['tax'] / 100) * $request['addon-quantity' . $id]);
                 $data['add_on_tax'][] = $addonTax;
             }
             $data['add_ons'] = $request['addon_id'];
@@ -356,32 +358,32 @@ class POSController extends Controller
 
         $orderType = session()->has('order_type') ? session()->get('order_type') : 'take_away';
 
-        if ($orderType == 'dine_in'){
-            if (!session()->has('table_id')){
+        if ($orderType == 'dine_in') {
+            if (!session()->has('table_id')) {
                 Toastr::error(translate('please select a table number'));
                 return back();
             }
-            if (!session()->has('people_number')){
+            if (!session()->has('people_number')) {
                 Toastr::error(translate('please enter people number'));
                 return back();
             }
 
             $table = Table::find(session('table_id'));
-            if (isset($table) && session('people_number') > $table->capacity  || session('people_number') < 1 ) {
-                Toastr::error(translate('enter valid people number between 1 to '. $table->capacity));
+            if (isset($table) && session('people_number') > $table->capacity || session('people_number') < 1) {
+                Toastr::error(translate('enter valid people number between 1 to ' . $table->capacity));
                 return back();
             }
         }
 
         $deliveryCharge = 0;
         // store customer address for home delivery
-        if ($orderType == 'home_delivery'){
-            if (!session()->has('customer_id')){
+        if ($orderType == 'home_delivery') {
+            if (!session()->has('customer_id')) {
                 Toastr::error(translate('please select a customer'));
                 return back();
             }
 
-            if (!session()->has('address')){
+            if (!session()->has('address')) {
                 Toastr::error(translate('please select a delivery address'));
                 return back();
             }
@@ -390,7 +392,7 @@ class POSController extends Controller
             $distance = $addressData['distance'] ?? 0;
             $areaId = $addressData['area_id'];
 
-            $deliveryCharge = Helpers::get_delivery_charge(branchId: auth('branch')->id() ?? 1, distance:  $distance, selectedDeliveryArea: $areaId);
+            $deliveryCharge = Helpers::get_delivery_charge(branchId: auth_branch_id() ?? 1, distance: $distance, selectedDeliveryArea: $areaId);
 
             $address = [
                 'address_type' => 'Home',
@@ -400,8 +402,8 @@ class POSController extends Controller
                 'floor' => $addressData['floor'],
                 'road' => $addressData['road'],
                 'house' => $addressData['house'],
-                'longitude' => (string)$addressData['longitude'],
-                'latitude' => (string)$addressData['latitude'],
+                'longitude' => (string) $addressData['longitude'],
+                'latitude' => (string) $addressData['latitude'],
                 'user_id' => session()->get('customer_id'),
                 'is_guest' => 0,
             ];
@@ -426,7 +428,7 @@ class POSController extends Controller
         $order->user_id = session()->get('customer_id') ?? null;
         $order->coupon_discount_title = $request->coupon_discount_title == 0 ? null : 'coupon_discount_title';
         $order->payment_status = ($orderType == 'take_away') ? 'paid' : (($orderType == 'dine_in' && $request->type != 'pay_after_eating') ? 'paid' : 'unpaid');
-        $order->order_status = $orderType == 'take_away' ? 'delivered' : 'confirmed' ;
+        $order->order_status = $orderType == 'take_away' ? 'delivered' : 'confirmed';
         $order->order_type = ($orderType == 'take_away') ? 'pos' : (($orderType == 'dine_in') ? 'dine_in' : (($orderType == 'home_delivery') ? 'delivery' : null));
         $order->coupon_code = $request->coupon_code ?? null;
         $order->payment_method = $request->type;
@@ -456,11 +458,11 @@ class POSController extends Controller
 
                     //*** addon quantity integer casting ***
                     array_walk($c['add_on_qtys'], function (&$add_on_qtys) {
-                        $add_on_qtys = (int)$add_on_qtys;
+                        $add_on_qtys = (int) $add_on_qtys;
                     });
                     //***end***
 
-                    $branchProduct = $this->product_by_Branch->where(['product_id' => $c['id'], 'branch_id' => auth('branch')->id()])->first();
+                    $branchProduct = $this->product_by_Branch->where(['product_id' => $c['id'], 'branch_id' => auth_branch_id()])->first();
 
                     $discountData = [];
                     if (isset($branchProduct)) {
@@ -510,7 +512,7 @@ class POSController extends Controller
         }
         if (isset($cart['extra_discount']) && $cart['extra_discount_type'] == 'amount') {
             if ($cart['extra_discount'] > $totalPriceForDiscountValidation) {
-                Toastr::error(translate('discount_can_not_be_more_than '). $totalPriceForDiscountValidation);
+                Toastr::error(translate('discount_can_not_be_more_than ') . $totalPriceForDiscountValidation);
                 return back();
             }
         }
@@ -519,10 +521,10 @@ class POSController extends Controller
         try {
             $order->extra_discount = $extraDiscount ?? 0;
             $order->total_tax_amount = $totalTaxAmount;
-            $order->order_amount = $totalPrice + $totalTaxAmount + $order->delivery_charge+$totalAddonTax;
+            $order->order_amount = $totalPrice + $totalTaxAmount + $order->delivery_charge + $totalAddonTax;
 
             $order->coupon_discount_amount = 0.00;
-            $order->branch_id = auth('branch')->id();
+            $order->branch_id = auth_branch_id();
             $order->table_id = session()->get('table_id');
             $order->number_of_people = session()->get('people_number');
 
@@ -533,7 +535,7 @@ class POSController extends Controller
             }
             OrderDetail::insert($orderDetails);
 
-            if ($request->type == 'cash' || $request->type == 'card'){
+            if ($request->type == 'cash' || $request->type == 'card') {
                 $orderChangeAmount = new OrderChangeAmount();
                 $orderChangeAmount->order_id = $order->id;
                 $orderChangeAmount->order_amount = $order->order_amount;
@@ -559,7 +561,7 @@ class POSController extends Controller
                 $notification->title = "You have a new order from POS - (Order Confirmed). ";
                 $notification->description = $order->id;
                 $notification->status = 1;
-                $notification->order_id =  $order->id;
+                $notification->order_id = $order->id;
                 $notification->order_status = $order->order_status;
 
                 try {
@@ -571,19 +573,19 @@ class POSController extends Controller
             }
 
             //send notification to customer for home delivery
-            if ($order->order_type == 'delivery'){
+            if ($order->order_type == 'delivery') {
                 $message = Helpers::order_status_update_message('confirmed');
                 $customer = $this->user->find($order->user_id);
                 $customerFcmToken = $customer?->cm_firebase_token;
                 $local = $customer?->language_code ?? 'en';
                 $customerName = $customer?->name ?? '';
 
-                if ($local != 'en'){
+                if ($local != 'en') {
                     $statusKey = Helpers::order_status_message_key('confirmed');
                     $translatedMessage = $this->business_setting->with('translations')->where(['key' => $statusKey])->first();
-                    if (isset($translatedMessage->translations)){
-                        foreach ($translatedMessage->translations as $translation){
-                            if ($local == $translation->locale){
+                    if (isset($translatedMessage->translations)) {
+                        foreach ($translatedMessage->translations as $translation) {
+                            if ($local == $translation->locale) {
                                 $message = $translation->value;
                             }
                         }
@@ -591,7 +593,7 @@ class POSController extends Controller
                 }
 
                 $restaurantName = Helpers::get_business_settings('restaurant_name');
-                $value = Helpers::text_variable_data_format(value:$message, user_name: $customerName, restaurant_name: $restaurantName,  order_id: $orderId);
+                $value = Helpers::text_variable_data_format(value: $message, user_name: $customerName, restaurant_name: $restaurantName, order_id: $orderId);
 
 
                 if ($value && isset($customerFcmToken)) {
@@ -611,7 +613,7 @@ class POSController extends Controller
                     if (isset($emailServices['status']) && $emailServices['status'] == 1 && $orderMailStatus == 1 && isset($customer)) {
                         Mail::to($customer->email)->send(new \App\Mail\OrderPlaced($orderId));
                     }
-                }catch (\Exception $e) {
+                } catch (\Exception $e) {
                     //
                 }
             }
@@ -677,7 +679,7 @@ class POSController extends Controller
         $this->order->where(['checked' => 0])->update(['checked' => 1]);
 
         $orders = $this->order->pos()->with(['customer', 'branch'])
-            ->where('branch_id', auth('branch')->id())
+            ->where('branch_id', auth_branch_id())
             ->when($request->search, function ($q, $search) {
                 $keywords = explode(' ', $search);
                 $q->where(function ($subQuery) use ($keywords) {
@@ -703,7 +705,7 @@ class POSController extends Controller
      */
     public function orderDetails($id): Renderable|RedirectResponse
     {
-        $order = $this->order->with('details')->where(['id' => $id, 'branch_id' => auth('branch')->id()])->first();
+        $order = $this->order->with('details')->where(['id' => $id, 'branch_id' => auth_branch_id()])->first();
         if (isset($order)) {
             return view('branch-views.pos.order.order-view', compact('order'));
         } else {
@@ -755,13 +757,13 @@ class POSController extends Controller
         ]);
 
         $user_phone = $this->user->where('phone', $request->phone)->first();
-        if (isset($user_phone)){
+        if (isset($user_phone)) {
             Toastr::error(translate('The phone is already taken'));
             return back();
         }
 
         $user_email = $this->user->where('email', $request->email)->first();
-        if (isset($user_email)){
+        if (isset($user_email)) {
             Toastr::error(translate('The email is already taken'));
             return back();
         }
@@ -813,7 +815,7 @@ class POSController extends Controller
             'contact_person_name' => 'required',
             'contact_person_number' => 'required',
             'address' => 'required',
-//            'latitude' => 'required',
+            //            'latitude' => 'required',
 //            'longitude' => 'required',
         ]);
 
@@ -821,22 +823,22 @@ class POSController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 200);
         }
 
-        $branchId = auth('branch')->id();
+        $branchId = auth_branch_id();
         $branch = $this->branch->find($branchId);
         $originLat = $branch['latitude'];
         $originLng = $branch['longitude'];
         $destinationLat = $request['latitude'];
         $destinationLng = $request['longitude'];
 
-        if ($request->has('latitude') && $request->has('longitude')){
+        if ($request->has('latitude') && $request->has('longitude')) {
 
             $data = $this->getDistance($originLat, $originLng, $destinationLat, $destinationLng);
             $distanceValue = $data[0]['distanceMeters'];
 
-            $distance = $distanceValue/1000;
+            $distance = $distanceValue / 1000;
         }
 
-        if ($request['selected_area_id']){
+        if ($request['selected_area_id']) {
             $area = DeliveryChargeByArea::find($request['selected_area_id']);
         }
 
@@ -849,8 +851,8 @@ class POSController extends Controller
             'road' => $request->road,
             'house' => $request->house,
             'distance' => $distance ?? 0,
-            'longitude' => (string)$request->longitude,
-            'latitude' => (string)$request->latitude,
+            'longitude' => (string) $request->longitude,
+            'latitude' => (string) $request->latitude,
             'area_id' => $request['selected_area_id'],
             'area_name' => $area->area_name ?? null
         ];
@@ -872,7 +874,7 @@ class POSController extends Controller
             "waypoint" => [
                 "location" => [
                     "latLng" => [
-                        "latitude" =>  $originLat,
+                        "latitude" => $originLat,
                         "longitude" => $originLng
                     ]
                 ]
@@ -921,7 +923,7 @@ class POSController extends Controller
 
     public function exportOrder(Request $request)
     {
-        $branchId = auth('branch')->id();
+        $branchId = auth_branch_id();
 
         // Single query with conditional filters
         $orders = $this->order->pos()->with(['customer', 'branch'])

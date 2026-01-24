@@ -24,8 +24,8 @@ class TableOrderController extends Controller
     public function __construct(
         private Order $order,
         private Table $table,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param $status
@@ -36,12 +36,12 @@ class TableOrderController extends Controller
     {
         $from = $request['from'];
         $to = $request['to'];
-        $this->order->where(['checked' => 0, 'branch_id' => auth('branch')->id()])->update(['checked' => 1]);
+        $this->order->where(['checked' => 0, 'branch_id' => auth_branch_id()])->update(['checked' => 1]);
 
         if ($status == 'all') {
             $orders = $this->order
                 ->with(['customer', 'branch', 'table'])
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->when($from && $to, function ($q) use ($from, $to) {
                     $q->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
                 });
@@ -49,7 +49,7 @@ class TableOrderController extends Controller
         } else {
             $orders = $this->order
                 ->with(['customer', 'branch', 'table'])
-                ->where(['order_status' => $status, 'branch_id' => auth('branch')->id()]);
+                ->where(['order_status' => $status, 'branch_id' => auth_branch_id()]);
         }
 
         $queryParam = [];
@@ -58,7 +58,7 @@ class TableOrderController extends Controller
         if ($request->has('search')) {
             $key = explode(' ', $request['search']);
             $orders = $this->order
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('id', 'like', "%{$value}%")
@@ -73,35 +73,35 @@ class TableOrderController extends Controller
             'confirmed' => $this->order
                 ->dineIn()
                 ->where(['order_status' => 'confirmed'])
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
 
             'cooking' => $this->order
                 ->dineIn()->where(['order_status' => 'cooking'])
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
 
             'done' => $this->order
                 ->dineIn()
-                ->where(['order_status' => 'done'])->where(['branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'done'])->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
 
             'completed' => $this->order
                 ->dineIn()
-                ->where(['order_status' => 'completed'])->where(['branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'completed'])->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
 
             'canceled' => $this->order
                 ->dineIn()
-                ->where(['order_status' => 'canceled'])->where(['branch_id' => auth('branch')->id()])
+                ->where(['order_status' => 'canceled'])->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count(),
@@ -111,7 +111,7 @@ class TableOrderController extends Controller
                 ->whereHas('table_order', function ($q) {
                     $q->where('branch_table_token_is_expired', 0);
                 })
-                ->where(['branch_id' => auth('branch')->id()])
+                ->where(['branch_id' => auth_branch_id()])
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })->count()
@@ -158,7 +158,7 @@ class TableOrderController extends Controller
                     $q->where('branch_table_token_is_expired', 0);
                 });
             })
-            ->where(['branch_id' => auth('branch')->id()])
+            ->where(['branch_id' => auth_branch_id()])
             ->get();
 
         $orders = $this->order
@@ -166,7 +166,7 @@ class TableOrderController extends Controller
             ->whereHas('table_order', function ($q) {
                 $q->where('branch_table_token_is_expired', 0);
             })
-            ->where(['branch_id' => auth('branch')->id()])
+            ->where(['branch_id' => auth_branch_id()])
             ->when(!is_null($table_id), function ($query) use ($table_id) {
                 return $query->where('table_id', $table_id);
             })
@@ -216,7 +216,8 @@ class TableOrderController extends Controller
             $data[$key]['Total Amount'] = Helpers::set_symbol($order['order_amount']);
             $data[$key]['Payment Status'] = $order->payment_status == 'paid' ? 'Paid' : 'Unpaid';
             $data[$key]['Order Status'] = $order['order_status'] == 'pending' ? 'Pending' : ($order['order_status'] == 'confirmed' ? 'Confirmed' : ($order['order_status'] == 'processing' ? 'Processing' : ($order['order_status'] == 'delivered' ? 'Delivered' : ($order['order_status'] == 'picked_up' ? 'Out For Delivery' : str_replace('_', ' ', $order['order_status'])))));
-        };
+        }
+        ;
 
         return (new FastExcel($data))->download('orders.xlsx');
     }

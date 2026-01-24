@@ -16,12 +16,13 @@ class BranchStatusCheck
      */
     public function handle($request, Closure $next)
     {
-        if (auth('branch')->user()->status == 1) {
-            return $next($request);
+        if (auth('branch')->check() && auth('branch')->user()->status != 1) {
+            auth()->guard('branch')->logout();
+            Toastr::warning(\App\CentralLogics\translate('account_is_disabled!'));
+            return redirect()->route('branch.auth.login');
         }
-        auth()->guard('branch')->logout();
-        Toastr::warning(\App\CentralLogics\translate('account_is_disabled!'));
-        return redirect()->route('branch.auth.login');
+
+        return $next($request);
 
     }
 }

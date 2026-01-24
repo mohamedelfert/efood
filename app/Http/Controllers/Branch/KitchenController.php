@@ -15,10 +15,10 @@ use Illuminate\Contracts\Support\Renderable;
 class KitchenController extends Controller
 {
     public function __construct(
-        private User       $user,
+        private User $user,
         private ChefBranch $chefBranch
-    )
-    {}
+    ) {
+    }
 
     /**
      * @return Renderable
@@ -66,7 +66,7 @@ class KitchenController extends Controller
 
             $data = [
                 'user_id' => $chef->id,
-                'branch_id' => auth('branch')->user()->id,
+                'branch_id' => auth_branch_id(),
             ];
             $this->chefBranch->insert($data);
 
@@ -90,7 +90,7 @@ class KitchenController extends Controller
 
         $chefs = $this->user->where('user_type', 'kitchen')
             ->whereHas('chefBranch', function ($query) {
-                $query->where('branch_id', auth('branch')->user()->id);
+                $query->where('branch_id', auth_branch_id());
             })
             ->when($search != null, function ($query) use ($key) {
                 $query->where(function ($q) use ($key) {

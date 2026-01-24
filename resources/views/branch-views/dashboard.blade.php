@@ -4,7 +4,8 @@
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" src="{{asset('public/assets/admin')}}/vendor/apex/apexcharts.css"></link>
+    <link rel="stylesheet" src="{{asset('public/assets/admin')}}/vendor/apex/apexcharts.css">
+    </link>
 @endpush
 
 @section('content')
@@ -12,8 +13,16 @@
         <div>
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
-                    <h1 class="page-header-title c1">{{translate('welcome')}} {{translate('to')}} {{auth('branch')->user()->name}} {{translate('branch')}}</h1>
-                    <p class="text-dark font-weight-semibold">{{translate('Monitor_your_business_analytics_and_statistics')}}</p>
+                    <h1 class="page-header-title c1">{{translate('welcome')}} {{translate('to')}} {{auth_branch()->name}}
+                        {{translate('branch')}}</h1>
+                    <p class="text-dark font-weight-semibold">
+                        {{translate('Monitor_your_business_analytics_and_statistics')}}</p>
+                </div>
+                <div class="col-sm-auto mb-2 mb-sm-0">
+                    <div class="d-flex flex-column align-items-sm-end">
+                        <div class="text-dark font-weight-bold">{{translate('Branch Wallet Balance')}}</div>
+                        <h2 class="c1 mb-0">{{ \App\CentralLogics\Helpers::set_symbol($branch->wallet_balance ?? 0) }}</h2>
+                    </div>
                 </div>
             </div>
         </div>
@@ -22,26 +31,29 @@
             <div class="row justify-content-between align-items-center g-2 mb-3">
                 <div class="col-auto">
                     <h4 class="d-flex align-items-center gap-10 mb-0">
-                        <img width="20" class="avatar-img rounded-0" src="{{asset('public/assets/admin/img/icons/business_analytics.png')}}" alt="Business Analytics">
+                        <img width="20" class="avatar-img rounded-0"
+                            src="{{asset('public/assets/admin/img/icons/business_analytics.png')}}"
+                            alt="Business Analytics">
                         {{translate('Business_Analytics')}}
                     </h4>
                 </div>
                 <div class="col-auto">
-                    <select class="custom-select  min-w200" name="statistics_type" onchange="order_stats_update(this.value)">
-                        <option value="overall" {{session()->has('statistics_type') && session('statistics_type') == 'overall'?'selected':''}}>
+                    <select class="custom-select  min-w200" name="statistics_type"
+                        onchange="order_stats_update(this.value)">
+                        <option value="overall" {{session()->has('statistics_type') && session('statistics_type') == 'overall' ? 'selected' : ''}}>
                             {{translate('Overall Statistics')}}
                         </option>
-                        <option value="today" {{session()->has('statistics_type') && session('statistics_type') == 'today'?'selected':''}}>
-                            {{translate("Today")."'s"}} {{translate("Statistics")}}
+                        <option value="today" {{session()->has('statistics_type') && session('statistics_type') == 'today' ? 'selected' : ''}}>
+                            {{translate("Today") . "'s"}} {{translate("Statistics")}}
                         </option>
-                        <option value="this_month" {{session()->has('statistics_type') && session('statistics_type') == 'this_month'?'selected':''}}>
-                            {{translate("This Month")."'s"}} {{translate("Statistics")}}
+                        <option value="this_month" {{session()->has('statistics_type') && session('statistics_type') == 'this_month' ? 'selected' : ''}}>
+                            {{translate("This Month") . "'s"}} {{translate("Statistics")}}
                         </option>
                     </select>
                 </div>
             </div>
             <div class="row g-2" id="order_stats">
-                @include('branch-views.partials._dashboard-order-stats',['data'=>$data])
+                @include('branch-views.partials._dashboard-order-stats', ['data' => $data])
             </div>
         </div>
 
@@ -50,7 +62,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
                         <h4 class="d-flex align-items-center text-capitalize gap-10 mb-0">
-                            <img width="20" class="avatar-img rounded-0" src="{{asset('public/assets/admin/img/icons/earning_statistics.png')}}" alt="">
+                            <img width="20" class="avatar-img rounded-0"
+                                src="{{asset('public/assets/admin/img/icons/earning_statistics.png')}}" alt="">
                             {{translate('order_statistics')}}
                         </h4>
 
@@ -59,21 +72,21 @@
                                 <label>
                                     <input type="radio" name="statistics" hidden checked>
                                     <span data-order-type="yearOrder"
-                                          onclick="orderStatisticsUpdate(this)">{{translate('This_Year')}}</span>
+                                        onclick="orderStatisticsUpdate(this)">{{translate('This_Year')}}</span>
                                 </label>
                             </li>
                             <li>
                                 <label>
                                     <input type="radio" name="statistics" hidden="">
                                     <span data-order-type="MonthOrder"
-                                          onclick="orderStatisticsUpdate(this)">{{translate('This_Month')}}</span>
+                                        onclick="orderStatisticsUpdate(this)">{{translate('This_Month')}}</span>
                                 </label>
                             </li>
                             <li>
                                 <label>
                                     <input type="radio" name="statistics" hidden="">
                                     <span data-order-type="WeekOrder"
-                                          onclick="orderStatisticsUpdate(this)">{{translate('This Week')}}</span>
+                                        onclick="orderStatisticsUpdate(this)">{{translate('This Week')}}</span>
                                 </label>
                             </li>
                         </ul>
@@ -97,7 +110,8 @@
                             <div class="position-relative pie-chart">
                                 <div id="dognut-pie"></div>
                                 <div class="total--orders">
-                                    <h3>{{$donut['pending'] + $donut['ongoing'] + $donut['delivered']+ $donut['canceled']+ $donut['returned']+ $donut['failed']}} </h3>
+                                    <h3>{{$donut['pending'] + $donut['ongoing'] + $donut['delivered'] + $donut['canceled'] + $donut['returned'] + $donut['failed']}}
+                                    </h3>
                                     <span>{{ translate('orders') }}</span>
                                 </div>
                             </div>
@@ -130,7 +144,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
                         <h4 class="d-flex align-items-center text-capitalize gap-10 mb-0">
-                            <img width="20" class="avatar-img rounded-0" src="{{asset('public/assets/admin/img/icons/earning_statistics.png')}}" alt="">
+                            <img width="20" class="avatar-img rounded-0"
+                                src="{{asset('public/assets/admin/img/icons/earning_statistics.png')}}" alt="">
                             {{translate('earning_statistics')}}
                         </h4>
                         <ul class="option-select-btn">
@@ -138,21 +153,21 @@
                                 <label>
                                     <input type="radio" name="statistics2" hidden="" checked="">
                                     <span data-earn-type="yearEarn"
-                                          onclick="earningStatisticsUpdate(this)">{{translate('This_Year')}}</span>
+                                        onclick="earningStatisticsUpdate(this)">{{translate('This_Year')}}</span>
                                 </label>
                             </li>
                             <li>
                                 <label>
                                     <input type="radio" name="statistics2" hidden="">
                                     <span data-earn-type="MonthEarn"
-                                          onclick="earningStatisticsUpdate(this)">{{translate('This_Month')}}</span>
+                                        onclick="earningStatisticsUpdate(this)">{{translate('This_Month')}}</span>
                                 </label>
                             </li>
                             <li>
                                 <label>
                                     <input type="radio" name="statistics2" hidden="">
                                     <span data-earn-type="WeekEarn"
-                                          onclick="earningStatisticsUpdate(this)">{{translate('This Week')}}</span>
+                                        onclick="earningStatisticsUpdate(this)">{{translate('This Week')}}</span>
                                 </label>
                             </li>
                         </ul>
@@ -167,43 +182,37 @@
             <div class="card h100 recent-orders">
                 <div class="card-header d-flex justify-content-between gap-10">
                     <h5 class="mb-0">{{translate('Recent_Orders')}}</h5>
-                    <a href="{{ route('branch.orders.list', ['status' => 'all']) }}" class="btn-link">{{translate('View_All')}}</a>
+                    <a href="{{ route('branch.orders.list', ['status' => 'all']) }}"
+                        class="btn-link">{{translate('View_All')}}</a>
                 </div>
                 <div class="card-body">
                     <ul class="common-list">
                         @foreach($data['recent_orders'] as $recent)
                             <li class="pt-0 d-flex flex-wrap gap-2 align-items-center justify-content-between">
                                 <div class="order-info ">
-                                    <h5><a href="{{route('branch.orders.details', ['id' => $recent->id])}}" class="text-dark" >{{translate('Order')}}# {{$recent->id}}</a></h5>
+                                    <h5><a href="{{route('branch.orders.details', ['id' => $recent->id])}}"
+                                            class="text-dark">{{translate('Order')}}# {{$recent->id}}</a></h5>
                                     <p>{{\Illuminate\Support\Carbon::parse($recent->created_at)->format('d-m-y, h:m A')}}</p>
                                 </div>
                                 @if($recent['order_status'] == 'pending')
-                                    <span
-                                        class="status text-primary">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-primary">{{translate($recent['order_status'])}}</span>
                                 @elseif($recent['order_status'] == 'delivered')
-                                    <span
-                                        class="status text-success">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-success">{{translate($recent['order_status'])}}</span>
                                 @elseif($recent['order_status'] == 'confirmed' || $recent['order_status'] == 'processing' || $recent['order_status'] == 'out_for_delivery')
-                                    <span
-                                        class="status text-warning">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-warning">{{translate($recent['order_status'])}}</span>
                                 @elseif($recent['order_status'] == 'canceled' || $recent['order_status'] == 'failed')
                                     @if($recent['order_status'] == 'failed')
-                                        <span
-                                            class="status text-warning">{{translate('failed_to_deliver')}}</span>
+                                        <span class="status text-warning">{{translate('failed_to_deliver')}}</span>
                                     @else
-                                        <span
-                                            class="status text-warning">{{translate($recent['order_status'])}}</span>
+                                        <span class="status text-warning">{{translate($recent['order_status'])}}</span>
                                     @endif
 
                                 @elseif($recent['order_status'] == 'cooking')
-                                    <span
-                                        class="status text-info">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-info">{{translate($recent['order_status'])}}</span>
                                 @elseif($recent['order_status'] == 'completed')
-                                    <span
-                                        class="status text-success">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-success">{{translate($recent['order_status'])}}</span>
                                 @else
-                                    <span
-                                        class="status text-primary">{{translate($recent['order_status'])}}</span>
+                                    <span class="status text-primary">{{translate($recent['order_status'])}}</span>
                                 @endif
                             </li>
                         @endforeach
@@ -219,7 +228,8 @@
 @push('script')
     <script src="{{asset('public/assets/admin')}}/vendor/chart.js/dist/Chart.min.js"></script>
     <script src="{{asset('public/assets/admin')}}/vendor/chart.js.extensions/chartjs-extensions.js"></script>
-    <script src="{{asset('public/assets/admin')}}/vendor/chartjs-plugin-datalabels/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script
+        src="{{asset('public/assets/admin')}}/vendor/chartjs-plugin-datalabels/dist/chartjs-plugin-datalabels.min.js"></script>
     <script src="{{asset('public/assets/admin')}}/vendor/apex/apexcharts.min.js"></script>
 @endpush
 
@@ -245,10 +255,10 @@
             colors: ['rgba(255, 111, 112, 0.5)', '#107980'],
             series: [{
                 name: "Order",
-                    data: [{{$orderStatisticsChart[1]}}, {{$orderStatisticsChart[2]}}, {{$orderStatisticsChart[3]}}, {{$orderStatisticsChart[4]}},
-                {{$orderStatisticsChart[5]}}, {{$orderStatisticsChart[6]}}, {{$orderStatisticsChart[7]}}, {{$orderStatisticsChart[8]}},
-                {{$orderStatisticsChart[9]}}, {{$orderStatisticsChart[10]}}, {{$orderStatisticsChart[11]}}, {{$orderStatisticsChart[12]}}]
-                },
+                data: [{{$orderStatisticsChart[1]}}, {{$orderStatisticsChart[2]}}, {{$orderStatisticsChart[3]}}, {{$orderStatisticsChart[4]}},
+                    {{$orderStatisticsChart[5]}}, {{$orderStatisticsChart[6]}}, {{$orderStatisticsChart[7]}}, {{$orderStatisticsChart[8]}},
+                    {{$orderStatisticsChart[9]}}, {{$orderStatisticsChart[10]}}, {{$orderStatisticsChart[11]}}, {{$orderStatisticsChart[12]}}]
+            },
             ],
             markers: {
                 size: 2,
@@ -294,7 +304,7 @@
                 height: 328,
                 type: 'line',
                 zoom: {
-                enabled: false
+                    enabled: false
                 },
                 toolbar: {
                     show: false,
@@ -308,8 +318,8 @@
             series: [{
                 name: "Earning",
                 data: [{{$earning[1]}}, {{$earning[2]}}, {{$earning[3]}}, {{$earning[4]}}, {{$earning[5]}}, {{$earning[6]}},
-                    {{$earning[7]}}, {{$earning[8]}}, {{$earning[9]}}, {{$earning[10]}}, {{$earning[11]}}, {{$earning[12]}}]
-                },
+                        {{$earning[7]}}, {{$earning[8]}}, {{$earning[9]}}, {{$earning[10]}}, {{$earning[11]}}, {{$earning[12]}}]
+            },
             ],
             markers: {
                 size: 2,
@@ -375,7 +385,7 @@
                 success: function (data) {
                     $('#order_stats').html(data.view)
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log(textStatus, errorThrown);
                 },
                 complete: function () {

@@ -17,10 +17,10 @@ use Illuminate\Contracts\Support\Renderable;
 class ProductController extends Controller
 {
     public function __construct(
-        private Product         $product,
+        private Product $product,
         private ProductByBranch $productByBranch,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -136,17 +136,18 @@ class ProductController extends Controller
             'price' => $price,
             'discount_type' => $request['discount_type'],
             'discount' => $request['discount'],
-            'branch_id' => auth('branch')->id(),
+            'branch_id' => auth_branch_id(),
             'is_available' => 1,
             'variations' => $variations,
             'stock_type' => $request->stock_type,
-            'stock' =>  $request->product_stock ?? 0,
+            'stock' => $request->product_stock ?? 0,
         ];
 
-        $updatedProduct = $this->productByBranch->updateOrCreate([
-            'product_id' => $branchProduct['product_id'],
-            'branch_id' => auth('branch')->id(),
-        ],
+        $updatedProduct = $this->productByBranch->updateOrCreate(
+            [
+                'product_id' => $branchProduct['product_id'],
+                'branch_id' => auth_branch_id(),
+            ],
             $branchProduct
         );
 
@@ -155,7 +156,7 @@ class ProductController extends Controller
             $updatedProduct->save();
         }
 
-        if (auth('branch')->id() == 1) {
+        if (auth_branch_id() == 1) {
             $product = $this->product->find($branchProduct['product_id']);
             if ($product) {
                 $product->price = $request['price'];
@@ -176,7 +177,7 @@ class ProductController extends Controller
     public function status(Request $request): JsonResponse
     {
         $product = $this->product->find($request->id);
-        $branchProduct = $this->productByBranch->where(['product_id' => $product->id, 'branch_id' => auth('branch')->id()])->first();
+        $branchProduct = $this->productByBranch->where(['product_id' => $product->id, 'branch_id' => auth_branch_id()])->first();
         $mainBranchProduct = $this->productByBranch->where(['product_id' => $request->id, 'branch_id' => 1])->first();
 
         if (isset($branchProduct)) {
@@ -187,12 +188,12 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'is_available' => $request->status,
                 'stock_type' => $branchProduct->stock_type,
-                'stock' =>  $branchProduct->stock,
+                'stock' => $branchProduct->stock,
             ];
 
             $this->productByBranch->updateOrCreate([
                 'product_id' => $data['product_id'],
-                'branch_id' => auth('branch')->id()
+                'branch_id' => auth_branch_id()
             ], $data);
 
         } else {
@@ -212,11 +213,11 @@ class ProductController extends Controller
                         'price' => $product->price,
                         'discount_type' => $product->discount_type,
                         'discount' => $product->discount,
-                        'branch_id' => auth('branch')->id(),
+                        'branch_id' => auth_branch_id(),
                         'is_available' => $request->status,
                         'variations' => $var,
                         'stock_type' => $mainBranchProduct->stock_type ?? 'unlimited',
-                        'stock' =>  $mainBranchProduct->stock??0,
+                        'stock' => $mainBranchProduct->stock ?? 0,
                     ];
                 }
             } else {
@@ -225,18 +226,18 @@ class ProductController extends Controller
                     'price' => $product->price,
                     'discount_type' => $product->discount_type,
                     'discount' => $product->discount,
-                    'branch_id' => auth('branch')->id(),
+                    'branch_id' => auth_branch_id(),
                     'is_available' => $request->status,
                     'variations' => [],
                     'stock_type' => $mainBranchProduct->stock_type ?? 'unlimited',
-                    'stock' =>  $mainBranchProduct->stock ??0,
+                    'stock' => $mainBranchProduct->stock ?? 0,
                 ];
 
             }
 
             $this->productByBranch->updateOrCreate([
                 'product_id' => $product->id,
-                'branch_id' => auth('branch')->id()
+                'branch_id' => auth_branch_id()
             ], $data);
         }
 

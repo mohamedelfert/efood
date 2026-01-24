@@ -18,8 +18,8 @@ class TableController extends Controller
 {
     public function __construct(
         private Table $table,
-    )
-    {}
+    ) {
+    }
 
     /**
      * @return Application|Factory|View
@@ -27,12 +27,14 @@ class TableController extends Controller
     public function index(): Factory|View|Application
     {
         $tables = $this->table
-            ->with(['order' => function ($q) {
-                $q->whereHas('table_order', function ($q) {
-                    $q->where('branch_table_token_is_expired', 0);
-                });
-            }])
-            ->where(['branch_id' => auth('branch')->user()->id, 'is_active' => '1'])
+            ->with([
+                'order' => function ($q) {
+                    $q->whereHas('table_order', function ($q) {
+                        $q->where('branch_table_token_is_expired', 0);
+                    });
+                }
+            ])
+            ->where(['branch_id' => auth_branch_id(), 'is_active' => '1'])
             ->get()
             ->toArray();
 
@@ -49,7 +51,7 @@ class TableController extends Controller
         $key = explode(' ', $request['search']);
 
         $tables = $this->table->with('branch')
-            ->where('branch_id', auth('branch')->user()->id)
+            ->where('branch_id', auth_branch_id())
             ->when($search != null, function ($query) use ($key) {
                 foreach ($key as $value) {
                     $query->where('number', 'like', "%{$value}%");
@@ -71,7 +73,7 @@ class TableController extends Controller
             'number' => [
                 'required',
                 Rule::unique('tables')->where(function ($query) use ($request) {
-                    return $query->where(['number' => $request->number, 'branch_id' => auth('branch')->user()->id]);
+                    return $query->where(['number' => $request->number, 'branch_id' => auth_branch_id()]);
                 }),
             ],
             'capacity' => 'required|min:1|max:99',
@@ -84,7 +86,7 @@ class TableController extends Controller
         $table = $this->table;
         $table->number = $request->number;
         $table->capacity = $request->capacity;
-        $table->branch_id = auth('branch')->user()->id;
+        $table->branch_id = auth_branch_id();
         $table->is_active = 1;
         $table->save();
 
@@ -112,7 +114,7 @@ class TableController extends Controller
      */
     public function edit($id): Renderable
     {
-        $table = $this->table->where(['id' => $id, 'branch_id' => auth('branch')->user()->id])->first();
+        $table = $this->table->where(['id' => $id, 'branch_id' => auth_branch_id()])->first();
         return view('branch-views.table.edit', compact('table'));
     }
 
@@ -127,7 +129,7 @@ class TableController extends Controller
             'number' => [
                 'required',
                 Rule::unique('tables')->where(function ($query) use ($request, $id) {
-                    return $query->where(['number' => $request->number, 'branch_id' => auth('branch')->user()->id])
+                    return $query->where(['number' => $request->number, 'branch_id' => auth_branch_id()])
                         ->whereNotIn('id', [$id]);
                 }),
             ],
@@ -138,7 +140,7 @@ class TableController extends Controller
             'capacity.required' => translate('Table capacity is required!'),
         ]);
 
-        $table = $this->table->where(['id' => $id, 'branch_id' => auth('branch')->user()->id])->first();
+        $table = $this->table->where(['id' => $id, 'branch_id' => auth_branch_id()])->first();
         $table->number = $request->number;
         $table->capacity = $request->capacity;
         $table->update();
@@ -153,7 +155,7 @@ class TableController extends Controller
      */
     public function delete(Request $request): RedirectResponse
     {
-        $table = $this->table->where(['id' => $request->id, 'branch_id' => auth('branch')->user()->id])->first();
+        $table = $this->table->where(['id' => $request->id, 'branch_id' => auth_branch_id()])->first();
         $table->delete();
 
         Toastr::success(translate('Table removed!'));

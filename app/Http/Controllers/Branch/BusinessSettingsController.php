@@ -18,7 +18,7 @@ class BusinessSettingsController extends Controller
      */
     public function branchIndex(): Factory|View|Application
     {
-        $branch = Branch::find(auth('branch')->user()->id);
+        $branch = Branch::find(auth_branch_id());
         return view('branch-views.business-settings.branch-index', compact('branch'));
     }
 
@@ -28,7 +28,7 @@ class BusinessSettingsController extends Controller
      */
     public function settingsUpdate(Request $request): RedirectResponse
     {
-        $branch = Branch::find(auth('branch')->user()->id);
+        $branch = Branch::find(auth_branch_id());
         $branch->name = $request->name;
         $branch->preparation_time = $request->preparation_time;
         $branch->save();

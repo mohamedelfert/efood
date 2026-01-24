@@ -51,10 +51,10 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="branch_id">{{translate('branch')}}</label>
-                                    <select class="custom-select" name="branch_id" required>
-                                        <option value="" disabled {{ $role->branch_id ? '' : 'selected' }}>{{translate('select_branch')}}</option>
+                                    <select class="custom-select" name="branch_id">
+                                        <option value="0" {{ $employee->branch_id == null ? 'selected' : '' }}>{{translate('Main_Dashboard')}}</option>
                                         @foreach($branches as $branch)
-                                            <option value="{{$branch->id}}" {{ $role->branch_id == $branch->id ? 'selected' : '' }}>
+                                            <option value="{{$branch->id}}" {{ $employee->branch_id == $branch->id ? 'selected' : '' }}>
                                                 {{$branch->name}}
                                             </option>
                                         @endforeach
