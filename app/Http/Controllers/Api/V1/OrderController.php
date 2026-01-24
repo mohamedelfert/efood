@@ -2658,14 +2658,23 @@ class OrderController extends Controller
      */
     public function cancelOrder(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'txt' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
         $order = $this->order::find($request['order_id']);
 
         if (!isset($order)) {
-            return response()->json(['errors' => [['code' => 'order', 'message' => 'Order not found!']]], 404);
+            return response()->json(['errors' => [['code' => 'order', 'message' => translate('Order not found!')]]], 404);
         }
 
-        if ($order->order_status != 'pending') {
-            return response()->json(['errors' => [['code' => 'order', 'message' => 'Order can only cancel when order status is pending!']]], 403);
+        if ($order->order_status == 'delivered') {
+            return response()->json(['errors' => [['code' => 'order', 'message' => translate('Order already delivered, you can not cancel it!')]]], 403);
         }
 
         $userId = (bool) auth('api')->user() ? auth('api')->user()->id : $request['guest_id'];
@@ -2673,7 +2682,8 @@ class OrderController extends Controller
 
         if ($this->order->where(['user_id' => $userId, 'is_guest' => $userType, 'id' => $request['order_id']])->first()) {
             $this->order->where(['user_id' => $userId, 'is_guest' => $userType, 'id' => $request['order_id']])->update([
-                'order_status' => 'canceled'
+                'order_status' => 'canceled',
+                'cancel_reason' => $request->txt,
             ]);
             return response()->json(['message' => translate('order_canceled')], 200);
         }

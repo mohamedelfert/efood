@@ -10,7 +10,8 @@
     <div class="content container-fluid">
         <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
             <h2 class="h1 mb-0 d-flex align-items-center gap-2">
-                <img width="20" class="avatar-img" src="{{asset('public/assets/admin/img/icons/business_setup2.png')}}" alt="">
+                <img width="20" class="avatar-img" src="{{asset('public/assets/admin/img/icons/business_setup2.png')}}"
+                    alt="">
                 <span class="page-header-title">
                     {{translate('business_setup')}}
                 </span>
@@ -34,7 +35,8 @@
         </div>
     </div>
 
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -48,10 +50,17 @@
                         @csrf
                         <input type="hidden" name="day" id="day_id_input">
                         <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" name="is_24_hours" id="is_24_hours"
+                                    value="1">
+                                <label class="custom-control-label" for="is_24_hours">{{translate('24 Hours')}}</label>
+                            </div>
+                        </div>
+                        <div class="form-group time-input">
                             <label for="recipient-name" class="col-form-label">{{translate('Start time')}}:</label>
                             <input type="time" class="form-control" name="start_time" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group time-input">
                             <label for="message-text" class="col-form-label">{{translate('End time')}}:</label>
                             <input type="time" class="form-control" name="end_time" required>
                         </div>
@@ -78,6 +87,16 @@
                 modal.find('.modal-title').text('{{translate('Create Schedule For ')}} ' + day_name);
                 modal.find('.modal-body input[name=day]').val(day_id);
             })
+
+            $('#is_24_hours').on('change', function () {
+                if ($(this).is(':checked')) {
+                    $('.time-input').hide();
+                    $('.time-input input').removeAttr('required');
+                } else {
+                    $('.time-input').show();
+                    $('.time-input input').attr('required', true);
+                }
+            });
         });
     </script>
     <script>
@@ -119,8 +138,8 @@
             $('.js-select2-custom').each(function () {
                 var select2 = $.HSCore.components.HSSelect2.init($(this));
             });
-            $("#comission_status").on('change', function(){
-                if($("#comission_status").is(':checked')){
+            $("#comission_status").on('change', function () {
+                if ($("#comission_status").is(':checked')) {
                     $('#comission').removeAttr('readonly');
                 } else {
                     $('#comission').attr('readonly', true);
@@ -164,7 +183,7 @@
                                 });
                             }
                         },
-                        error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
                             toastr.error('{{translate('Schedule not found')}}', {
                                 CloseButton: true,
                                 ProgressBar: true
@@ -212,7 +231,7 @@
                         });
                     }
                 },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
                     toastr.error(XMLHttpRequest.responseText, {
                         CloseButton: true,
                         ProgressBar: true

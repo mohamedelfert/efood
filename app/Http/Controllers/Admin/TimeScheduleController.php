@@ -14,8 +14,7 @@ class TimeScheduleController extends Controller
 {
     public function __construct(
         private TimeSchedule $timeSchedule,
-    )
-    {
+    ) {
     }
 
     /**
@@ -34,8 +33,8 @@ class TimeScheduleController extends Controller
     public function addSchedule(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required_unless:is_24_hours,1',
+            'end_time' => 'required_unless:is_24_hours,1|after:start_time',
         ], [
             'end_time.after' => translate('End time must be after the start time')
         ]);
@@ -44,23 +43,34 @@ class TimeScheduleController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
+        $is24Hours = $request->has('is_24_hours') && $request->is_24_hours == 1;
+        $startTime = $is24Hours ? '00:00' : $request->start_time;
+        $endTime = $is24Hours ? '23:59' : $request->end_time;
+
         $temp = $this->timeSchedule->where('day', $request->day)
-            ->where(function ($q) use ($request) {
-                return $q->where(function ($query) use ($request) {
-                    return $query->where('opening_time', '<=', $request->start_time)->where('closing_time', '>=', $request->start_time);
-                })->orWhere(function ($query) use ($request) {
-                    return $query->where('opening_time', '<=', $request->end_time)->where('closing_time', '>=', $request->end_time);
+            ->where(function ($q) use ($startTime, $endTime) {
+                return $q->where(function ($query) use ($startTime) {
+                    return $query->where('opening_time', '<=', $startTime)->where('closing_time', '>=', $startTime);
+                })->orWhere(function ($query) use ($endTime) {
+                    return $query->where('opening_time', '<=', $endTime)->where('closing_time', '>=', $endTime);
                 });
             })
             ->first();
 
         if (isset($temp)) {
-            return response()->json(['errors' => [
-                ['code' => 'time', 'message' => translate('schedule_overlapping_warning')]
-            ]]);
+            return response()->json([
+                'errors' => [
+                    ['code' => 'time', 'message' => translate('schedule_overlapping_warning')]
+                ]
+            ]);
         }
 
-        $timeSchedule = $this->timeSchedule->insert(['day' => $request->day, 'opening_time' => $request->start_time, 'closing_time' => $request->end_time]);
+        $this->timeSchedule->create([
+            'day' => $request->day,
+            'opening_time' => $startTime,
+            'closing_time' => $endTime,
+            'is_24_hours' => $is24Hours
+        ]);
 
         $schedules = $this->timeSchedule->get();
         return response()->json(['view' => view('admin-views.business-settings.partials._schedule', compact('schedules'))->render()]);

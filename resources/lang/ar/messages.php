@@ -4499,4 +4499,6 @@
   'fund_customer_wallet' => 'تمويل محفظة العميل',
   'add_fund_from_branch' => 'إضافة رصيد من الفرع',
   'Fund customer wallet: ' => 'تمويل محفظة العميل: ',
+  'Order can only cancel when order status is pending!' => 'يمكن إلغاء الطلب فقط عند أن حالة الطلب هي "قيد الانتظار"!',
+  'Order not found!' => 'الطلب غير موجود!',
 );
