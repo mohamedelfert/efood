@@ -18,13 +18,13 @@ use function App\CentralLogics\translate;
 class KitchenController extends Controller
 {
     public function __construct(
-        private ChefBranch   $chefBranch,
-        private Branch       $branch,
-        private Order        $order,
-        private User         $user,
-        private OrderDetail  $orderDetail
-    )
-    {}
+        private ChefBranch $chefBranch,
+        private Branch $branch,
+        private Order $order,
+        private User $user,
+        private OrderDetail $orderDetail
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -139,6 +139,15 @@ class KitchenController extends Controller
     public function changeStatus(Request $request): JsonResponse
     {
         $order = $this->order->find($request->order_id);
+
+        if (in_array($order->order_status, ['delivered', 'failed', 'canceled'])) {
+            return response()->json([
+                'errors' => [
+                    ['code' => 'order', 'message' => translate('You can not change the status of ' . $order->order_status . ' order')]
+                ]
+            ], 403);
+        }
+
         $order->order_status = $request->order_status;
 
         if ($request->order_status == 'done') {

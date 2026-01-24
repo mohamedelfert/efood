@@ -455,10 +455,11 @@ class OrderController extends Controller
             }
         }
 
-        if (in_array($order->order_status, ['delivered', 'failed'])) {
+        if (in_array($order->order_status, ['delivered', 'failed', 'canceled'])) {
             $statusMessages = [
                 'delivered' => translate('You can not change the status of delivered order'),
                 'failed' => translate('You can not change the status of failed order'),
+                'canceled' => translate('You can not change the status of canceled order'),
             ];
             Toastr::warning($statusMessages[$order->order_status]);
             return back();

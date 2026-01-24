@@ -254,6 +254,16 @@ class DeliverymanController extends Controller
             ], 401);
         }
 
+        $order = $this->order->find($request['order_id']);
+
+        if (in_array($order->order_status, ['delivered', 'failed', 'canceled'])) {
+            return response()->json([
+                'errors' => [
+                    ['code' => 'order', 'message' => translate('You can not change the status of ' . $order->order_status . ' order')]
+                ]
+            ], 403);
+        }
+
         $this->order->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryman['id']])->update([
             'order_status' => $request['status']
         ]);
