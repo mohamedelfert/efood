@@ -85,9 +85,10 @@
                                                     <div class="row">
                                                         <div class="col-12">
                                                             <div class="">
-                                                                <label class="input-label">{{translate('select branch')}}</label>
-                                                                <select name="branch_ids[]" class="form-control js-select2-custom" multiple>
+                                                                    <label class="input-label">{{translate('select branch')}}</label>
+                                                                <select name="branch_ids[]" id="choose_branch" class="form-control js-select2-custom" multiple>
                                                                     <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                                    <option value="0" {{ $category->all_branches ? 'selected' : '' }}>{{translate('All_Branches')}}</option>
                                                                     @foreach(\App\Model\Branch::active()->get() as $branch)
                                                                         <option value="{{ $branch->id }}"
                                                                             {{ in_array($branch->id, json_decode($category->branch_ids ?? '[]', true)) ? 'selected' : '' }}>
@@ -202,6 +203,13 @@
             $('.js-select2-custom').each(function () {
                 var select2 = $.HSCore.components.HSSelect2.init($(this));
             });
+        });
+
+        $('#choose_branch').on('change', function() {
+            let selected = $(this).val();
+            if (selected && selected.includes('0')) {
+                $(this).val(['0']).trigger('change.select2');
+            }
         });
     </script>
 @endpush

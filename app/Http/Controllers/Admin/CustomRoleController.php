@@ -17,9 +17,8 @@ class CustomRoleController extends Controller
 {
     public function __construct(
         private AdminRole $adminRole,
-        private Admin     $admin
-    )
-    {
+        private Admin $admin
+    ) {
     }
 
     public function create(Request $request): Renderable
@@ -31,9 +30,12 @@ class CustomRoleController extends Controller
 
         $query = $this->adminRole->with('branch')->whereNotIn('id', [1]);
 
-        // إذا لم يكن Master Admin → فلترة حسب الفرع
+        // إذا لم يكن Master Admin → فلترة حسب الفرع + الأدوار المتاحة لكل الفروع
         if ($user->admin_role_id != 1) {
-            $query->where('branch_id', $user->branch_id);
+            $query->where(function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id)
+                    ->orWhere('all_branches', 1);
+            });
         }
 
         // تطبيق البحث إذا وجد
@@ -58,6 +60,7 @@ class CustomRoleController extends Controller
         $request->validate([
             'name' => 'required|unique:admin_roles,name',
             'modules' => 'required|array|min:1',
+            'branch_id' => 'required|exists:branches,id|or:in:0',
         ]);
 
         $user = auth('admin')->user();
@@ -77,7 +80,8 @@ class CustomRoleController extends Controller
 
         $this->adminRole->create([
             'name' => $request->name,
-            'branch_id' => $branchId,
+            'branch_id' => $request->branch_id == '0' ? null : $branchId,
+            'all_branches' => $request->branch_id == '0' ? 1 : 0,
             'module_access' => json_encode($request->modules),
             'status' => 1,
         ]);
@@ -98,13 +102,14 @@ class CustomRoleController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'branch_id' => 'required|exists:branches,id',
+            'branch_id' => 'required|exists:branches,id|or:in:0',
             'modules' => 'required|array|min:1',
         ]);
 
         $this->adminRole->findOrFail($id)->update([
             'name' => $request->name,
-            'branch_id' => $request->branch_id,
+            'branch_id' => $request->branch_id == '0' ? null : $request->branch_id,
+            'all_branches' => $request->branch_id == '0' ? 1 : 0,
             'module_access' => json_encode($request->modules),
         ]);
 

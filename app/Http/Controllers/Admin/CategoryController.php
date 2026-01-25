@@ -16,11 +16,11 @@ use Illuminate\Http\Request;
 class CategoryController extends Controller
 {
     public function __construct(
-        private Category    $category,
+        private Category $category,
         private Translation $translation,
         private Branch $branch
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -54,64 +54,64 @@ class CategoryController extends Controller
      * @return Renderable
      */
     function subIndex(Request $request): Renderable
-{
-    $search = $request['search'];
-    $queryParam = ['search' => $search];
+    {
+        $search = $request['search'];
+        $queryParam = ['search' => $search];
 
-    $categories = $this->category->with(['parent'])
-        ->when($request['search'], function ($query) use ($search) {
-            $query->orWhere('name', 'like', "%{$search}%");
-        })
-        ->where(['position' => 1])
-        ->latest()
-        ->paginate(Helpers::getPagination())
-        ->appends($queryParam);
+        $categories = $this->category->with(['parent'])
+            ->when($request['search'], function ($query) use ($search) {
+                $query->orWhere('name', 'like', "%{$search}%");
+            })
+            ->where(['position' => 1])
+            ->latest()
+            ->paginate(Helpers::getPagination())
+            ->appends($queryParam);
 
-    // Fetch branches for the form
-    $branches = $this->branch->active()->get();
+        // Fetch branches for the form
+        $branches = $this->branch->active()->get();
 
-    return view('admin-views.category.sub-index', compact('categories', 'search', 'branches'));
-}
+        return view('admin-views.category.sub-index', compact('categories', 'search', 'branches'));
+    }
 
     /**
      * @param Request $request
-     * @return RedirectResponse
-     */
     public function store(Request $request)
     {
         $rules = [
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
             'branch_ids' => 'required|array',
-            'branch_ids.*' => 'exists:branches,id',
+            'branch_ids.*' => 'exists:branches,id|or:in:0',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
         $messages = [
-            'name.required' => 'الاسم مطلوب.',
-            'name.array' => 'يجب أن يكون الاسم مصفوفة.',
-            'name.*.required' => 'اسم الفئة مطلوب في جميع اللغات.',
-            'name.*.string' => 'يجب أن يكون الاسم نصًا.',
-            'name.*.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
-            'branch_ids.required' => 'يرجى تحديد فرع واحد على الأقل.',
-            'branch_ids.array' => 'يجب أن تكون معرفات الفروع مصفوفة.',
-            'branch_ids.*.exists' => 'معرف الفرع غير موجود.',
-            'image.required' => 'الصورة مطلوبة.',
-            'image.image' => 'يجب أن تكون الصورة صورة.',
-            'image.mimes' => 'يجب أن تكون الصورة من نوع: jpeg, png, jpg, gif.',
-            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+            'name.required' => translate('Name is required'),
+            'name.array' => translate('Name must be an array'),
+            'name.*.required' => translate('Category name is required in all languages'),
+            'name.*.string' => translate('Name must be a string'),
+            'name.*.max' => translate('Name must not exceed 255 characters'),
+            'branch_ids.required' => translate('Please select at least one branch or all branches'),
+            'branch_ids.array' => translate('Branch IDs must be an array'),
+            'branch_ids.*.exists' => translate('Branch ID does not exist'),
+            'image.required' => translate('Image is required'),
+            'image.image' => translate('Image must be an image'),
+            'image.mimes' => translate('Image must be of type: jpeg, png, jpg, gif'),
+            'image.max' => translate('Image size must not exceed 2048 KB'),
         ];
 
         $request->validate($rules, $messages);
 
         // Check duplicate
-        foreach ($request->name as $index => $name) {
-            if ($this->category->where('name', $name)
-                ->where('parent_id', $request->parent_id ?? 0)
-                ->whereJsonContains('branch_ids', $request->branch_ids[0])
-                ->exists()) {
-                Toastr::error(translate('Category already exists in selected branch!'));
-                return back();
+        if (!in_array('0', $request->branch_ids)) {
+            foreach ($request->name as $index => $name) {
+                if ($this->category->where('name', $name)
+                    ->where('parent_id', $request->parent_id ?? 0)
+                    ->whereJsonContains('branch_ids', $request->branch_ids[0])
+                    ->exists()) {
+                    Toastr::error(translate('Category already exists in selected branch!'));
+                    return back();
+                }
             }
         }
 
@@ -127,7 +127,8 @@ class CategoryController extends Controller
         $category->parent_id = $request->parent_id ?? 0;
         $category->position = $request->position ?? 0;
         $category->priority = $request->priority ?? 0;
-        $category->branch_ids = json_encode($request->branch_ids = $request->branch_ids); // Save as JSON
+        $category->all_branches = in_array('0', $request->branch_ids) ? 1 : 0;
+        $category->branch_ids = in_array('0', $request->branch_ids) ? json_encode([]) : json_encode($request->branch_ids);
         $category->save();
 
         // Translations
@@ -184,31 +185,31 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         $rules = [
-            'name'          => 'required|array',
-            'name.*'        => 'required|string|max:255',
-            'branch_ids'    => 'required|array',
-            'branch_ids.*'  => 'exists:branches,id',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'banner_image'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'name' => 'required|array',
+            'name.*' => 'required|string|max:255',
+            'branch_ids' => 'required|array',
+            'branch_ids.*' => 'exists:branches,id|or:in:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
 
         $messages = [
-            'name.required' => 'الاسم مطلوب.',
-            'name.array' => 'يجب أن يكون الاسم مصفوفة.',
-            'name.*.required' => 'اسم الفئة مطلوب.',
-            'name.*.string' => 'يجب أن يكون الاسم نصًا.',
-            'name.*.max' => 'يجب ألا يتجاوز الاسم 255 حرفًا.',
-            'branch_ids.required' => 'يرجى تحديد فرع واحد على الأقل.',
-            'branch_ids.array' => 'يجب أن تكون معرفات الفروع مصفوفة.',
-            'branch_ids.*.exists' => 'معرف الفرع غير موجود.',
+            'name.required' => translate('Name is required'),
+            'name.array' => translate('Name must be an array'),
+            'name.*.required' => translate('Category name is required'),
+            'name.*.string' => translate('Name must be a string'),
+            'name.*.max' => translate('Name must not exceed 255 characters'),
+            'branch_ids.required_without' => translate('Please select at least one branch or all branches'),
+            'branch_ids.array' => translate('Branch IDs must be an array'),
+            'branch_ids.*.exists' => translate('Branch ID does not exist'),
             'image.nullable' => '',
-            'image.image' => 'يجب أن تكون الصورة صورة.',
-            'image.mimes' => 'يجب أن تكون الصورة من نوع: jpeg, png, jpg, gif, webp.',
-            'image.max' => 'يجب ألا يتجاوز حجم الصورة 2048 كيلوبايت.',
+            'image.image' => translate('Image must be an image'),
+            'image.mimes' => translate('Image must be of type: jpeg, png, jpg, gif, webp'),
+            'image.max' => translate('Image size must not exceed 2048 KB'),
             'banner_image.nullable' => '',
-            'banner_image.image' => 'يجب أن تكون صورة البانر صورة.',
-            'banner_image.mimes' => 'يجب أن تكون صورة البانر من نوع: jpeg, png, jpg, gif, webp.',
-            'banner_image.max' => 'يجب ألا يتجاوز حجم صورة البانر 2048 كيلوبايت.',
+            'banner_image.image' => translate('Banner image must be an image'),
+            'banner_image.mimes' => translate('Banner image must be of type: jpeg, png, jpg, gif, webp'),
+            'banner_image.max' => translate('Banner image size must not exceed 2048 KB'),
         ];
 
         $request->validate($rules, $messages);
@@ -229,23 +230,27 @@ class CategoryController extends Controller
         }
 
         // Save selected branches as JSON
-        $category->branch_ids = json_encode($request->branch_ids);
+        $category->all_branches = in_array('0', $request->branch_ids) ? 1 : 0;
+        $category->branch_ids = in_array('0', $request->branch_ids) ? json_encode([]) : json_encode($request->branch_ids);
         $category->save();
 
         // Handle translations (non-English)
         foreach ($request->lang ?? [] as $index => $langCode) {
-            if ($langCode === 'en') continue;
+            if ($langCode === 'en')
+                continue;
 
             if (!empty($request->name[$index])) {
                 $this->translation->updateOrInsert(
                     ([
-                    'translationable_type'  => 'App\Model\Category',
-                    'translationable_id'    => $category->id,
-                    'locale'                => $langCode,
-                    'key'                   => 'name',
-                ]), [
-                    'value' => $request->name[$index]
-                ]);
+                        'translationable_type' => 'App\Model\Category',
+                        'translationable_id' => $category->id,
+                        'locale' => $langCode,
+                        'key' => 'name',
+                    ]),
+                    [
+                        'value' => $request->name[$index]
+                    ]
+                );
             }
         }
 

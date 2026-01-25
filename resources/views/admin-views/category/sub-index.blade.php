@@ -89,6 +89,7 @@
                                                     <label class="input-label">{{translate('select branch')}}</label>
                                                     <select name="branch_ids[]" class="form-control js-select2-custom" id="choose_branch" required multiple>
                                                         <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                        <option value="0">{{translate('All_Branches')}}</option>
                                                         @foreach($branches as $branch)
                                                             <option value="{{$branch['id']}}">{{$branch['name']}}</option>
                                                         @endforeach
@@ -170,9 +171,10 @@
                                 <tr>
                                     <th>{{translate('SL')}}</th>
                                     <th>{{translate('image')}}</th>
-                                    <th>{{translate('Main_Category')}}</th>
+                                    <th>{{translate('main_Category')}}</th>
                                     <th>{{translate('sub_Category')}}</th>
                                     <th>{{translate('status')}}</th>
+                                    <th>{{translate('branch')}}</th>
                                     <th class="text-center">{{translate('action')}}</th>
                                 </tr>
                                 </thead>
@@ -204,6 +206,15 @@
                                                     <span class="switcher_control"></span>
                                                 </label>
                                             </div>
+                                        </td>
+                                        <td>
+                                            @if($category['all_branches'])
+                                                <span class="badge badge-soft-primary">{{translate('All')}}</span>
+                                            @else
+                                                @foreach(json_decode($category['branch_ids'], true) as $branchId)
+                                                    <span class="badge badge-soft-info">{{ $branches->find($branchId)->name ?? '' }}</span>
+                                                @endforeach
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
@@ -291,6 +302,13 @@
         $("#choose_branch").select2({
             placeholder: "Select Branch",
             allowClear: true
+        });
+
+        $('#choose_branch').on('change', function() {
+            let selected = $(this).val();
+            if (selected && selected.includes('0')) {
+                $(this).val(['0']).trigger('change.select2');
+            }
         });
     </script>
 @endpush

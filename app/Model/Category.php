@@ -15,7 +15,8 @@ class Category extends Model
         'parent_id' => 'integer',
         'position' => 'integer',
         'status' => 'integer',
-        'priority' => 'integer'
+        'priority' => 'integer',
+        'all_branches' => 'integer'
     ];
 
     public function translations(): MorphMany
@@ -76,9 +77,11 @@ class Category extends Model
     protected static function booted()
     {
         static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
+            $builder->with([
+                'translations' => function ($query) {
+                    return $query->where('locale', app()->getLocale());
+                }
+            ]);
         });
     }
 }

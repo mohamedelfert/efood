@@ -24,4 +24,8 @@ class AdminRole extends Model
     {
         return $this->hasMany(Admin::class, 'admin_role_id');
     }
+
+    protected $casts = [
+        'all_branches' => 'integer',
+    ];
 }

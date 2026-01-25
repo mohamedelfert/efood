@@ -33,8 +33,9 @@
 
                     <div class="form-group">
                         <label>{{translate('branch')}}</label>
-                        <select name="branch_id" class="form-control" required>
+                        <select name="branch_id" id="choose_branch" class="form-control" required>
                             <option value="">{{translate('Select Branch')}}</option>
+                            <option value="0">{{translate('All_Branches')}}</option>
                             @foreach($branches as $branch)
                                 <option value="{{$branch->id}}">{{$branch->name}}</option>
                             @endforeach
@@ -112,6 +113,7 @@
                             <th>{{translate('SL')}}</th>
                             <th>{{translate('role_name')}}</th>
                             <th>{{translate('branch')}}</th>
+                            <th>{{translate('all_branches')}}</th>
                             <th>{{translate('modules')}}</th>
                             <th>{{translate('created_at')}}</th>
                             <th>{{translate('status')}}</th>
@@ -124,6 +126,13 @@
                                 <td>{{$loop->iteration}}</td>
                                 <td>{{$role['name']}}</td>
                                 <td>{{$role->branch?->name ?? '-'}}</td>
+                                <td>
+                                    @if($role['all_branches'])
+                                        <span class="badge badge-soft-primary">{{translate('Yes')}}</span>
+                                    @else
+                                        <span class="badge badge-soft-info">{{translate('No')}}</span>
+                                    @endif
+                                </td>
                                 <td class="text-capitalize">
                                     <div class="max-w300 text-wrap">
                                         @if($role['module_access']!=null)
@@ -194,6 +203,7 @@
                 $('#submit-create-role').submit();
             }
         });
+
     </script>
 
 @endpush
