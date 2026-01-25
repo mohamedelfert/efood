@@ -2685,6 +2685,31 @@ class OrderController extends Controller
                 'order_status' => 'canceled',
                 'cancel_reason' => $request->txt,
             ]);
+
+            // Send notification to Admin and Branch
+            try {
+                $data = [
+                    'title' => translate('Order Canceled'),
+                    'description' => translate('Order has been canceled by customer'),
+                    'order_id' => $order->id,
+                    'image' => '',
+                    'type' => 'order_canceled_by_customer', // Or reuse 'order_request' if appropriate, but unique type is better for handling
+                ];
+
+                Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'canceled']));
+                Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-' . $order->branch_id . '-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'canceled']));
+
+                Log::info('Admin and branch server notifications sent for canceled order', [
+                    'order_id' => $order->id,
+                    'branch_id' => $order->branch_id
+                ]);
+            } catch (\Exception $exception) {
+                Log::error('Failed to send admin/branch notifications for canceled order', [
+                    'order_id' => $order->id,
+                    'error' => $exception->getMessage()
+                ]);
+            }
+
             return response()->json(['message' => translate('order_canceled')], 200);
         }
         return response()->json([

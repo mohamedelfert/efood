@@ -2432,6 +2432,8 @@
   'You can not change the status of delivered order' => 'لا يمكن تغيير حالة الطلب المكتمل',
   'You can not change the status of failed order' => 'لا يمكن تغيير حالة الطلب الفاشل',
   'You can not change the status of canceled order' => 'لا يمكن تغيير حالة الطلب الملغى',
+  'Order has been canceled by customer' => 'تم إلغاء الطلب من قبل العميل',
+  'Order Canceled' => 'تم إلغاء الطلب',
   'select_at_least_one_product' => 'اختر منتج واحد على الأقل',
   'select_category' => 'اختر المجموعه',
   'banner_added_successfully' => 'تم إضافة العرض بنجاح',
