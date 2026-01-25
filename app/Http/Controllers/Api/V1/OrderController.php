@@ -2692,8 +2692,10 @@ class OrderController extends Controller
                     'title' => translate('Order Canceled'),
                     'description' => translate('Order has been canceled by customer'),
                     'order_id' => $order->id,
+                    'branch_id' => $order->branch_id,
+                    'order_status' => 'canceled',
                     'image' => '',
-                    'type' => 'order_canceled_by_customer', // Or reuse 'order_request' if appropriate, but unique type is better for handling
+                    'type' => 'order_status',
                 ];
 
                 Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'canceled']));
