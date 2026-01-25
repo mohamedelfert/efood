@@ -2417,6 +2417,7 @@
   'add_new_banner' => 'إضافة عرض جديد',
   'Update_Banner' => 'تعديل العرض',
   'Update banner' => 'تعديل العرض',
+  'Print Voucher' => 'طباعة كوبون',
   'banner_image' => 'صورة العرض',
   'title' => 'العنوان',
   'type' => 'النوع',

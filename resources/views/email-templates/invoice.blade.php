@@ -1,33 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $language_code }}">
 
 <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Type" content="text/html;" />
-    <meta charset="UTF-8">
-    <title>Invoice #{{ $order->id }}</title>
-
+    <title>{{ translate('Invoice') }} #{{ $order->id }}</title>
     <style>
-        /* Define fonts first, although DejaVu Sans is built-in to dompdf */
-        @font-face {
-            font-family: 'DejaVu Sans';
-            font-style: normal;
-            font-weight: normal;
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Cairo', sans-serif;
+            background-color: #f4f4f4;
+            color: #5C4033;
         }
 
-        body,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        table,
-        th,
-        td,
-        span,
-        div {
-            font-family: 'DejaVu Sans', sans-serif !important;
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f4f4f4;
+            padding-bottom: 40px;
+        }
+
+        .main {
+            background-color: #FDF8F3;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            border-spacing: 0;
+            font-family: 'Inter', 'Cairo', sans-serif;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E6D5C3;
+        }
+
+        .header-accent {
+            height: 8px;
+            background: linear-gradient(90deg, #5C4033, #A07855);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .restaurant-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .invoice-title {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin: 20px 0;
+            color: #5C4033;
+        }
+
+        .info-box {
+            background-color: rgba(160, 120, 85, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .item-table th {
+            background-color: #5C4033;
+            color: #ffffff;
+            padding: 12px;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .item-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #E6D5C3;
+            font-size: 14px;
+        }
+
+        .total-row td {
+            padding: 8px 12px;
+            font-size: 15px;
+        }
+
+        .grand-total td {
+            font-size: 22px;
+            font-weight: 700;
+            padding-top: 20px;
+            border-top: 2px solid #5C4033;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            border-top: 1px dashed #A07855;
+            font-size: 13px;
+            color: #8B735B;
         }
 
         .rtl {
@@ -35,374 +111,152 @@
             text-align: right;
         }
 
-        .rtl .text-right {
-            text-align: left !important;
-        }
-
-        @media print {
-            .non-printable {
-                display: none;
-            }
-
-            .printable {
-                display: block;
-            }
-        }
-
-        .hr {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-            border: 0;
-            border-top: .0625rem solid #e7eaf3;
-            box-sizing: content-box;
-            height: 0;
-            overflow: visible;
-        }
-
-        .hr-style-2 {
-            border: 0;
-            height: 1px;
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
-        }
-
-        .hr-style-1 {
-            overflow: visible;
-            padding: 0;
-            border: none;
-            border-top: medium double #000000;
-            text-align: center;
-        }
-
-        .text-dark {
-            color: #1e2022 !important
-        }
-
-        #printableAreaContent * {
-            font-weight: normal !important;
-        }
-
-        #printableAreaContent {
-            color: #000000;
-            font-family: 'DejaVu Sans', sans-serif !important;
-        }
-
-        @page {
-            size: auto;
-            /* auto is the initial value */
-            margin: 2px;
+        .ltr {
+            direction: ltr;
+            text-align: left;
         }
     </style>
 </head>
-@php($language_code = $order->customer?->language_code ?? 'en')
-@php($direction = $language_code === 'ar' ? 'rtl' : 'ltr')
-@php($text_align = $direction === 'rtl' ? 'right' : 'left')
 
-<body class="{{ $direction === 'rtl' ? 'rtl' : '' }}" dir="{{ $direction }}">
-    <div class="content container-fluid" style="color: black; max-width:40%; margin: auto;">
-        <div class="row justify-content-center" id="printableArea">
-            <div class="col-5" id="printableAreaContent">
-                <div style="text-align: center; padding-top: 1.5rem; margin-bottom: 1rem;">
-                    <h2 style="font-size: 1.3125rem; line-height: 1; font-weight: 700 !important; margin:0;">
+<body class="{{ $direction }}">
+    <center class="wrapper">
+        <table class="main">
+            <tr>
+                <td class="header-accent"></td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <div class="restaurant-name">
                         {{ \App\Model\BusinessSetting::where(['key' => 'restaurant_name'])->first()->value }}
-                    </h2>
-                    <h5
-                        style="font-size: 20px; font-weight: 700 !important; line-height: 1; margin-top:0; margin-bottom: 0.5rem;">
-                        {{ \App\Model\BusinessSetting::where(['key' => 'address'])->first()->value }}
-                    </h5>
-                    <h5
-                        style="font-size: 16px; font-weight: 700 !important; line-height: 1; margin-top:0; margin-bottom: 0.5rem;">
-                        {{ translate('Phone') }} :
+                    </div>
+                    <div style="text-align: center; font-size: 14px; color: #8B735B;">
+                        {{ \App\Model\BusinessSetting::where(['key' => 'address'])->first()->value }} |
+                        {{ translate('Phone') }}:
                         {{ \App\Model\BusinessSetting::where(['key' => 'phone'])->first()->value }}
-                    </h5>
-                </div>
+                    </div>
 
-                <hr class="hr text-dark hr-style-1"
-                    style="margin-top: 1rem;margin-bottom: 1rem;box-sizing: content-box;height: 0;overflow: visible;padding: 0;border: none;border-top: medium double #000000;text-align: center;">
+                    <div class="invoice-title">✧ {{ translate('Invoice') }} ✧</div>
 
-                <table style="width: 100%; margin-top: 1.5rem; white-space: nowrap;">
-                    <tr>
-                        <td style="width: 50%; vertical-align: top;">
-                            <h5
-                                style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                {{ translate('Order ID : ') }}{{ $order['id'] }}
-                            </h5>
-                        </td>
-                        @php($flip = $direction === 'rtl' ? 'left' : 'right')
-                        <td style="width: 50%; vertical-align: top; text-align: {{ $flip }};">
-                            <h5
-                                style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                <span
-                                    style="font-weight: normal">{{ date('d/M/Y h:m a', strtotime($order['created_at'])) }}</span>
-                            </h5>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" style="width: 100%; vertical-align: top;">
-                            @if ($order->is_guest == 0)
-                                @if (isset($order->customer))
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Customer Name : ') }}<span
-                                            style="font-weight: normal">{{ $order->customer['name'] }}</span>
-                                    </h5>
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Phone : ') }}<span
-                                            style="font-weight: normal">{{ $order->customer['phone'] }}</span>
-                                    </h5>
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Address : ') }}<span
-                                            style="font-weight: normal">{{ isset($order->address) ? $order->address['address'] : '' }}</span>
-                                    </h5>
-                                @endif
-                            @endif
-                            @if ($order->is_guest == 1)
-                                @if (isset($order->address))
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Customer Name : ') }}<span
-                                            style="font-weight: normal">{{ isset($order->address) ? $order->address['contact_person_name'] : '' }}</span>
-                                    </h5>
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Phone : ') }}<span
-                                            style="font-weight: normal">{{ isset($order->address) ? $order->address['contact_person_number'] : '' }}</span>
-                                    </h5>
-                                    <h5
-                                        style="font-weight: 700 !important; font-size: .75rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                                        {{ translate('Address : ') }}<span
-                                            style="font-weight: normal">{{ isset($order->address) ? $order->address['address'] : '' }}</span>
-                                    </h5>
-                                @endif
-                            @endif
-                        </td>
-                    </tr>
-                </table>
+                    <div class="info-box">
+                        <table width="100%">
+                            <tr>
+                                <td><strong>{{ translate('Order ID') }}:</strong> #{{ $order->id }}</td>
+                                <td align="center">{{ date('d M, Y h:i A', strtotime($order->created_at)) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding-top: 10px;">
+                                    <strong>{{ translate('Customer') }}:</strong>
+                                    @if($order->is_guest == 0)
+                                        {{ $order->customer ? $order->customer['name'] : translate('Customer') }}
+                                    @else
+                                        {{ $order->address ? $order->address['contact_person_name'] : translate('Guest') }}
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
 
-                <h5 class="text-uppercase"
-                    style="font-weight: 700 !important; font-size: .875rem; line-height: 1.4; margin-top: 0; margin-bottom: .5rem;">
-                </h5>
-                <hr class="hr text-dark hr-style-2"
-                    style="margin-top: 1rem;margin-bottom: 1rem;border: 0;border-top: .0625rem solid #e7eaf3;box-sizing: content-box;overflow: visible; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));">
-                <table class="table table-bordered mt-3"
-                    style="border-collapse: collapse; border: .0625rem solid rgba(231, 234, 243, .7); width: 100%; margin-top: 1rem; margin-bottom: 1rem;">
-                    <thead>
-
-                        <tr style="font-size: .875rem; line-height: 1.6;">
-                            <th
-                                style="width: 10%; padding: .75rem; font-size: .75rem; text-transform: uppercase; border-bottom-width: .125rem; vertical-align: bottom; border-bottom: .125rem solid rgba(231, 234, 243, .7);">
-                                {{ translate('QTY') }}
-                            </th>
-                            <th
-                                style="padding: .75rem; font-size: .75rem; text-transform: uppercase; border-bottom-width: .125rem; vertical-align: bottom; border-bottom: .125rem solid rgba(231, 234, 243, .7);">
-                                {{ translate('DESC') }}
-                            </th>
-                            <th
-                                style="text-align:{{ $flip }}; padding: .75rem; padding-right:4px; font-size: .75rem; text-transform: uppercase; border-bottom-width: .125rem; vertical-align: bottom; border-bottom: .125rem solid rgba(231, 234, 243, .7);">
-                                {{ translate('Price') }}
-                            </th>
-                            </th>
-                        </tr>
-                    </thead>
-
-
-                    <tbody>
-                        @php($subTotal = 0)
-                        @php($totalTax = 0)
-                        @php($totalDisOnPro = 0)
-                        @php($addOnsCost = 0)
-                        @php($addOnTax = 0)
-                        @php($add_ons_tax_cost = 0)
-                        @foreach ($order->details as $detail)
-                        @if ($detail->product)
-                        @php($addOnQtys = json_decode($detail['add_on_qtys'], true))
-                        @php($addOnPrices = json_decode($detail['add_on_prices'], true))
-                        @php($addOnTaxes = json_decode($detail['add_on_taxes'], true))
-
-                        <tr style="font-size: .875rem; line-height: 1.6;">
-                            <td
-                                style="border: .0625rem solid rgba(231, 234, 243, .7); padding: .75rem; vertical-align: top;">
-                                {{ $detail['quantity'] }}
-                            </td>
-                            <td
-                                style="border: .0625rem solid rgba(231, 234, 243, .7); padding: .75rem; vertical-align: top;">
-                                <span style="word-break: break-all;">
-                                    {{ Str::limit($detail->product['name'], 200) }}</span><br>
-                                @if (count(json_decode($detail['variation'], true)) > 0)
-                                    <strong><u>{{ translate('variation') }} : </u></strong>
-                                    @foreach (json_decode($detail['variation'], true) as $variation)
-                                        @if (isset($variation['name']) && isset($variation['values']))
-                                            <span style="display: block; text-transform: capitalize;">
-                                                <strong>{{ $variation['name'] }} - </strong>
-                                            </span>
-                                            @foreach ($variation['values'] as $value)
-                                                <span style="display: block; text-transform: capitalize;">
-                                                    {{ $value['label'] }} :
-                                                    <strong>{{ \App\CentralLogics\Helpers::set_symbol($value['optionPrice']) }}</strong>
-                                                </span>
-                                            @endforeach
-                                        @else
-                                            @if (isset(json_decode($detail['variation'], true)[0]))
-                                                @foreach (json_decode($detail['variation'], true)[0] as $key1 => $variation)
-                                                    <div class="font-size-sm text-body"
-                                                        style="font-size: .8125rem; color: #677788 !important;">
-                                                        <span>{{ $key1 }} : </span>
-                                                        <span style="font-weight: bold;">{{ $variation }}</span>
-                                                    </div>
+                    <table class="item-table">
+                        <thead>
+                            <tr>
+                                <th width="15%" style="text-align: center;">{{ translate('QTY') }}</th>
+                                <th>{{ translate('Description') }}</th>
+                                <th width="25%">{{ translate('Price') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php($subTotalMail = 0)
+                            @php($totalTaxMail = 0)
+                            @php($addOnsCostMail = 0)
+                            @php($addOnsTaxCostMail = 0)
+                            @foreach($order->details as $detail)
+                            @if($detail->product)
+                            @php($addOnQtys = json_decode($detail['add_on_qtys'], true))
+                            @php($addOnPrices = json_decode($detail['add_on_prices'], true))
+                            @php($addOnTaxes = json_decode($detail['add_on_taxes'], true))
+                            <tr>
+                                <td align="center">{{ $detail['quantity'] }}</td>
+                                <td>
+                                    <div style="font-weight: 700;">{{ $detail->product['name'] }}</div>
+                                    @if (count(json_decode($detail['variation'], true)) > 0)
+                                        @foreach(json_decode($detail['variation'], true) as $variation)
+                                            @if (isset($variation['name']) && isset($variation['values']))
+                                                @foreach ($variation['values'] as $value)
+                                                    <div style="font-size: 11px; color: #8B735B;">{{ $value['label'] }}:
+                                                        {{ \App\CentralLogics\Helpers::set_symbol($value['optionPrice']) }}</div>
                                                 @endforeach
                                             @endif
-                                            @break
-                                        @endif
+                                        @endforeach
+                                    @endif
+                                    @foreach(json_decode($detail['add_on_ids'], true) as $key2 => $id)
+                                    @php($addon = \App\Model\AddOn::find($id))
+                                    <div style="font-size: 11px; color: #8B735B;">+
+                                        {{ $addon ? $addon['name'] : translate('Addon') }} ({{ $addOnQtys[$key2] ?? 1 }}
+                                        x {{ \App\CentralLogics\Helpers::set_symbol($addOnPrices[$key2] ?? 0) }})</div>
+                                    @php($addOnsCostMail += ($addOnPrices[$key2] ?? 0) * ($addOnQtys[$key2] ?? 1))
+                                    @php($addOnsTaxCostMail += ($addOnTaxes[$key2] ?? 0) * ($addOnQtys[$key2] ?? 1))
                                     @endforeach
-                                @else
-                                    <div class="font-size-sm text-body"
-                                        style="font-size: .8125rem; color: #677788 !important;">
-                                        <span>{{ translate('Price') }} : </span>
-                                        <span
-                                            style="font-weight: bold;">{{ \App\CentralLogics\Helpers::set_symbol($detail->price) }}</span>
-                                    </div>
-                                @endif
+                                </td>
+                                <td>
+                                    @php($amount = ($detail['price'] - $detail['discount_on_product']) * $detail['quantity'])
+                                    {{ \App\CentralLogics\Helpers::set_symbol($amount) }}
+                                </td>
+                            </tr>
+                            @php($subTotalMail += $amount)
+                            @php($totalTaxMail += $detail['tax_amount'] * $detail['quantity'])
+                            @endif
+                            @endforeach
+                        </tbody>
+                    </table>
 
-
-
-                                @foreach (json_decode($detail['add_on_ids'], true) as $key2 => $id)
-                                @php($addon = \App\Model\AddOn::find($id))
-                                @if ($key2 == 0)
-                                    <strong><u>{{ translate('Addons : ') }}</u></strong>
-                                @endif
-
-                                @if ($addOnQtys == null)
-                                @php($add_on_qty = 1)
-                                @else
-                                @php($add_on_qty = $addOnQtys[$key2])
-                                @endif
-
-                                <div class="font-size-sm text-body"
-                                    style="font-size: .8125rem; color: #677788 !important;">
-                                    <span>{{ $addon ? $addon['name'] : translate('addon deleted') }} :
-                                    </span>
-                                    <span class="font-weight-bold">
-                                        {{ $add_on_qty }} x
-                                        {{ \App\CentralLogics\Helpers::set_symbol($addOnPrices[$key2]) }}
-                                    </span>
-                                </div>
-                                @php($addOnsCost += $addOnPrices[$key2] * $add_on_qty)
-                                @php($add_ons_tax_cost += $addOnTaxes[$key2] * $add_on_qty)
-                                @endforeach
-
-                                {{ translate('Discount : ') }}{{ \App\CentralLogics\Helpers::set_symbol($detail['discount_on_product']) }}
-                            </td>
-                            <td
-                                style="border: .0625rem solid rgba(231, 234, 243, .7); padding: .75rem; vertical-align: top; width: 28%;padding-right:4px; text-align:{{ $flip }};">
-                                @php($amount = ($detail['price'] - $detail['discount_on_product']) * $detail['quantity'])
-                                {{ \App\CentralLogics\Helpers::set_symbol($amount) }}
+                    <table width="100%" class="total-row">
+                        <tr>
+                            <td>{{ translate('Items Price') }}:</td>
+                            <td align="right">{{ \App\CentralLogics\Helpers::set_symbol($subTotalMail) }}</td>
+                        </tr>
+                        @if($addOnsCostMail > 0)
+                            <tr>
+                                <td>{{ translate('Addon Cost') }}:</td>
+                                <td align="right">{{ \App\CentralLogics\Helpers::set_symbol($addOnsCostMail) }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td>{{ translate('Tax / VAT') }}:</td>
+                            <td align="right">
+                                {{ \App\CentralLogics\Helpers::set_symbol($totalTaxMail + $addOnsTaxCostMail) }}</td>
+                        </tr>
+                        @if($order['coupon_discount_amount'] > 0)
+                            <tr>
+                                <td>{{ translate('Coupon Discount') }}:</td>
+                                <td align="right">-
+                                    {{ \App\CentralLogics\Helpers::set_symbol($order['coupon_discount_amount']) }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td>{{ translate('Delivery Fee') }}:</td>
+                            <td align="right">
+                                {{ \App\CentralLogics\Helpers::set_symbol($order['order_type'] == 'take_away' ? 0 : $order['delivery_charge']) }}
                             </td>
                         </tr>
-                        @php($subTotal += $amount)
-                        @php($totalTax += $detail['tax_amount'] * $detail['quantity'])
-                        @endif
-                        @endforeach
-                    </tbody>
-                </table>
 
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="5" border="0"
-                    style="color: black!important; text-align: {{ $flip }}; font-size: .875rem; line-height: 1.6;">
-                    <tr>
-                        <td width="50%"><strong>{{ translate('Items Price:') }}</strong></td>
-                        <td width="50%">{{ \App\CentralLogics\Helpers::set_symbol($subTotal) }}</td>
-                    </tr>
+                        @php($grandTotalMail = $subTotalMail + $addOnsCostMail + $totalTaxMail + $addOnsTaxCostMail - $order['coupon_discount_amount'] - $order['extra_discount'] + ($order['order_type'] == 'take_away' ? 0 : $order['delivery_charge']))
 
-                    <tr>
-                        <td><strong>{{ translate('Addon Cost:') }}</strong></td>
-                        <td>{{ \App\CentralLogics\Helpers::set_symbol($addOnsCost) }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>{{ translate('Coupon Discount:') }}</strong></td>
-                        <td>- {{ \App\CentralLogics\Helpers::set_symbol($order['coupon_discount_amount']) }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>{{ translate('Extra Discount:') }}</strong></td>
-                        <td>- {{ \App\CentralLogics\Helpers::set_symbol($order['extra_discount']) }}</td>
-                    </tr>
-
-                    <tr>
-                        <td><strong>{{ translate('Tax / VAT:') }}</strong></td>
-                        <td>{{ \App\CentralLogics\Helpers::set_symbol($totalTax + $add_ons_tax_cost) }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>{{ translate('Delivery Fee:') }}</strong></td>
-                        <td>
-                            @if ($order['order_type'] == 'take_away')
-                            @php($del_c = 0)
-                            @else
-                            @php($del_c = $order['delivery_charge'])
-                            @endif
-                            {{ \App\CentralLogics\Helpers::set_symbol($del_c) }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <hr
-                                style="width: 50%; float:{{ $flip }};border: 0;border-top: .0625rem solid #e7eaf3;box-sizing: content-box;height: 1px;">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="font-size: 20px;"><strong>{{ translate('Total:') }}</strong></td>
-                        <td style="font-size: 20px;">
-                            {{ \App\CentralLogics\Helpers::set_symbol($subTotal + $del_c + $totalTax + $addOnsCost - $order['coupon_discount_amount'] - $order['extra_discount'] + $add_ons_tax_cost) }}
-                        </td>
-                    </tr>
-
-                    <!-- Partial Payment -->
-                    @if ($order->order_partial_payments->isNotEmpty())
-                                        @foreach ($order->order_partial_payments as $partial)
-                                            <tr>
-                                                <td><strong>{{ translate('Paid By') }}
-                                                        ({{ str_replace('_', ' ', $partial->paid_with) }})
-                                                        :</strong></td>
-                                                <td>{{ \App\CentralLogics\Helpers::set_symbol($partial->paid_amount) }}</td>
-                                            </tr>
-                                        @endforeach
-                                        <?php
-                        $due_amount = $order->order_partial_payments->first()?->due_amount ?? 0;
-                                                                                                    ?>
-                                        <tr>
-                                            <td><strong>{{ translate('Due Amount:') }}</strong></td>
-                                            <td>{{ \App\CentralLogics\Helpers::set_symbol($due_amount) }}</td>
-                                        </tr>
-                    @endif
-
-                    @if ($order->order_change_amount()->exists())
-                    <tr>
-                        <td><strong>{{ translate('Paid Amount:') }}</strong></td>
-                        <td>{{ \App\CentralLogics\Helpers::set_symbol($order->order_change_amount?->paid_amount) }}
-                        </td>
-                    </tr>
-                    @php($changeOrDueAmount = $order->order_change_amount?->paid_amount - $order->order_change_amount?->order_amount)
-                    <tr>
-                        <td><strong>{{ $changeOrDueAmount < 0 ? translate('Due Amount') : translate('Change Amount') }}:</strong>
-                        </td>
-                        <td>{{ \App\CentralLogics\Helpers::set_symbol($changeOrDueAmount) }}</td>
-                    </tr>
-                    @endif
-                </table>
-
-                <hr class="hr text-dark hr-style-2"
-                    style="margin-top: 1rem;margin-bottom: 1rem;border: 0;border-top: .0625rem solid #e7eaf3;box-sizing: content-box;overflow: visible; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));">
-                <h5 class="text-center pt-3"
-                    style="font-size: .875rem; line-height: 1.4; text-align: center; margin-top: 1rem; margin-bottom: .5rem; font-weight: 700 !importan;">
-                    {{ translate('"""THANK YOU"""') }}
-                </h5>
-                <hr class="hr text-dark hr-style-2"
-                    style="margin-top: 1rem;margin-bottom: 1rem;border: 0;border-top: .0625rem solid #e7eaf3;box-sizing: content-box;overflow: visible; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));">
-                <div class="text-center" style="font-size: .875rem; line-height: 1.6; text-align: center;">
-                    {{ \App\Model\BusinessSetting::where(['key' => 'footer_text'])->first()->value }}
-                </div>
-            </div>
-        </div>
-    </div>
-
+                        <tr class="grand-total">
+                            <td style="color: #5C4033;"><strong>{{ translate('Total') }}</strong></td>
+                            <td align="right" style="color: #5C4033;">
+                                <strong>{{ \App\CentralLogics\Helpers::set_symbol($grandTotalMail) }}</strong></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    <div style="font-size: 16px; margin-bottom: 10px;">✧ {{ translate('THANK YOU') }} ✧</div>
+                    <div>{{ \App\Model\BusinessSetting::where(['key' => 'footer_text'])->first()->value }}</div>
+                </td>
+            </tr>
+        </table>
+    </center>
 </body>
 
 </html>

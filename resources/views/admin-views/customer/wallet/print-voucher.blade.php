@@ -3,7 +3,23 @@
 @section('title', translate('Print Voucher'))
 
 @push('css_or_js')
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --light-bg: #FDF8F3;
+            --dark-coffee: #5C4033;
+            --accent-gold: #A07855;
+            --border-color: #E6D5C3;
+            --text-muted: #8B735B;
+        }
+
+        body {
+            font-family: 'Inter', 'Cairo', sans-serif !important;
+            background-color: #f4f4f4;
+            color: var(--dark-coffee);
+        }
+
         @media print {
             .non-printable {
                 display: none;
@@ -12,158 +28,264 @@
             .printable {
                 display: block;
             }
+
+            body {
+                background-color: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .invoice-card {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
         }
 
-        .hr-style-2 {
-            border: 0;
-            height: 1px;
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+        .invoice-card {
+            background-color: var(--light-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            position: relative;
         }
 
-        .hr-style-1 {
-            overflow: visible;
-            padding: 0;
-            border: none;
-            border-top: medium double #000000;
+        .invoice-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--dark-coffee), var(--accent-gold));
+            border-radius: 12px 12px 0 0;
+        }
+
+        .header-section {
             text-align: center;
+            margin-bottom: 30px;
         }
 
-        #printableAreaContent * {
-            font-weight: normal !important;
+        .restaurant-logo {
+            max-width: 120px;
+            margin-bottom: 15px;
         }
-    </style>
 
-    <style type="text/css" media="print">
-        @page {
-            size: auto;
-            margin: 2px;
+        .invoice-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+            padding: 0 40px;
+        }
+
+        .invoice-title::before,
+        .invoice-title::after {
+            content: '✧';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-gold);
+            font-size: 20px;
+        }
+
+        .invoice-title::before {
+            left: 0;
+        }
+
+        .invoice-title::after {
+            right: 0;
+        }
+
+        .info-grid {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(160, 120, 85, 0.05);
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .info-item {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: var(--dark-coffee);
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .invoice-table th {
+            background-color: var(--dark-coffee);
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .invoice-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .summary-section {
+            margin-top: 20px;
+            border-top: 2px solid var(--dark-coffee);
+            padding-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .summary-row.total {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark-coffee);
+            border-top: 1px solid var(--border-color);
+            margin-top: 15px;
+            padding-top: 15px;
+        }
+
+        .footer-section {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px dashed var(--accent-gold);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            color: var(--dark-coffee);
+            margin-bottom: 15px;
+        }
+
+        [dir="rtl"] .invoice-table th,
+        [dir="rtl"] .invoice-table td {
+            text-align: right;
+        }
+
+        [dir="ltr"] .invoice-table th,
+        [dir="ltr"] .invoice-table td {
+            text-align: left;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="content container-fluid" style="color: black">
-        <div class="row justify-content-center" id="printableArea">
-            <div class="col-md-12">
-                <div class="text-center">
-                    <input type="button" class="btn btn-primary non-printable" onclick="printDiv('printableArea')"
-                        value="{{translate('Proceed, If thermal printer is ready.')}}" />
-                    <a href="{{url()->previous()}}" class="btn btn-danger non-printable">{{translate('Back')}}</a>
-                </div>
-                <hr class="non-printable">
+<div class="content container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-12 mb-3">
+            <div class="text-center">
+                <input type="button" class="btn btn-primary non-printable" onclick="printDiv('printableArea')"
+                    value="{{translate('Print Voucher')}}" />
+                <a href="{{url()->previous()}}" class="btn btn-secondary non-printable">{{translate('Back')}}</a>
             </div>
-            <div class="col-5" id="printableAreaContent">
-                <div class="text-center pt-4 mb-3">
-                    <h2 style="line-height: 1">
-                        {{\App\Model\BusinessSetting::where(['key' => 'restaurant_name'])->first()->value}}</h2>
-                    <h5 style="font-size: 20px;font-weight: lighter;line-height: 1">
-                        {{\App\Model\BusinessSetting::where(['key' => 'address'])->first()->value}}
-                    </h5>
-                    <h5 style="font-size: 16px;font-weight: lighter;line-height: 1">
-                        {{translate('Phone')}} : {{\App\Model\BusinessSetting::where(['key' => 'phone'])->first()->value}}
-                    </h5>
+        </div>
+
+        <div class="invoice-card" id="printableArea">
+            <div class="header-section">
+                @php($logo = \App\Model\BusinessSetting::where(['key' => 'logo'])->first()->value)
+                <img class="restaurant-logo" src="{{asset('storage/app/public/restaurant/' . $logo)}}"
+                    onerror="this.src='{{asset('public/assets/admin/img/160x160/img2.jpg')}}'" alt="logo">
+                <div>
+                    <h1 class="invoice-title">{{translate('إيصال المحفظة')}}</h1>
                 </div>
-                <hr class="text-dark hr-style-1">
+            </div>
 
-                <div class="row mt-4">
-                    <div class="col-6">
-                        <h5>{{translate('Transaction ID')}} : {{$transaction['transaction_id']}}</h5>
-                    </div>
-                    <div class="col-6 text-right">
-                        <h5 style="font-weight: lighter">
-                            <span
-                                class="font-weight-normal">{{date('d/M/Y h:i a', strtotime($transaction['created_at']))}}</span>
-                        </h5>
-                    </div>
-                    <div class="col-12 mt-3">
-                        @if(isset($transaction->user))
-                            <h5>
-                                {{translate('Customer Name')}} : <span
-                                    class="font-weight-normal">{{$transaction->user['name']}}</span>
-                            </h5>
-                            <h5>
-                                {{translate('Phone')}} : <span class="font-weight-normal">{{$transaction->user['phone']}}</span>
-                            </h5>
-                        @endif
-                    </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">{{translate('رقم المعاملة')}}:</span> {{$transaction['transaction_id']}}
                 </div>
-
-                <hr class="text-dark hr-style-2">
-
-                <div class="py-3">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>{{translate('Description')}}</th>
-                                <th class="text-right">{{translate('Amount')}}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    {{translate('Wallet Fund Addition')}}
-                                    @if($transaction->reference)
-                                        <br><small>{{translate('Reference')}}: {{$transaction->reference}}</small>
-                                    @endif
-                                </td>
-                                <td class="text-right">
-                                    {{ \App\CentralLogics\Helpers::set_symbol($transaction->credit) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="info-item" style="text-align: left;">
+                    {{date('d M, Y h:i a', strtotime($transaction['created_at']))}}
                 </div>
-
-                <div class="row justify-content-end mb-3 m-0">
-                    <div class="col-12 p-0">
-                        <dl class="row text-right" style="color: black!important;">
-                            <dt class="col-6" style="font-size: 20px">{{translate('Total')}}:</dt>
-                            <dd class="col-6" style="font-size: 20px">
-                                {{ \App\CentralLogics\Helpers::set_symbol($transaction->credit) }}</dd>
-
-                            <dt class="col-6">{{translate('Current Wallet Balance')}}:</dt>
-                            <dd class="col-6">{{ \App\CentralLogics\Helpers::set_symbol($transaction->balance) }}</dd>
-                        </dl>
-                    </div>
+                <div class="info-item">
+                    <span class="info-label">{{translate('اسم العميل')}}:</span>
+                    {{$transaction->user ? $transaction->user['name'] : translate('Customer')}}
                 </div>
+                <div class="info-item">
+                    <span class="info-label">{{translate('الهاتف')}}:</span>
+                    {{$transaction->user ? $transaction->user['phone'] : ''}}
+                </div>
+            </div>
 
-                <hr class="text-dark hr-style-2">
-                <h5 class="text-center pt-3">
-                    "{{translate('THANK YOU')}}"
-                </h5>
-                <hr class="text-dark hr-style-2">
-                <div class="text-center">{{\App\Model\BusinessSetting::where(['key' => 'footer_text'])->first()->value}}</div>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>{{translate('الوصف')}}</th>
+                        <th style="width: 25%; text-align: left;">{{translate('المبلغ')}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            {{translate('إضافة رصيد للمحفظة')}}
+                            @if($transaction->reference)
+                                <div style="font-size: 12px; color: var(--text-muted);">{{translate('Reference')}}:
+                                    {{$transaction->reference}}</div>
+                            @endif
+                        </td>
+                        <td style="text-align: left;">
+                            {{ \App\CentralLogics\Helpers::set_symbol($transaction->credit) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="summary-section">
+                <div class="summary-row total">
+                    <span>{{translate('الإجمالي')}}</span>
+                    <span>{{ \App\CentralLogics\Helpers::set_symbol($transaction->credit) }}</span>
+                </div>
+                <div class="summary-row" style="margin-top: 10px; font-weight: 700;">
+                    <span>{{translate('الرصيد المحفظة الحالي')}}</span>
+                    <span>{{ \App\CentralLogics\Helpers::set_symbol($transaction->balance) }}</span>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <div class="footer-logo">✧ {{translate('شكراً لك')}} ✧</div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                    {{\App\Model\BusinessSetting::where(['key' => 'restaurant_name'])->first()->value}}<br>
+                    {{\App\Model\BusinessSetting::where(['key' => 'footer_text'])->first()->value}}
+                </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('script')
     <script>
         "use strict";
-
         function printDiv(divName) {
-            if ($('html').attr('dir') === 'rtl') {
-                $('html').attr('dir', 'ltr')
-                var printContents = document.getElementById(divName).innerHTML;
-                var originalContents = document.body.innerHTML;
-                document.body.innerHTML = printContents;
-                $('#printableAreaContent').attr('dir', 'rtl')
-                window.print();
-                document.body.innerHTML = originalContents;
-                $('html').attr('dir', 'rtl')
-            } else {
-                var printContents = document.getElementById(divName).innerHTML;
-                var originalContents = document.body.innerHTML;
-                document.body.innerHTML = printContents;
-                window.print();
-                document.body.innerHTML = originalContents;
-            }
+            var printContents = document.getElementById(divName).innerHTML;
+            var originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+            window.location.reload();
         }
-
-        // Auto print on load
-        $(document).ready(function () {
-            // printDiv('printableArea');
-        });
     </script>
 @endpush
