@@ -73,15 +73,20 @@ class CategoryController extends Controller
         return view('admin-views.category.sub-index', compact('categories', 'search', 'branches'));
     }
 
-    /**
-     * @param Request $request
     public function store(Request $request)
     {
         $rules = [
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
             'branch_ids' => 'required|array',
-            'branch_ids.*' => 'exists:branches,id|or:in:0',
+            'branch_ids.*' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if ($value != '0' && !\App\Model\Branch::where('id', $value)->exists()) {
+                        $fail(translate('Branch ID does not exist'));
+                    }
+                }
+            ],
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
@@ -105,10 +110,12 @@ class CategoryController extends Controller
         // Check duplicate
         if (!in_array('0', $request->branch_ids)) {
             foreach ($request->name as $index => $name) {
-                if ($this->category->where('name', $name)
-                    ->where('parent_id', $request->parent_id ?? 0)
-                    ->whereJsonContains('branch_ids', $request->branch_ids[0])
-                    ->exists()) {
+                if (
+                    $this->category->where('name', $name)
+                        ->where('parent_id', $request->parent_id ?? 0)
+                        ->whereJsonContains('branch_ids', $request->branch_ids[0])
+                        ->exists()
+                ) {
                     Toastr::error(translate('Category already exists in selected branch!'));
                     return back();
                 }
@@ -152,6 +159,7 @@ class CategoryController extends Controller
         return back();
     }
 
+
     /**
      * @param $id
      * @return Renderable
@@ -188,7 +196,14 @@ class CategoryController extends Controller
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
             'branch_ids' => 'required|array',
-            'branch_ids.*' => 'exists:branches,id|or:in:0',
+            'branch_ids.*' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if ($value != '0' && !\App\Model\Branch::where('id', $value)->exists()) {
+                        $fail(translate('Branch ID does not exist'));
+                    }
+                }
+            ],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
@@ -199,7 +214,7 @@ class CategoryController extends Controller
             'name.*.required' => translate('Category name is required'),
             'name.*.string' => translate('Name must be a string'),
             'name.*.max' => translate('Name must not exceed 255 characters'),
-            'branch_ids.required_without' => translate('Please select at least one branch or all branches'),
+            'branch_ids.required' => translate('Please select at least one branch or all branches'),
             'branch_ids.array' => translate('Branch IDs must be an array'),
             'branch_ids.*.exists' => translate('Branch ID does not exist'),
             'image.nullable' => '',

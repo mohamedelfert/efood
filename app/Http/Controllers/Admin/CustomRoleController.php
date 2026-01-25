@@ -60,7 +60,14 @@ class CustomRoleController extends Controller
         $request->validate([
             'name' => 'required|unique:admin_roles,name',
             'modules' => 'required|array|min:1',
-            'branch_id' => 'required|exists:branches,id|or:in:0',
+            'branch_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if ($value != '0' && !Branch::where('id', $value)->exists()) {
+                        $fail(translate('Branch ID does not exist'));
+                    }
+                }
+            ],
         ]);
 
         $user = auth('admin')->user();
@@ -102,7 +109,14 @@ class CustomRoleController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'branch_id' => 'required|exists:branches,id|or:in:0',
+            'branch_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if ($value != '0' && !Branch::where('id', $value)->exists()) {
+                        $fail(translate('Branch ID does not exist'));
+                    }
+                }
+            ],
             'modules' => 'required|array|min:1',
         ]);
 
