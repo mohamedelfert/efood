@@ -1,486 +1,354 @@
 <!DOCTYPE html>
 <?php
-    $lang = \App\CentralLogics\Helpers::get_default_language();
+$lang = \App\CentralLogics\Helpers::get_default_language();
 ?>
-<html lang="{{ $lang }}" class="">
+<html lang="{{ $lang }}">
+
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ translate('Email_Template') }}</title>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap');
 
         body {
             margin: 0;
-            font-family: 'Roboto', sans-serif;
-            font-size: 13px;
-            line-height: 21px;
-            color: #737883;
-            background-color: #e9ecef;
             padding: 0;
-            display: flex;align-items: center;justify-content: center;
-            min-height: 100vh;
-        }
-        h1,h2,h3,h4,h5,h6 {
-            color: #334257;
-            margin: 0;
-        }
-        * {
-            box-sizing: border-box
+            font-family: 'Inter', 'Cairo', sans-serif;
+            background-color: #f4f4f4;
+            color: #5C4033;
         }
 
-        :root {
-            --base: #ffa726
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f4f4f4;
+            padding: 40px 0;
         }
 
-        .main-table {
-            width: 500px;
-            background: #FFFFFF;
+        .main {
+            background-color: #FDF8F3;
             margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E6D5C3;
+        }
+
+        .header-accent {
+            height: 8px;
+            background: linear-gradient(90deg, #5C4033, #A07855);
+        }
+
+        .content {
             padding: 40px;
         }
-        .main-table-td {
-        }
-        img {
-            max-width: 100%;
-        }
-        .cmn-btn{
-            background: var(--base);
-            color: #fff;
-            padding: 8px 20px;
-            display: inline-block;
-            text-decoration: none;
-        }
-        .mb-1 {
-            margin-bottom: 5px;
-        }
-        .mb-2 {
-            margin-bottom: 10px;
-        }
-        .mb-3 {
-            margin-bottom: 15px;
-        }
-        .mb-4 {
+
+        .restaurant-logo {
+            text-align: center;
             margin-bottom: 20px;
         }
-        .mb-5 {
-            margin-bottom: 25px;
+
+        .mail-img-logo {
+            max-width: 150px;
+            height: auto;
         }
-        hr {
-            border-color : rgba(0, 170, 109, 0.3);
-            margin: 16px 0
-        }
-        .border-top {
-            border-top: 1px solid rgba(0, 170, 109, 0.3);
-            padding: 15px 0 10px;
-            display: block;
-        }
-        .d-block {
-            display: block;
-        }
-        .privacy {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-        }
-        .privacy a {
-            text-decoration: none;
-            color: #334257;
-            position: relative;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .privacy a span {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #334257;
-            display: inline-block;
-            margin: 0 7px;
-        }
-        .social {
-            margin: 15px 0 8px;
-            display: block;
-        }
-        .copyright{
-            text-align: center;
-            display: block;
-        }
-        div {
-            display: block;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .text-base {
-            color: var(--base);
-            font-weight: 700
-        }
-        .font-medium {
-            font-weight: 500;
-        }
-        .font-bold {
+
+        .mail-title {
+            font-size: 28px;
             font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #5C4033;
         }
-        a {
-            text-decoration: none;
+
+        .mail-body {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            text-align: center;
         }
-        .bg-section {
-            background: #E3F5F1;
+
+        .order-info-box {
+            background-color: rgba(160, 120, 85, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
         }
-        .p-10 {
-            padding: 10px;
+
+        .order-summary-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #E6D5C3;
         }
-        .mt-0{
-            margin-top: 0;
-        }
-        .w-100 {
+
+        .item-table {
             width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        .order-table {
-            padding: 10px;
-            background: #fff;
-        }
-        .order-table tr td {
-            vertical-align: top
-        }
-        .order-table .subtitle {
-            margin: 0;
-            margin-bottom: 10px;
-        }
-        .text-left {
+
+        .item-table th {
             text-align: left;
+            padding: 10px;
+            background-color: #5C4033;
+            color: #ffffff;
+            font-size: 13px;
         }
-        .text-right {
+
+        .item-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #E6D5C3;
+            font-size: 14px;
+        }
+
+        .total-table {
+            width: 100%;
+            border-spacing: 0;
+        }
+
+        .total-table td {
+            padding: 5px 0;
+        }
+
+        .total-row-label {
+            text-align: right;
+            padding-right: 15px;
+            font-size: 14px;
+        }
+
+        .total-row-value {
+            text-align: right;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .grand-total {
+            border-top: 2px solid #5C4033;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .grand-total td {
+            font-size: 20px;
+            font-weight: 700;
+            color: #5C4033;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            border-top: 1px dashed #A07855;
+            font-size: 13px;
+            color: #8B735B;
+        }
+
+        .privacy-links {
+            margin-bottom: 15px;
+        }
+
+        .privacy-links a {
+            color: #5C4033;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .copyright {
+            color: #8B735B;
+        }
+
+        .rtl {
+            direction: rtl;
             text-align: right;
         }
-        .bg-section-2 {
-            background: #F8F9FB;
-        }
-        .p-1 {
-            padding: 5px;
-        }
-        .p-2 {
-            padding: 10px;
-        }
-        .px-3 {
-            padding-inline: 15px
-        }
-        .mb-0 {
-            margin-bottom: 0;
-        }
-        .m-0 {
-            margin: 0;
-        }
-        .text-base {
-            color: var(--base);
-            font-weight: 700
-        }
-        .mail-img-1 {
-            width: 140px;
-            height: 60px;
-            object-fit: contain
-        }
-        .mail-img-2 {
-            width: 130px;
-            height: 45px;
-            object-fit: contain
-        }
-        .mail-img-3 {
-            width: 100%;
-            height: 172px;
-            object-fit: cover
-        }
-        .social img {
-        width: 24px;
+
+        .ltr {
+            direction: ltr;
+            text-align: left;
         }
     </style>
-
 </head>
 
-
-<body style="background-color: #e9ecef;padding:15px">
-
-    <table dir="" class="main-table">
-        <tbody>
+<body>
+    <center class="wrapper">
+        <table class="main">
             <tr>
-                <td class="main-table-td">
-                    <h2 class="mb-3" id="mail-title">{{ $title?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
-                    <div class="mb-1" id="mail-body">{!! $body?? translate('Hi_Sabrina,') !!}</div>
+                <td class="header-accent"></td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <div class="restaurant-logo">
+                        @php($logo = \App\Model\BusinessSetting::where(['key' => 'logo'])->first()->value)
+                        <img class="mail-img-logo" src="{{ asset('storage/app/public/restaurant/' . $logo) }}"
+                            onerror="this.src='{{ asset('public/assets/admin/img/160x160/img2.jpg') }}'" alt="Logo">
+                    </div>
 
-                    <table class="bg-section p-10 w-100">
+                    <h1 class="mail-title">✧ {{ $title ?? translate('Email_Template') }} ✧</h1>
+
+                    <div class="mail-body">
+                        {!! $body ?? '' !!}
+                    </div>
+
+                    <div class="order-info-box">
+                        <div class="order-summary-title">{{ translate('Order_Summary') }}</div>
+                        <table width="100%">
+                            <tr>
+                                <td width="50%">
+                                    <strong>{{ translate('Order') }}#:</strong> {{ $order->id }}<br>
+                                    <strong>{{ translate('Date') }}:</strong> {{ $order->created_at }}
+                                </td>
+                                <td width="50%" align="right">
+                                    @if ($order->is_guest == 0 && isset($order->customer))
+                                        <strong>{{ translate('Customer') }}:</strong> {{ $order->customer['name'] }}<br>
+                                        {{ $order->customer['phone'] }}
+                                    @elseif ($order->is_guest == 1 && isset($order->address))
+                                        <strong>{{ translate('Guest') }}:</strong>
+                                        {{ $order->address['contact_person_name'] }}<br>
+                                        {{ $order->address['contact_person_number'] }}
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <table class="item-table">
+                        <thead>
+                            <tr>
+                                <th>{{ translate('Product') }}</th>
+                                <th align="center" style="text-align: center;">{{ translate('QTY') }}</th>
+                                <th align="right" style="text-align: right;">{{ translate('Price') }}</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                        <tr>
-                            <td class="p-10">
-                                    <span class="d-block text-center">
-                                        @php($restaurant_logo = \App\Model\BusinessSetting::where(['key' => 'logo'])->first()->value)
-                                        <img class="mb-2 mail-img-2" onerror="this.src='{{ asset('storage/app/public/restaurant/' . $restaurant_logo) }}'"
-                                             src="{{ asset('storage/app/public/email_template/') }}/{{ $data['logo']??'' }}" alt="">
-                                        <h3 class="mb-3 mt-0">{{ translate('Order_Info') }}</h3>
-                                    </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <table class="order-table w-100">
-                                    <tbody>
-                                    <tr>
-                                        <td>
-                                            <h3 class="subtitle">{{ translate('Order_Summary') }}</h3>
-                                            <span class="d-block">{{ translate('Order') }}# {{ $order->id }}</span>
-                                            <span class="d-block">{{ $order->created_at  }}</span>
-                                        </td>
-                                        <td>
-                                            @if ($order->is_guest == 0 && isset($order->customer))
-                                                <span class="d-block"><strong>{{ translate('Customer Name:') }}</strong>
-                                                    {{ $order->customer['name'] }}
-                                                </span>
-                                                <span class="d-block"><strong>{{ translate('Phone:') }}</strong>
-                                                    {{ $order->customer['phone'] }}
-                                                </span>
-                                                <span class="d-block"><strong>{{ translate('Address:') }}</strong>
-                                                    {{ isset($order->address) ? $order->address['address'] : '' }}
-                                                </span>
-                                            @elseif ($order->is_guest == 1 && isset($order->address))
-                                                <span class="d-block"><strong>{{ translate('Customer Name:') }}</strong>
-                                                    {{ $order->address['contact_person_name'] }}
-                                                </span>
-                                                <span class="d-block"><strong>{{ translate('Phone:') }}</strong>
-                                                    {{ $order->address['contact_person_number'] }}
-                                                </span>
-                                                <span class="d-block"><strong>{{ translate('Address:') }}</strong>
-                                                    {{ $order->address['address'] }}
-                                                </span>
+                            @php($sub_total = 0)
+                            @php($total_tax = 0)
+                            @php($total_dis_on_pro = 0)
+                            @php($add_ons_cost = 0)
+                            @php($add_ons_tax_cost = 0)
+                            @foreach($order->details as $detail)
+                            @php($product_details = json_decode($detail['product_details'], true))
+                            @php($add_on_qtys = json_decode($detail['add_on_qtys'], true))
+                            @php($add_on_prices = json_decode($detail['add_on_prices'], true))
+                            @php($add_on_taxes = json_decode($detail['add_on_taxes'], true))
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ $product_details['name'] }}</div>
+                                    @if (isset($detail['variation']))
+                                        @foreach(json_decode($detail['variation'], true) as $variation)
+                                            @if (isset($variation['name']) && isset($variation['values']))
+                                                @foreach ($variation['values'] as $value)
+                                                    <div style="font-size: 11px; color: #8B735B;">{{ $value['label'] }}:
+                                                        {{ \App\CentralLogics\Helpers::set_symbol($value['optionPrice']) }}</div>
+                                                @endforeach
                                             @endif
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div style="margin-bottom: 20px"></div>
-                                        </td>
-                                    </tr>
-                                    @php($sub_total=0)
-                                    @php($total_tax=0)
-                                    @php($total_dis_on_pro=0)
-                                    @php($add_ons_cost=0)
-                                    @php($add_on_tax=0)
-                                    @php($add_ons_tax_cost=0)
+                                        @endforeach
+                                    @endif
+                                    @php($addon_ids = json_decode($detail['add_on_ids'], true))
+                                    @if ($addon_ids)
+                                    @foreach($addon_ids as $key2 => $id)
+                                    @php($addon = \App\Model\AddOn::find($id))
+                                    @php($add_on_qty = $add_on_qtys[$key2] ?? 1)
+                                    <div style="font-size: 11px; color: #8B735B;">+
+                                        {{ $addon ? $addon['name'] : translate('Addon') }} ({{ $add_on_qty }} x
+                                        {{ \App\CentralLogics\Helpers::set_symbol($add_on_prices[$key2]) }})</div>
+                                    @php($add_ons_cost += $add_on_prices[$key2] * $add_on_qty)
+                                    @php($add_ons_tax_cost += $add_on_taxes[$key2] * $add_on_qty)
+                                    @endforeach
+                                    @endif
+                                </td>
+                                <td align="center">{{ $detail['quantity'] }}</td>
+                                <td align="right">
+                                    @php($amount = $detail['price'] * $detail['quantity'])
+                                    @php($tot_discount = $detail['discount_on_product'] * $detail['quantity'])
+                                    @php($product_tax = $detail['tax_amount'] * $detail['quantity'])
+                                    {{ \App\CentralLogics\Helpers::set_symbol($amount - $tot_discount + $product_tax) }}
 
-                                    <td colspan="2">
-                                        <table class="w-100">
-                                            <thead class="bg-section-2">
-                                            <tr style="white-space: nowrap">
-                                                <th style="text-align: left">{{ translate('SL') }}</th>
-                                                <th style="text-align: left">{{ translate('Product') }}</th>
-                                                <th style="text-align: center">{{ translate('Price') }}</th>
-                                                <th style="text-align: center">{{ translate('Discount') }}</th>
-                                                <th style="text-align: center">{{ translate('Tax') }}</th>
-                                                <th style="text-align: right">{{ translate('Total_Price') }}</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            @foreach($order->details as $detail)
-                                                @php($product_details = json_decode($detail['product_details'], true))
-                                                @php($add_on_qtys=json_decode($detail['add_on_qtys'],true))
-                                                @php($add_on_prices=json_decode($detail['add_on_prices'],true))
-                                                @php($add_on_taxes=json_decode($detail['add_on_taxes'],true))
-
-                                                <tr>
-                                                    <td>{{ $loop->iteration }}</td>
-                                                    <td>
-                                                        <div class="media gap-3 w-max-content">
-
-                                                            <img
-                                                                style="width: 50px; object-fit: cover; height: 50px; border-radius: 5px;"
-                                                                 src="{{asset('storage/app/public/product/')}}/{{$detail->product?->image}}"
-                                                                 onerror="this.src='{{asset('public/assets/admin/img/160x160/img2.jpg')}}'"
-                                                                 alt="Image Description">
-
-                                                            <div class="media-body text-dark fz-12">
-                                                                {{--                                                <h6 class="text-capitalize">{{$detail->product?->name}}</h6>--}}
-                                                                <h6 class="text-capitalize">{{$product_details['name']}}</h6>
-                                                                <div class="d-flex gap-2">
-                                                                    @if (isset($detail['variation']))
-                                                                        @foreach(json_decode($detail['variation'],true) as  $variation)
-                                                                            @if (isset($variation['name'])  && isset($variation['values']))
-                                                                                <span class="d-block text-capitalize">
-                                                                <strong>{{  $variation['name']}} -</strong>
-                                                            </span>
-                                                                                @foreach ($variation['values'] as $value)
-
-                                                                                    <span class="d-block text-capitalize">
-                                                                     {{ $value['label']}} :
-                                                                    <strong>{{\App\CentralLogics\Helpers::set_symbol( $value['optionPrice'])}}</strong>
-                                                                </span>
-                                                                                @endforeach
-                                                                            @else
-                                                                                @if (isset(json_decode($detail['variation'],true)[0]))
-                                                                                    <strong><u> {{  translate('Variation') }} : </u></strong>
-                                                                                    @foreach(json_decode($detail['variation'],true)[0] as $key1 =>$variation)
-                                                                                        <div class="font-size-sm text-body">
-                                                                                            <span>{{$key1}} :  </span>
-                                                                                            <span class="font-weight-bold">{{$variation}}</span>
-                                                                                        </div>
-                                                                                    @endforeach
-                                                                                @endif
-                                                                            @endif
-                                                                        @endforeach
-                                                                    @else
-                                                                        <div class="font-size-sm text-body">
-                                                                            <span class="text-dark">{{translate('price')}}  : {{\App\CentralLogics\Helpers::set_symbol($detail['price'])}}</span>
-                                                                        </div>
-                                                                    @endif
-
-                                                                    <div class="d-flex gap-2">
-                                                                        <span class="">{{translate('Qty')}} :  </span>
-                                                                        <span>{{$detail['quantity']}}</span>
-                                                                    </div>
-
-                                                                    <br>
-                                                                    @php($addon_ids = json_decode($detail['add_on_ids'],true))
-                                                                    @if ($addon_ids)
-                                                                        <span>
-                                                        <u><strong>{{translate('addons')}}</strong></u>
-                                                        @foreach($addon_ids as $key2 =>$id)
-                                                                                @php($addon=\App\Model\AddOn::find($id))
-                                                                                @php($add_on_qtys==null? $add_on_qty=1 : $add_on_qty=$add_on_qtys[$key2])
-
-                                                                                <div class="font-size-sm text-body">
-                                                                    <span>{{$addon ? $addon['name'] : translate('addon deleted')}} :  </span>
-                                                                    <span class="font-weight-semibold">
-                                                                        {{$add_on_qty}} x {{ \App\CentralLogics\Helpers::set_symbol($add_on_prices[$key2]) }} <br>
-                                                                    </span>
-                                                                </div>
-                                                                                @php($add_ons_cost+=$add_on_prices[$key2] * $add_on_qty)
-                                                                                @php($add_ons_tax_cost +=  $add_on_taxes[$key2] * $add_on_qty)
-                                                                            @endforeach
-                                                    </span>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td style="text-align: center">
-                                                        @php($amount=$detail['price']*$detail['quantity'])
-                                                        {{\App\CentralLogics\Helpers::set_symbol($amount)}}
-                                                    </td>
-                                                    <td style="text-align: center">
-                                                        @php($tot_discount = $detail['discount_on_product']*$detail['quantity'])
-                                                        {{\App\CentralLogics\Helpers::set_symbol($tot_discount)}}
-                                                    </td>
-                                                    <td style="text-align: center">
-                                                        @php($product_tax = $detail['tax_amount']*$detail['quantity'])
-                                                        {{\App\CentralLogics\Helpers::set_symbol($product_tax + $add_ons_tax_cost)}}
-                                                    </td>
-                                                    <td class="text-right">{{\App\CentralLogics\Helpers::set_symbol($amount-$tot_discount + $product_tax)}}</td>
-                                                </tr>
-                                                @php($total_dis_on_pro += $tot_discount)
-                                                @php($sub_total += $amount)
-                                                @php($total_tax += $product_tax)
-
-                                            @endforeach
-                                            <tr>
-                                                <td colspan="6">
-                                                    <hr style="margin-top:0;">
-                                                    <table class="w-100">
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">{{ translate('item_price') }}</td>
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($sub_total) }}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">{{ translate('discount') }}</td>
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($total_dis_on_pro) }}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">{{translate('addon')}} {{translate('cost')}}</td>
-
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($add_ons_cost) }}</td>
-                                                        </tr>
-
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">{{translate('coupon')}} {{translate('discount')}}</td>
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($order['coupon_discount_amount']) }}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3"> {{translate('extra discount')}}</td>
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($order['extra_discount']) }}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">{{translate('tax')}} / {{translate('vat')}}</td>
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($total_tax) }}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3"> {{translate('delivery fee')}}</td>
-                                                            @if($order['order_type']=='take_away')
-                                                                @php($del_c=0)
-                                                            @else
-                                                                @php($del_c=$order['delivery_charge'])
-                                                            @endif
-                                                            <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::set_symbol($del_c) }}</td>
-                                                        </tr>
-
-                                                        <tr>
-                                                            <td style="width: 40%"></td>
-                                                            <td class="p-1 px-3">
-                                                                <h4>{{ translate('total') }}</h4>
-                                                            </td>
-                                                            <td class="text-right p-1 px-3">
-                                                                <span class="text-base">{{ \App\CentralLogics\Helpers::set_symbol($sub_total + $total_tax + $add_ons_cost - $total_dis_on_pro + $add_ons_tax_cost - $order['coupon_discount_amount'] - $order['extra_discount'] + $del_c) }}</span>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                    </tbody>
-                                </table>
-                            </td>
-                        </tr>
+                                    @php($total_dis_on_pro += $tot_discount)
+                                    @php($sub_total += $amount)
+                                    @php($total_tax += $product_tax)
+                                </td>
+                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
-                    <hr>
-                    <div class="mb-2" id="mail-footer">
-                        {{ $footer_text ?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}
-                    </div>
-                    <div>
-                        {{ translate('Thanks_&_Regards') }},
-                    </div>
-                    <div class="mb-4">
-                        {{ $company_name }}
+                    <table class="total-table">
+                        <tr>
+                            <td class="total-row-label">{{ translate('Items Price') }}:</td>
+                            <td class="total-row-value">{{ \App\CentralLogics\Helpers::set_symbol($sub_total) }}</td>
+                        </tr>
+                        @if($add_ons_cost > 0)
+                            <tr>
+                                <td class="total-row-label">{{ translate('Addon Cost') }}:</td>
+                                <td class="total-row-value">{{ \App\CentralLogics\Helpers::set_symbol($add_ons_cost) }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="total-row-label">{{ translate('Discount') }}:</td>
+                            <td class="total-row-value">-
+                                {{ \App\CentralLogics\Helpers::set_symbol($total_dis_on_pro) }}</td>
+                        </tr>
+                        @if($order['coupon_discount_amount'] > 0)
+                            <tr>
+                                <td class="total-row-label">{{ translate('Coupon Discount') }}:</td>
+                                <td class="total-row-value">-
+                                    {{ \App\CentralLogics\Helpers::set_symbol($order['coupon_discount_amount']) }}</td>
+                            </tr>
+                        @endif
+                        @if($order['extra_discount'] > 0)
+                            <tr>
+                                <td class="total-row-label">{{translate('Extra Discount')}}:</td>
+                                <td class="total-row-value">-
+                                    {{ \App\CentralLogics\Helpers::set_symbol($order['extra_discount']) }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="total-row-label">{{ translate('Tax / VAT') }}:</td>
+                            <td class="total-row-value">
+                                {{ \App\CentralLogics\Helpers::set_symbol($total_tax + $add_ons_tax_cost) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="total-row-label">{{ translate('Delivery Fee') }}:</td>
+                            <td class="total-row-value">
+                                {{ \App\CentralLogics\Helpers::set_symbol($order['order_type'] == 'take_away' ? 0 : $order['delivery_charge']) }}
+                            </td>
+                        </tr>
+                        @php($grand_total_val = $sub_total + $total_tax + $add_ons_cost - $total_dis_on_pro + $add_ons_tax_cost - $order['coupon_discount_amount'] - $order['extra_discount'] + ($order['order_type'] == 'take_away' ? 0 : $order['delivery_charge']))
+                        <tr class="grand-total">
+                            <td class="total-row-label"><strong>{{ translate('Total') }}</strong></td>
+                            <td class="total-row-value">
+                                <strong>{{ \App\CentralLogics\Helpers::set_symbol($grand_total_val) }}</strong></td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 30px; text-align: left;">
+                        {{ $footer_text ?? '' }}<br><br>
+                        {{ translate('Thanks_&_Regards') }},<br>
+                        <strong>{{ $company_name }}</strong>
                     </div>
                 </td>
             </tr>
             <tr>
-                <td>
-                    <span class="privacy">
-                    @if(isset($data['privacy']) && $data['privacy'] == 1)
-                            <a href="{{ route('privacy-policy') }}" id="privacy-check">{{ translate('Privacy_Policy')}}</a>
+                <td class="footer">
+                    <div class="privacy-links">
+                        @if(isset($data['privacy']) && $data['privacy'] == 1)
+                            <a href="{{ route('privacy-policy') }}">{{ translate('Privacy_Policy')}}</a>
                         @endif
                         @if(isset($data['contact']) && $data['contact'] == 1)
-                            <a href="{{ route('about-us') }}" id="contact-check">{{ translate('About_Us')}}</a>
+                            <a href="{{ route('about-us') }}">{{ translate('About_Us')}}</a>
                         @endif
-                    </span>
-                    <span class="copyright" id="mail-copyright">
-                        {{ $copyright_text ?? translate('Copyright_2025_eFood._All_right_reserved') }}
-                    </span>
+                    </div>
+                    <div class="copyright">
+                        {{ $copyright_text ?? '' }}
+                    </div>
                 </td>
             </tr>
-        </tbody>
-    </table>
-
-
+        </table>
+    </center>
 </body>
+
 </html>

@@ -141,6 +141,22 @@
                                     });
                                 }
                             }
+                        },
+                        error: function (xhr) {
+                            var response = xhr.responseJSON;
+                            if (response && response.errors) {
+                                for (var i = 0; i < response.errors.length; i++) {
+                                    toastr.error(response.errors[i].message, {
+                                        CloseButton: true,
+                                        ProgressBar: true
+                                    });
+                                }
+                            } else {
+                                toastr.error('{{ translate('An error occurred. Please try again.') }}', {
+                                    CloseButton: true,
+                                    ProgressBar: true
+                                });
+                            }
                         }
                     });
                 }

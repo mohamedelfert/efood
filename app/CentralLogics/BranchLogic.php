@@ -44,7 +44,7 @@ class BranchLogic
                 $new_balance = $current_balance + $credit;
             } elseif ($transaction_type === 'cash_out' || $transaction_type === 'fund_customer_wallet' || $transaction_type === 'fund_customer_cashback') {
                 if ($current_balance < $amount) {
-                    throw new Exception(translate('Insufficient wallet balance.'));
+                    throw new Exception(translate('Insufficient branch wallet balance.'));
                 }
                 $debit = $amount;
                 $new_balance = $current_balance - $debit;
