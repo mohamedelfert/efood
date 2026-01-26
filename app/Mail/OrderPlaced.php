@@ -48,7 +48,7 @@ class OrderPlaced extends Mailable
                 ->first();
 
             $template_id = $template?->email_template ?? 3;
-            $local = $order->customer?->language_code ?? 'en';
+            $language_code = $order->customer?->language_code ?? 'en';
 
             // Default values
             $defaults = [
@@ -65,9 +65,9 @@ class OrderPlaced extends Mailable
             $copyright_text = $template?->copyright_text ?? $defaults['copyright_text'];
 
             // Apply translations if available
-            if ($template && $local !== 'en' && $template->translations->isNotEmpty()) {
+            if ($template && $language_code !== 'en' && $template->translations->isNotEmpty()) {
                 foreach ($template->translations as $t) {
-                    if ($t->locale === $local && $t->value) {
+                    if ($t->locale === $language_code && $t->value) {
                         switch ($t->key) {
                             case 'title':
                                 $title = $t->value;
@@ -135,7 +135,7 @@ class OrderPlaced extends Mailable
 
             // Try to generate and attach PDF
             try {
-                $html = view('email-templates.invoice', compact('order'))->render();
+                $html = view('email-templates.invoice', compact('order', 'language_code'))->render();
 
                 $mpdf = new Mpdf([
                     'mode' => 'utf-8',
