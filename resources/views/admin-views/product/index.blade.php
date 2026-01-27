@@ -365,7 +365,7 @@
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <div class="">
+                                                    <div class="position-relative">
                                                         <label class="input-label">{{translate('select branch')}}</label>
                                                         <select name="branches[]" class="form-control" id="choose_branch" multiple>
                                                             <option value="" disabled>---{{translate('select branch')}}---</option>
@@ -624,12 +624,16 @@
         //Select 2
         $("#choose_addons").select2({
             placeholder: "{{ translate('Select_Addons') }}",
-            allowClear: true
+            allowClear: true,
+            dir: 'rtl',
+            width: '100%'
         });
 
         $("#choose_branch").select2({
             placeholder: "{{ translate('select branch') }}",
-            allowClear: true
+            allowClear: true,
+            dir: 'rtl',
+            width: '100%'
         });
 
 
