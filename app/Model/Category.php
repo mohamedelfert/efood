@@ -16,7 +16,8 @@ class Category extends Model
         'position' => 'integer',
         'status' => 'integer',
         'priority' => 'integer',
-        'all_branches' => 'integer'
+        'all_branches' => 'integer',
+        'branch_ids' => 'array'
     ];
 
     public function translations(): MorphMany

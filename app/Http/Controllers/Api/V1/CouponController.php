@@ -15,9 +15,10 @@ class CouponController extends Controller
 {
     public function __construct(
         private Coupon $coupon,
-        private Order  $order,
+        private Order $order,
         private Branch $branch
-    ) {}
+    ) {
+    }
 
     /**
      * Get list of active coupons
@@ -28,7 +29,7 @@ class CouponController extends Controller
     {
         try {
             $branchId = $request->header('branch-id') ?? $request->branch_id;
-            
+
             $couponQuery = $this->coupon->active()
                 ->with('branch:id,name');
 
@@ -88,7 +89,7 @@ class CouponController extends Controller
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:15',
             'guest_id' => auth('api')->user() ? 'nullable' : 'required',
-            'order_amount' => 'required|numeric|min:0',
+            'order_amount' => 'nullable|numeric|min:0',
             'branch_id' => 'nullable|exists:branches,id'
         ]);
 
@@ -101,7 +102,8 @@ class CouponController extends Controller
 
         try {
             $branchId = $request->branch_id ?? $request->header('branch-id');
-            
+            $orderAmount = $request->order_amount ?? 0;
+
             $couponQuery = $this->coupon->active()
                 ->where('code', strtoupper($request->code));
 
@@ -128,12 +130,12 @@ class CouponController extends Controller
             }
 
             // Check minimum purchase requirement
-            if ($coupon->min_purchase > 0 && $request->order_amount < $coupon->min_purchase) {
+            if ($coupon->min_purchase > 0 && $orderAmount < $coupon->min_purchase) {
                 return response()->json([
                     'success' => false,
                     'errors' => [
                         [
-                            'code' => 'coupon', 
+                            'code' => 'coupon',
                             'message' => translate('Minimum purchase amount is') . ' ' . Helpers::currency_symbol() . $coupon->min_purchase
                         ]
                     ]
@@ -187,8 +189,8 @@ class CouponController extends Controller
             // Calculate discount amount
             $discountAmount = 0;
             if ($coupon->discount_type == 'percent') {
-                $discountAmount = ($request->order_amount * $coupon->discount) / 100;
-                
+                $discountAmount = ($orderAmount * $coupon->discount) / 100;
+
                 if ($coupon->max_discount > 0 && $discountAmount > $coupon->max_discount) {
                     $discountAmount = $coupon->max_discount;
                 }
@@ -242,7 +244,7 @@ class CouponController extends Controller
 
         try {
             $branchId = $request->branch_id ?? $request->header('branch-id');
-            
+
             $coupon = $this->coupon->active()
                 ->where('code', strtoupper($request->code))
                 ->with('branch:id,name')
