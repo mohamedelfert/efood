@@ -583,6 +583,12 @@ class Helpers
             $data = self::get_business_settings('failed_message');
         } elseif ($status == 'canceled') {
             $data = self::get_business_settings('canceled_message');
+            if (!isset($data) || (array_key_exists('status', $data) && $data['status'] == 0)) {
+                $data = [
+                    'status' => 1,
+                    'message' => translate('Order Canceled'),
+                ];
+            }
         } elseif ($status == 'customer_notify_message') {
             $data = self::get_business_settings('customer_notify_message');
         } elseif ($status == 'customer_notify_message_for_time_change') {

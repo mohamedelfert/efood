@@ -345,7 +345,7 @@ class OrderController extends Controller
                     'description' => $value,
                     'order_id' => $order['id'],
                     'image' => '',
-                    'type' => 'order_status',
+                    'type' => $request->order_status == 'canceled' ? 'order_canceled' : 'order_status',
                 ];
                 if (isset($customerFcmToken)) {
                     Helpers::send_push_notif_to_device($customerFcmToken, $data);
@@ -373,7 +373,7 @@ class OrderController extends Controller
                         'description' => $request->order_status == 'in_prepare' ? $value : ($request->order_status == 'canceled' ? $canceledValue : $outForDeliveryValue),
                         'order_id' => $order['id'],
                         'image' => '',
-                        'type' => 'order_status',
+                        'type' => $request->order_status == 'canceled' ? 'order_canceled' : 'order_status',
                     ];
                     if (isset($deliverymanFcmToken)) {
                         Helpers::send_push_notif_to_device(fcm_token: $deliverymanFcmToken, data: $data);

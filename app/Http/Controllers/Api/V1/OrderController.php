@@ -2742,11 +2742,15 @@ class OrderController extends Controller
                     'branch_id' => $order->branch_id,
                     'order_status' => 'canceled',
                     'image' => '',
-                    'type' => 'order_status',
+                    'type' => 'order_canceled',
                 ];
 
                 Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_canceled', web_push_link: route('admin.orders.list', ['status' => 'canceled']));
                 Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-' . $order->branch_id . '-message', type: 'order_canceled', web_push_link: route('branch.orders.list', ['status' => 'canceled']));
+
+                if (isset($order->delivery_man)) {
+                    Helpers::send_push_notif_to_device($order->delivery_man->fcm_token, $data);
+                }
 
                 Log::info('Admin and branch server notifications sent for canceled order', [
                     'order_id' => $order->id,
