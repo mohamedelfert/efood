@@ -15,7 +15,7 @@ return [
         'enabled' => env('ALQUTAIBI_BANK_ENABLED', true),
         'is_production' => env('ALQUTAIBI_BANK_PRODUCTION', false),
         'base_url' => env('ALQUTAIBI_BANK_URL', 'https://newdc.qtb-bank.com:5052/PayBills'),
-        'production_url' => env('ALQUTAIBI_BANK_PRODUCTION_URL', 'https://prod.qtb-bank.com/PayBills'),
+        'production_url' => env('ALQUTAIBI_BANK_PRODUCTION_URL', env('ALQUTAIBI_BANK_URL', 'https://prod.qtb-bank.com/PayBills')),
         'api_key' => env('ALQUTAIBI_BANK_API_KEY'),
         'app_key' => env('ALQUTAIBI_BANK_APP_KEY'),
         'timeout' => env('ALQUTAIBI_BANK_TIMEOUT', 30),
@@ -29,10 +29,28 @@ return [
     ],
 
     // ===============================
+    // Kuraimi Bank Configuration
+    // ===============================
+    'kuraimi' => [
+        'enabled' => env('KURAIMI_BANK_ENABLED', true),
+        'is_production' => env('KURAIMI_BANK_PRODUCTION', false),
+        'uat_url' => env('KURAIMI_BANK_UAT_URL', 'https://web.krmbank.net.ye:44746/alk-paymentsexp'),
+        'production_url' => env('KURAIMI_BANK_PRODUCTION_URL', 'https://web.krmbank.net.ye/alk-payments'),
+        'username' => env('KURAIMI_BANK_USERNAME'),
+        'password' => env('KURAIMI_BANK_PASSWORD'),
+        'timeout' => env('KURAIMI_BANK_TIMEOUT', 30),
+        'supported_currencies' => ['YER', 'SAR', 'USD'],
+        'fees' => [
+            'fixed' => 0,
+            'percentage' => 0
+        ]
+    ],
+
+    // ===============================
     // International Cards (Stripe)
     // ===============================
 
-   'stripe' => [
+    'stripe' => [
         'enabled' => env('STRIPE_ENABLED', true),
         'secret_key' => env('STRIPE_SECRET_KEY'),
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY'),
@@ -52,13 +70,13 @@ return [
         'webhook_timeout' => env('WEBHOOK_TIMEOUT', 30),
         'enable_logging' => env('PAYMENT_LOGGING', true),
         'log_level' => env('PAYMENT_LOG_LEVEL', 'info'), // debug, info, warning, error
-        
+
         // Security settings
         'enable_ip_whitelist' => env('PAYMENT_IP_WHITELIST', false),
         'allowed_ips' => explode(',', env('PAYMENT_ALLOWED_IPS', '')),
         'enable_rate_limiting' => env('PAYMENT_RATE_LIMITING', true),
         'rate_limit_per_minute' => env('PAYMENT_RATE_LIMIT', 10),
-        
+
         // Notification settings
         'send_sms_notifications' => env('PAYMENT_SMS_NOTIFICATIONS', true),
         'send_email_notifications' => env('PAYMENT_EMAIL_NOTIFICATIONS', true),
