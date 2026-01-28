@@ -302,6 +302,31 @@
                                     <div class="card h-100">
                                         <div class="card-header">
                                             <h4 class="mb-0 d-flex gap-2 align-items-center">
+                                                <i class="tio-label"></i>
+                                                {{translate('Branch')}}
+                                            </h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="position-relative">
+                                                        <label class="input-label">{{translate('select branch')}}</label>
+                                                        <select name="branches[]" class="form-control" id="choose_branch" multiple>
+                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                            @foreach($branches as $branch)
+                                                                <option value="{{$branch['id']}}">{{$branch['name']}}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h4 class="mb-0 d-flex gap-2 align-items-center">
                                                 <i class="tio-puzzle"></i>
                                                 {{translate('Addons')}}
                                             </h4>
@@ -349,31 +374,6 @@
                                                         <input class="switcher_input" type="checkbox" checked="checked" name="is_recommended">
                                                         <span class="switcher_control"></span>
                                                     </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="card h-100">
-                                        <div class="card-header">
-                                            <h4 class="mb-0 d-flex gap-2 align-items-center">
-                                                <i class="tio-label"></i>
-                                                {{translate('Branch')}}
-                                            </h4>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="position-relative">
-                                                        <label class="input-label">{{translate('select branch')}}</label>
-                                                        <select name="branches[]" class="form-control" id="choose_branch" multiple>
-                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
-                                                            @foreach($branches as $branch)
-                                                                <option value="{{$branch['id']}}">{{$branch['name']}}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
