@@ -2745,8 +2745,8 @@ class OrderController extends Controller
                     'type' => 'order_status',
                 ];
 
-                Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_request', web_push_link: route('admin.orders.list', ['status' => 'canceled']));
-                Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-' . $order->branch_id . '-message', type: 'order_request', web_push_link: route('branch.orders.list', ['status' => 'canceled']));
+                Helpers::send_push_notif_to_topic(data: $data, topic: 'admin_message', type: 'order_canceled', web_push_link: route('admin.orders.list', ['status' => 'canceled']));
+                Helpers::send_push_notif_to_topic(data: $data, topic: 'branch-order-' . $order->branch_id . '-message', type: 'order_canceled', web_push_link: route('branch.orders.list', ['status' => 'canceled']));
 
                 Log::info('Admin and branch server notifications sent for canceled order', [
                     'order_id' => $order->id,

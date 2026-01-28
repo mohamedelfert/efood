@@ -357,7 +357,7 @@ class OrderController extends Controller
         }
 
         //delivery man notification
-        if ($request->order_status == 'in_prepare' || $request->order_status == 'out_for_delivery') {
+        if ($request->order_status == 'in_prepare' || $request->order_status == 'out_for_delivery' || $request->order_status == 'canceled') {
 
             if (isset($order->delivery_man)) {
                 $deliverymanFcmToken = $order->delivery_man->fcm_token;
@@ -365,11 +365,12 @@ class OrderController extends Controller
 
             $value = translate('One of your order is on processing');
             $outForDeliveryValue = translate('One of your order is out for delivery');
+            $canceledValue = translate('One of your order is canceled');
             try {
                 if ($value) {
                     $data = [
                         'title' => translate('Order'),
-                        'description' => $request->order_status == 'in_prepare' ? $value : $outForDeliveryValue,
+                        'description' => $request->order_status == 'in_prepare' ? $value : ($request->order_status == 'canceled' ? $canceledValue : $outForDeliveryValue),
                         'order_id' => $order['id'],
                         'image' => '',
                         'type' => 'order_status',
