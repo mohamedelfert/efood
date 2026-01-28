@@ -16,11 +16,11 @@ class QIBPaymentGateway implements PaymentGatewayInterface
     public function __construct()
     {
         $isProduction = config('payment.alqutaibi.is_production', false);
-        $this->baseUrl = $isProduction 
+        $this->baseUrl = $isProduction
             ? config('payment.alqutaibi.production_url')
             : config('payment.alqutaibi.base_url');
         $this->apiKey = config('payment.alqutaibi.api_key');
-        $this->appKey = config('payment.alqutaibi.app_key');
+        $this->appKey = config('payment.alqutaibi.app_key') ?: $this->apiKey;
         $this->timeout = config('payment.alqutaibi.timeout', 30);
     }
 
@@ -31,7 +31,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
     {
         // IV must be exactly 16 null bytes (128 bit)
         $iv = str_repeat("\0", 16);
-        
+
         // Use AES-128-CBC with PKCS7 padding
         $encrypted = openssl_encrypt(
             $plainInput,
@@ -40,7 +40,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             OPENSSL_RAW_DATA,
             $iv
         );
-        
+
         return base64_encode($encrypted);
     }
 
@@ -50,11 +50,11 @@ class QIBPaymentGateway implements PaymentGatewayInterface
     private function normalizeCustomerNumber($number): string
     {
         $number = (string) $number;
-        
+
         if (strlen($number) == 9 && substr($number, 0, 1) == '4') {
             return substr($number, 1);
         }
-        
+
         return $number;
     }
 
@@ -63,7 +63,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
      */
     private function getCurrencyId(string $currency): int
     {
-        return match(strtoupper($currency)) {
+        return match (strtoupper($currency)) {
             'YER' => 1,
             'SAR' => 2,
             'USD' => 3,
