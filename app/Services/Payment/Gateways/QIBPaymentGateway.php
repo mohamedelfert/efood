@@ -112,6 +112,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             Log::info('QIB RequestPayment Response', [
                 'status_code' => $response->status(),
                 'response' => $result,
+                'raw_body' => $response->body(),
             ]);
 
             // Check if request was successful
