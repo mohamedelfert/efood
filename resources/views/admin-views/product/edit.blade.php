@@ -313,6 +313,31 @@
                                     <div class="card h-100">
                                         <div class="card-header">
                                             <h4 class="mb-0 d-flex gap-2 align-items-center">
+                                                <i class="tio-label"></i>
+                                                {{translate('Branch')}}
+                                            </h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="">
+                                                        <label class="input-label">{{translate('select branch')}}</label>
+                                                        <select name="branches[]" class="form-control js-select2-custom" multiple>
+                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
+                                                            @foreach($branches as $branch)
+                                                                <option value="{{$branch['id']}}" {{ $product->branches->pluck('id')->contains($branch['id']) ? 'selected' : '' }}>{{$branch['name']}}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h4 class="mb-0 d-flex gap-2 align-items-center">
                                                 <i class="tio-puzzle"></i>
                                                 {{translate('Addons')}}
                                             </h4>
@@ -360,31 +385,6 @@
                                                         <input class="switcher_input" type="checkbox" name="is_recommended" {{$product->is_recommended == 1 ? 'checked' : ''}}>
                                                         <span class="switcher_control"></span>
                                                     </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="card h-100">
-                                        <div class="card-header">
-                                            <h4 class="mb-0 d-flex gap-2 align-items-center">
-                                                <i class="tio-label"></i>
-                                                {{translate('Branch')}}
-                                            </h4>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="">
-                                                        <label class="input-label">{{translate('select branch')}}</label>
-                                                        <select name="branches[]" class="form-control js-select2-custom" multiple>
-                                                            <option value="" disabled>---{{translate('select branch')}}---</option>
-                                                            @foreach($branches as $branch)
-                                                                <option value="{{$branch['id']}}" {{ $product->branches->pluck('id')->contains($branch['id']) ? 'selected' : '' }}>{{$branch['name']}}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
