@@ -6,6 +6,8 @@ use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Model\Coupon;
 use App\Model\Branch;
+use App\Model\Notification;
+use Illuminate\Support\Facades\Log;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,8 +20,8 @@ class CouponController extends Controller
     public function __construct(
         private Coupon $coupon,
         private Branch $branch
-    )
-    {}
+    ) {
+    }
 
     /**
      * Display coupon list with search and branch filter
@@ -50,7 +52,7 @@ class CouponController extends Controller
         if ($request->has('branch_id') && $request['branch_id'] != 'all') {
             $query->where(function ($q) use ($branchFilter) {
                 $q->where('branch_id', $branchFilter)
-                  ->orWhereNull('branch_id'); // Include global coupons
+                    ->orWhereNull('branch_id'); // Include global coupons
             });
             $queryParam['branch_id'] = $request['branch_id'];
         }
@@ -102,13 +104,13 @@ class CouponController extends Controller
         $request->validate($rules, $messages);
 
         // Validate percentage discount
-        if ($request->discount_type == 'percent' && (float)$request->discount > 100) {
+        if ($request->discount_type == 'percent' && (float) $request->discount > 100) {
             Toastr::error(translate('discount_can_not_be_more_than_100%'));
             return back()->withInput();
         }
 
         // Validate percentage discount is at least 1
-        if ($request->discount_type == 'percent' && (float)$request->discount < 1) {
+        if ($request->discount_type == 'percent' && (float) $request->discount < 1) {
             Toastr::error(translate('Discount percentage must be at least 1%'));
             return back()->withInput();
         }
@@ -128,6 +130,29 @@ class CouponController extends Controller
                 'discount_type' => $request->discount_type,
                 'status' => 1,
             ]);
+
+            // Send notification
+            try {
+                $notification = new Notification();
+                $notification->title = translate('New Coupon Added');
+                $notification->description = $request->title . ' (' . strtoupper($request->code) . ')';
+                $notification->status = 1;
+                $notification->notification_type = 'coupon';
+                $notification->save();
+
+                $notificationData = [
+                    'title' => translate('New Coupon Available') . ': ' . $request->title,
+                    'description' => translate('Use code') . ' ' . strtoupper($request->code) . ' ' . translate('to get discount!'),
+                    'image' => '',
+                    'order_id' => '',
+                    'type' => 'coupon'
+                ];
+
+                $topic = ($request->branch_id == 'all' || empty($request->branch_id)) ? 'general' : 'branch_' . $request->branch_id;
+                Helpers::send_push_notif_to_topic($notificationData, 'notify', $topic);
+            } catch (\Exception $e) {
+                Log::error('Coupon notification failed: ' . $e->getMessage());
+            }
 
             Toastr::success(translate('Coupon added successfully!'));
             return redirect()->route('admin.coupon.add-new');
@@ -191,13 +216,13 @@ class CouponController extends Controller
         $request->validate($rules, $messages);
 
         // Validate percentage discount
-        if ($request->discount_type == 'percent' && (float)$request->discount > 100) {
+        if ($request->discount_type == 'percent' && (float) $request->discount > 100) {
             Toastr::error(translate('discount_can_not_be_more_than_100%'));
             return back()->withInput();
         }
 
         // Validate percentage discount is at least 1
-        if ($request->discount_type == 'percent' && (float)$request->discount < 1) {
+        if ($request->discount_type == 'percent' && (float) $request->discount < 1) {
             Toastr::error(translate('Discount percentage must be at least 1%'));
             return back()->withInput();
         }
@@ -272,7 +297,7 @@ class CouponController extends Controller
     public function generateCouponCode(): JsonResponse
     {
         $code = strtoupper(Str::random(10));
-        
+
         // Ensure code is unique
         while ($this->coupon->where('code', $code)->exists()) {
             $code = strtoupper(Str::random(10));

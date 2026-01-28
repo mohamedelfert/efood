@@ -8,6 +8,8 @@ use App\Model\Banner;
 use App\Model\Branch;
 use App\Model\Category;
 use App\Model\Product;
+use App\Model\Notification;
+use Illuminate\Support\Facades\Log;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
@@ -17,12 +19,12 @@ use Illuminate\Http\JsonResponse;
 class BannerController extends Controller
 {
     public function __construct(
-        private Banner   $banner,
-        private Product  $product,
+        private Banner $banner,
+        private Product $product,
         private Category $category,
-        private Branch   $branch
-    )
-    {}
+        private Branch $branch
+    ) {
+    }
 
     /**
      * @return Renderable
@@ -59,11 +61,11 @@ class BannerController extends Controller
                 if ($branchFilter === 'global') {
                     $query->where('is_global', true);
                 } else {
-                    $query->where(function($q) use ($branchFilter) {
+                    $query->where(function ($q) use ($branchFilter) {
                         $q->where('is_global', true)
-                          ->orWhereHas('branches', function($query) use ($branchFilter) {
-                              $query->where('branch_id', $branchFilter);
-                          });
+                            ->orWhereHas('branches', function ($query) use ($branchFilter) {
+                                $query->where('branch_id', $branchFilter);
+                            });
                     });
                 }
             })
@@ -155,10 +157,10 @@ class BannerController extends Controller
 
         // Attach multiple products to pivot table
         if ($request->banner_type == 'multiple_products' && !empty($request->product_ids)) {
-            $productIds = array_filter($request->product_ids, function($id) {
+            $productIds = array_filter($request->product_ids, function ($id) {
                 return !empty($id);
             });
-            
+
             if (!empty($productIds)) {
                 $banner->products()->attach($productIds);
             }
@@ -166,13 +168,42 @@ class BannerController extends Controller
 
         // Attach branches if not global
         if (!$request->is_global && !empty($request->branch_ids)) {
-            $branchIds = array_filter($request->branch_ids, function($id) {
+            $branchIds = array_filter($request->branch_ids, function ($id) {
                 return !empty($id);
             });
-            
+
             if (!empty($branchIds)) {
                 $banner->branches()->attach($branchIds);
             }
+        }
+
+        // Send notification
+        try {
+            $notification = new Notification();
+            $notification->title = translate('New Banner Added');
+            $notification->description = $request->title;
+            $notification->image = $banner->image;
+            $notification->status = 1;
+            $notification->notification_type = 'banner';
+            $notification->save();
+
+            $notificationData = [
+                'title' => translate('New Offer') . ': ' . $request->title,
+                'description' => translate('Check out our new offer!'),
+                'image' => $banner->image ? asset('storage/app/public/banner/' . $banner->image) : '',
+                'order_id' => '',
+                'type' => 'banner'
+            ];
+
+            if ($request->is_global) {
+                Helpers::send_push_notif_to_topic($notificationData, 'notify', 'general');
+            } else {
+                foreach ($branchIds as $branchId) {
+                    Helpers::send_push_notif_to_topic($notificationData, 'notify', 'branch_' . $branchId);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Banner notification failed: ' . $e->getMessage());
         }
 
         Toastr::success(translate('banner_added_successfully'));
@@ -257,31 +288,31 @@ class BannerController extends Controller
         // Handle multiple products
         if ($request->banner_type == 'multiple_products') {
             $banner->products()->detach();
-            
+
             if (!empty($request->product_ids)) {
-                $productIds = array_filter($request->product_ids, function($id) {
+                $productIds = array_filter($request->product_ids, function ($id) {
                     return !empty($id);
                 });
-                
+
                 if (!empty($productIds)) {
                     $banner->products()->attach($productIds);
                 }
             }
         }
 
-        $banner->image = $request->has('image') 
-            ? Helpers::update('banner/', $banner->image, 'png', $request->file('image')) 
+        $banner->image = $request->has('image')
+            ? Helpers::update('banner/', $banner->image, 'png', $request->file('image'))
             : $banner->image;
-        
+
         $banner->save();
 
         // Update branches
         $banner->branches()->detach();
         if (!$request->is_global && !empty($request->branch_ids)) {
-            $branchIds = array_filter($request->branch_ids, function($id) {
+            $branchIds = array_filter($request->branch_ids, function ($id) {
                 return !empty($id);
             });
-            
+
             if (!empty($branchIds)) {
                 $banner->branches()->attach($branchIds);
             }

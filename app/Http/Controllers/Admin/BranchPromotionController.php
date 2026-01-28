@@ -6,6 +6,8 @@ use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Model\Branch;
 use App\Model\BranchPromotion;
+use App\Model\Notification;
+use Illuminate\Support\Facades\Log;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
@@ -14,10 +16,10 @@ use Illuminate\Http\Request;
 class BranchPromotionController extends Controller
 {
     public function __construct(
-        private Branch          $branch,
+        private Branch $branch,
         private BranchPromotion $branchPromotion
-    )
-    {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -57,7 +59,8 @@ class BranchPromotionController extends Controller
 
         $promotion = $this->branchPromotion;
         $promotion->branch_id = $request->branch_id;
-        $promotion->promotion_type = $request->banner_type;;
+        $promotion->promotion_type = $request->banner_type;
+        ;
         if ($request->video) {
             $promotion->promotion_name = $request->video;
         }
@@ -65,6 +68,29 @@ class BranchPromotionController extends Controller
             $promotion->promotion_name = Helpers::upload('promotion/', 'png', $request->file('image'));
         }
         $promotion->save();
+
+        // Send notification
+        try {
+            $notification = new Notification();
+            $notification->title = translate('New Promotion Added');
+            $notification->description = $request->banner_type == 'video' ? translate('New promotional video added') : translate('New promotional image added');
+            $notification->image = $promotion->promotion_name;
+            $notification->status = 1;
+            $notification->notification_type = 'promotion';
+            $notification->save();
+
+            $notificationData = [
+                'title' => translate('New Promotion Available'),
+                'description' => $request->banner_type == 'video' ? translate('Check out our new promotional video!') : translate('Check out our new promotional offer!'),
+                'image' => ($request->image && $promotion->promotion_name) ? asset('storage/app/public/promotion/' . $promotion->promotion_name) : '',
+                'order_id' => '',
+                'type' => 'promotion'
+            ];
+
+            Helpers::send_push_notif_to_topic($notificationData, 'notify', 'branch_' . $request->branch_id);
+        } catch (\Exception $e) {
+            Log::error('Promotion notification failed: ' . $e->getMessage());
+        }
 
         Toastr::success(translate('Promotional campaign added successfully!'));
         return back();
@@ -95,7 +121,8 @@ class BranchPromotionController extends Controller
 
         $promotion = $this->branchPromotion->find($request->id);
         $promotion->branch_id = $request->branch_id;
-        $promotion->promotion_type = $request->banner_type;;
+        $promotion->promotion_type = $request->banner_type;
+        ;
         if ($request->video) {
             $promotion->promotion_name = $request->video;
         }
