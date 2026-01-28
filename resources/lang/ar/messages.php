@@ -692,6 +692,7 @@
   'Wallet Receipt' => 'تقرير المحفظة',
   'Add wallet balance' => 'إضافة رصيد المحفظة',
   'Thank You' => 'شكراً',
+  'Delivery Address' => 'عنوان التوصيل',
   'Branch Cover Image' => 'صورة غلاف الفرع',
   'Create Branch' => 'إنشاء الفرع',
   'search_your_location_here' => 'ابحث عن موقعك هنا',

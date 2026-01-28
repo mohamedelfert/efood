@@ -14,6 +14,7 @@ use App\Model\DMReview;
 use App\Models\GuestUser;
 use App\Models\OrderArea;
 use App\Model\OrderDetail;
+use App\Model\Coupon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
@@ -858,7 +859,7 @@ class OrderController extends Controller
     public function placeOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'payment_method' => 'required|in:wallet_payment,stripe,qib,cash_on_delivery,offline_payment',
+            'payment_method' => 'required|in:wallet_payment,stripe,qib,kuraimi,cash_on_delivery,offline_payment',
             'order_type' => 'required|in:delivery,take_away,in_car,in_restaurant,dine_in,self_pickup',
             'car_color' => 'required_if:order_type,in_car|string|max:50',
             'car_registration_number' => 'required_if:order_type,in_car|string|max:50',
@@ -1081,9 +1082,55 @@ class OrderController extends Controller
                 }
             }
 
-            // Apply delivery charge and coupon discount
+            // Calculate coupon discount on item subtotal
+            $coupon_discount_amount = 0;
+            if ($request->filled('coupon_code')) {
+                $coupon = Coupon::active()->where(['code' => $request['coupon_code']])->first();
+                if ($coupon) {
+                    if ($coupon->isAvailableForBranch($request['branch_id'])) {
+                        if ($coupon->min_purchase <= $calculated_order_amount) {
+                            $can_apply = true;
+                            if ($coupon->coupon_type == 'first_order') {
+                                if ($userId && $userType == 0) {
+                                    $order_count = $this->order->where(['user_id' => $userId, 'is_guest' => 0])->count();
+                                    if ($order_count > 0) {
+                                        $can_apply = false;
+                                    }
+                                } else {
+                                    $can_apply = false;
+                                }
+                            }
+
+                            if ($can_apply && $coupon->coupon_type == 'default' && $coupon->limit != null) {
+                                $usage_count = $this->order->where(['user_id' => $userId, 'coupon_code' => $request['coupon_code'], 'is_guest' => $userType])->count();
+                                if ($usage_count >= $coupon->limit) {
+                                    $can_apply = false;
+                                }
+                            }
+
+                            if ($can_apply) {
+                                if ($coupon->discount_type == 'percent') {
+                                    $discount_amount = ($calculated_order_amount * $coupon->discount) / 100;
+                                    if ($coupon->max_discount > 0 && $discount_amount > $coupon->max_discount) {
+                                        $discount_amount = $coupon->max_discount;
+                                    }
+                                } else {
+                                    $discount_amount = $coupon->discount;
+                                }
+                                $coupon_discount_amount = Helpers::set_price($discount_amount);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback to request amount if no coupon code calculation was successful but amount is passed
+            if ($coupon_discount_amount == 0 && $request->filled('coupon_discount_amount')) {
+                $coupon_discount_amount = Helpers::set_price($request->coupon_discount_amount);
+            }
+
+            // Apply delivery charge and deduct coupon discount
             $calculated_order_amount += $deliveryCharge;
-            $coupon_discount_amount = Helpers::set_price($request->coupon_discount_amount ?? 0);
             $calculated_order_amount -= $coupon_discount_amount;
 
             if ($calculated_order_amount < 0.01) {
