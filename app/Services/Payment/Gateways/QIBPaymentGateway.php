@@ -20,7 +20,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             ? config('payment.alqutaibi.production_url')
             : config('payment.alqutaibi.base_url');
         $this->apiKey = config('payment.alqutaibi.api_key');
-        $this->appKey = config('payment.alqutaibi.app_key') ?: $this->apiKey;
+        $this->appKey = config('payment.alqutaibi.app_key');
         $this->timeout = config('payment.alqutaibi.timeout', 30);
     }
 
