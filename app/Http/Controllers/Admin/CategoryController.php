@@ -135,7 +135,7 @@ class CategoryController extends Controller
         $category->position = $request->position ?? 0;
         $category->priority = $request->priority ?? 0;
         $category->all_branches = in_array('0', $request->branch_ids) ? 1 : 0;
-        $category->branch_ids = in_array('0', $request->branch_ids) ? json_encode([]) : json_encode($request->branch_ids);
+        $category->branch_ids = in_array('0', $request->branch_ids) ? [] : $request->branch_ids;
         $category->save();
 
         // Translations
@@ -246,7 +246,7 @@ class CategoryController extends Controller
 
         // Save selected branches as JSON
         $category->all_branches = in_array('0', $request->branch_ids) ? 1 : 0;
-        $category->branch_ids = in_array('0', $request->branch_ids) ? json_encode([]) : json_encode($request->branch_ids);
+        $category->branch_ids = in_array('0', $request->branch_ids) ? [] : $request->branch_ids;
         $category->save();
 
         // Handle translations (non-English)

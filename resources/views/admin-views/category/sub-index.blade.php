@@ -211,9 +211,12 @@
                                             @if($category['all_branches'])
                                                 <span class="badge badge-soft-primary">{{translate('All')}}</span>
                                             @else
-                                                @foreach(json_decode($category['branch_ids'], true) as $branchId)
-                                                    <span class="badge badge-soft-info">{{ $branches->find($branchId)->name ?? '' }}</span>
-                                                @endforeach
+                                                @php($branchIds = is_array($category['branch_ids']) ? $category['branch_ids'] : json_decode($category['branch_ids'], true))
+                                                @if(is_array($branchIds))
+                                                    @foreach($branchIds as $branchId)
+                                                        <span class="badge badge-soft-info">{{ $branches->find($branchId)->name ?? '' }}</span>
+                                                    @endforeach
+                                                @endif
                                             @endif
                                         </td>
                                         <td>

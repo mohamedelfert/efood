@@ -91,7 +91,7 @@
                                                                     <option value="0" {{ $category->all_branches ? 'selected' : '' }}>{{translate('All_Branches')}}</option>
                                                                     @foreach(\App\Model\Branch::active()->get() as $branch)
                                                                         <option value="{{ $branch->id }}"
-                                                                            {{ in_array($branch->id, json_decode($category->branch_ids ?? '[]', true)) ? 'selected' : '' }}>
+                                                                            {{ in_array($branch->id, (is_string($category->branch_ids) ? json_decode($category->branch_ids, true) : $category->branch_ids) ?? []) ? 'selected' : '' }}>
                                                                             {{ $branch->name }}
                                                                         </option>
                                                                     @endforeach
