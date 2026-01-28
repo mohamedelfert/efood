@@ -700,6 +700,7 @@
   'Ex : 3' => 'مثال: 3',
   'Branch Image' => 'صورة الفرع',
   'Main Category' => 'التصنيف الرئيسي',
+  'main_Category' => 'التصنيف الرئيسي',
   'Wallet Receipt' => 'تقرير المحفظة',
   'Add wallet balance' => 'إضافة رصيد المحفظة',
   'Thank You' => 'شكراً',
