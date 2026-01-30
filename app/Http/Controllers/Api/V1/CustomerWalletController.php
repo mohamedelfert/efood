@@ -31,13 +31,13 @@ class CustomerWalletController extends Controller
     private NotificationService $notificationService;
 
     public function __construct(
-        private User              $user,
-        private BusinessSetting   $businessSetting,
+        private User $user,
+        private BusinessSetting $businessSetting,
         private WalletTransaction $walletTransaction,
-        private WalletBonus       $walletBonus,
-        NotificationService       $notificationService,
-        private WhatsAppService   $whatsapp
-    ){
+        private WalletBonus $walletBonus,
+        NotificationService $notificationService,
+        private WhatsAppService $whatsapp
+    ) {
         $this->notificationService = $notificationService;
         $this->whatsapp = $whatsapp;
     }
@@ -57,14 +57,16 @@ class CustomerWalletController extends Controller
 
         if ($walletTransaction) {
             return response()->json([
-                    'success' => true,
-                    'message' => translate('Payment initiated successfully'),
-                ], 200);
+                'success' => true,
+                'message' => translate('Payment initiated successfully'),
+            ], 200);
         }
 
-        return response()->json(['errors' => [
-            'message' => translate('failed_to_create_transaction')
-        ]], 200);
+        return response()->json([
+            'errors' => [
+                'message' => translate('failed_to_create_transaction')
+            ]
+        ], 200);
     }
 
     /**
@@ -96,7 +98,7 @@ class CustomerWalletController extends Controller
         DB::beginTransaction();
         try {
             $transactionId = 'LP_' . time() . '_' . $user->id;
-            
+
             $this->walletTransaction->create([
                 'user_id' => $user->id,
                 'transaction_id' => $transactionId,
@@ -112,7 +114,7 @@ class CustomerWalletController extends Controller
 
             $user->decrement('point', $request->point);
             $user->increment('wallet_balance', $loyaltyAmount);
-            
+
             DB::commit();
 
             // ✅ Send notification
@@ -131,7 +133,7 @@ class CustomerWalletController extends Controller
                 'new_balance' => $user->fresh()->wallet_balance,
                 'remaining_points' => $user->fresh()->point,
             ], 200);
-            
+
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Loyalty transfer failed: ' . $e->getMessage());
@@ -220,17 +222,17 @@ class CustomerWalletController extends Controller
     public function getWalletBalance(Request $request): JsonResponse
     {
         $user = $this->user->find($request->user()->id);
-        
+
         $totalEarned = $this->walletTransaction
             ->where('user_id', $user->id)
             ->where('credit', '>', 0)
             ->sum('credit');
-            
+
         $totalSpent = $this->walletTransaction
             ->where('user_id', $user->id)
             ->where('debit', '>', 0)
             ->sum('debit');
-            
+
         $pendingTransactions = $this->walletTransaction
             ->where('user_id', $user->id)
             ->where('status', 'pending')
@@ -335,7 +337,7 @@ class CustomerWalletController extends Controller
             ], 500);
         }
     }
-    
+
     // public function topUpWallet(Request $request): JsonResponse
     // {
     //     $validator = Validator::make($request->all(), [
@@ -343,12 +345,12 @@ class CustomerWalletController extends Controller
     //         'gateway' => 'required|in:stripe,qib,loyalty_points',
     //         'currency' => 'sometimes|string|in:SAR,USD,EUR,EGP,YER',
     //         'callback_url' => 'sometimes|url',
-            
+
     //         // QIB specific fields
     //         'payment_CustomerNo' => 'required_if:gateway,qib|string',
     //         'payment_DestNation' => 'required_if:gateway,qib|integer',
     //         'payment_Code' => 'required_if:gateway,qib|integer',
-            
+
     //         // Loyalty points field
     //         'points' => 'required_if:gateway,loyalty_points|integer|min:1',
     //     ]);
@@ -418,7 +420,7 @@ class CustomerWalletController extends Controller
 
     //         if (isset($response['status']) && $response['status']) {
     //             $currentBalance = $user->wallet_balance;
-                
+
     //             // BUILD METADATA WITH STRING CASTING
     //             $metadata = [
     //                 'gateway' => $gateway,
@@ -456,7 +458,7 @@ class CustomerWalletController extends Controller
     //                     'created_at' => now(),
     //                     'updated_at' => now(),
     //                 ]);
-                    
+
     //                 Log::info('WalletTransaction created successfully', [
     //                     'transaction_id' => $transactionId,
     //                     'user_id' => $user->id,
@@ -545,15 +547,18 @@ class CustomerWalletController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:1|max:50000',
-            'gateway' => 'required|in:stripe,qib,loyalty_points',
+            'gateway' => 'required|in:stripe,qib,loyalty_points,kuraimi',
             'currency' => 'sometimes|string|in:SAR,USD,EUR,EGP,YER',
             'callback_url' => 'sometimes|url',
-            
+
             // QIB specific fields
-            'payment_CustomerNo' => 'required_if:gateway,qib|string',
-            'payment_DestNation' => 'required_if:gateway,qib|integer',
+            // 'payment_CustomerNo' => 'required_if:gateway,qib|string',
+            // 'payment_DestNation' => 'required_if:gateway,qib|integer',
             'payment_Code' => 'required_if:gateway,qib|integer',
-            
+
+            // Kuraimi specific
+            'pin_pass' => 'required_if:gateway,kuraimi|string',
+
             // Loyalty points field
             'points' => 'required_if:gateway,loyalty_points|integer|min:1',
         ]);
@@ -590,7 +595,7 @@ class CustomerWalletController extends Controller
                 $amount,
                 $user->branch_id ?? null
             );
-            
+
             Log::info('Wallet top-up cashback preview', [
                 'user_id' => $user->id,
                 'amount' => $amount,
@@ -639,13 +644,16 @@ class CustomerWalletController extends Controller
                 $data['payment_CustomerNo'] = $request->payment_CustomerNo;
                 $data['payment_DestNation'] = $request->payment_DestNation;
                 $data['payment_Code'] = $request->payment_Code;
+            } elseif ($gateway === 'kuraimi') {
+                $data['payment_SCustID'] = $user->id; // Using user ID as SCustID
+                $data['pin_pass'] = $request->pin_pass;
             }
 
             $response = $gatewayInstance->requestPayment($data);
 
             if (isset($response['status']) && $response['status']) {
                 $currentBalance = $user->wallet_balance;
-                
+
                 // BUILD METADATA WITH STRING CASTING
                 $metadata = [
                     'gateway' => $gateway,
@@ -659,10 +667,15 @@ class CustomerWalletController extends Controller
                         'payment_DestNation' => $request->payment_DestNation,
                         'payment_Code' => $request->payment_Code,
                     ]);
+                } elseif ($gateway === 'kuraimi') {
+                    $metadata = array_merge($metadata, [
+                        'payment_SCustID' => $user->id,
+                        'transaction_id' => $transactionId,
+                    ]);
                 } else {
                     // For Stripe - Cast IDs to strings
                     $metadata = array_merge($metadata, [
-                        'stripe_order_id' => (string)($response['order_id'] ?? ''),
+                        'stripe_order_id' => (string) ($response['order_id'] ?? ''),
                         'payment_key' => $response['payment_key'] ?? null,
                     ]);
                 }
@@ -683,7 +696,7 @@ class CustomerWalletController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    
+
                     Log::info('WalletTransaction created successfully', [
                         'transaction_id' => $transactionId,
                         'user_id' => $user->id,
@@ -751,6 +764,14 @@ class CustomerWalletController extends Controller
                 if ($gateway === 'qib') {
                     $responseData['requires_otp'] = true;
                     $responseData['otp_sent'] = true;
+                } elseif ($gateway === 'kuraimi') {
+                    // Auto-complete for Kuraimi
+                    $this->walletTransaction->where('transaction_id', $transactionId)->update(['status' => 'completed']);
+                    $user->increment('wallet_balance', $amount);
+
+                    $responseData['requires_otp'] = false;
+                    $responseData['message'] = translate('Top-up successful');
+                    $responseData['new_balance'] = $user->fresh()->wallet_balance;
                 } else {
                     $responseData['payment_url'] = $response['checkout_url'] ?? null;
                     $responseData['requires_otp'] = false;
@@ -795,7 +816,7 @@ class CustomerWalletController extends Controller
         DB::beginTransaction();
         try {
             $transactionId = 'LP_TOPUP_' . time() . '_' . $user->id;
-            
+
             $this->walletTransaction->create([
                 'user_id' => $user->id,
                 'transaction_id' => $transactionId,
@@ -812,7 +833,7 @@ class CustomerWalletController extends Controller
 
             $user->decrement('point', $points);
             $user->increment('wallet_balance', $amount);
-            
+
             DB::commit();
 
             return response()->json([
@@ -824,7 +845,7 @@ class CustomerWalletController extends Controller
                 'new_balance' => $user->fresh()->wallet_balance,
                 'remaining_points' => $user->fresh()->point,
             ], 200);
-            
+
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Loyalty top-up failed: ' . $e->getMessage());
@@ -1004,8 +1025,8 @@ class CustomerWalletController extends Controller
 
             // Send transfer notifications
             $this->notificationService->sendMoneyTransferNotification(
-                $sender->fresh(), 
-                $receiver->fresh(), 
+                $sender->fresh(),
+                $receiver->fresh(),
                 [
                     'transaction_id' => $transactionId,
                     'amount' => $amount,
@@ -1032,7 +1053,7 @@ class CustomerWalletController extends Controller
                 'amount' => $amount,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'errors' => [['code' => 'server_error', 'message' => translate('Transfer failed')]]
             ], 500);
@@ -1045,36 +1066,38 @@ class CustomerWalletController extends Controller
     public function getMyQRCode(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         Log::info('Getting QR code', [
             'user_id' => $user->id,
             'has_qr_code' => $user->hasQRCode()
         ]);
-        
+
         // Generate QR code if not exists
         if (!$user->hasQRCode()) {
             Log::info('QR code missing, generating new one', ['user_id' => $user->id]);
-            
+
             $generated = $user->generateQRCode();
-            
+
             if (!$generated) {
                 Log::error('QR code generation failed', [
                     'user_id' => $user->id,
                     'hint' => 'Check logs for detailed error'
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
-                    'errors' => [[
-                        'code' => 'qr_generation_failed',
-                        'message' => translate('Failed to generate QR code. Please contact support.')
-                    ]]
+                    'errors' => [
+                        [
+                            'code' => 'qr_generation_failed',
+                            'message' => translate('Failed to generate QR code. Please contact support.')
+                        ]
+                    ]
                 ], 500);
             }
-            
+
             $user->refresh();
         }
-        
+
         // Prepare response
         $response = [
             'success' => true,
@@ -1083,21 +1106,21 @@ class CustomerWalletController extends Controller
             'user_phone' => $user->phone,
             'message' => translate('Share this QR code to receive money')
         ];
-        
+
         // Try to get image URL first
         $imageUrl = $user->qr_code_image_url;
-        
+
         if ($imageUrl) {
             $response['qr_code_image'] = $imageUrl;
             $response['qr_code_type'] = 'url';
         } else {
             // Fallback to base64 if URL doesn't work
             $base64 = $user->qr_code_base64;
-            
+
             if ($base64) {
                 $response['qr_code_image'] = $base64;
                 $response['qr_code_type'] = 'base64';
-                
+
                 Log::info('Using base64 QR code (storage link may be missing)', [
                     'user_id' => $user->id
                 ]);
@@ -1106,18 +1129,18 @@ class CustomerWalletController extends Controller
                     'user_id' => $user->id,
                     'qr_code_image' => $user->qr_code_image
                 ]);
-                
+
                 $response['qr_code_image'] = null;
                 $response['qr_code_type'] = 'none';
                 $response['warning'] = 'QR code image not accessible';
             }
         }
-        
+
         Log::info('QR code retrieved successfully', [
             'user_id' => $user->id,
             'type' => $response['qr_code_type']
         ]);
-        
+
         return response()->json($response, 200);
     }
 
@@ -1127,17 +1150,17 @@ class CustomerWalletController extends Controller
     public function regenerateQRCode(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $generated = $user->regenerateQRCode();
-        
+
         if (!$generated) {
             return response()->json([
                 'errors' => [['code' => 'qr_generation_failed', 'message' => translate('Failed to regenerate QR code')]]
             ], 500);
         }
-        
+
         $user->refresh();
-        
+
         return response()->json([
             'success' => true,
             'qr_code' => $user->qr_code,
@@ -1160,32 +1183,32 @@ class CustomerWalletController extends Controller
         }
 
         $sender = $request->user();
-        
+
         // Validate QR code
         $validation = QRCodeHelper::validateQRCode($request->qr_data);
-        
+
         if (!$validation['valid']) {
             return response()->json([
                 'errors' => [['code' => 'invalid_qr', 'message' => $validation['message']]]
             ], 400);
         }
-        
+
         $receiver = $validation['user'];
-        
+
         // Check if user is trying to send to themselves
         if ($receiver->id === $sender->id) {
             return response()->json([
                 'errors' => [['code' => 'self_transfer', 'message' => translate('You cannot transfer money to yourself')]]
             ], 400);
         }
-        
+
         // Check if receiver is active
         if (!$receiver->is_active) {
             return response()->json([
                 'errors' => [['code' => 'inactive_user', 'message' => translate('Receiver account is not active')]]
             ], 400);
         }
-        
+
         return response()->json([
             'success' => true,
             'receiver' => [
@@ -1216,26 +1239,26 @@ class CustomerWalletController extends Controller
         }
 
         $sender = $request->user();
-        
+
         // Validate QR code
         $validation = QRCodeHelper::validateQRCode($request->qr_data);
-        
+
         if (!$validation['valid']) {
             return response()->json([
                 'errors' => [['code' => 'invalid_qr', 'message' => $validation['message']]]
             ], 400);
         }
-        
+
         $receiver = $validation['user'];
         $amount = $request->amount;
-        
+
         // Check if user is trying to send to themselves
         if ($receiver->id === $sender->id) {
             return response()->json([
                 'errors' => [['code' => 'self_transfer', 'message' => translate('You cannot transfer money to yourself')]]
             ], 400);
         }
-        
+
         // Verify PIN
         if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
             return response()->json([
@@ -1301,7 +1324,7 @@ class CustomerWalletController extends Controller
                 'receiver_id' => $receiver->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'errors' => [['code' => 'server_error', 'message' => translate('Failed to send OTP')]]
             ], 500);
@@ -1323,7 +1346,7 @@ class CustomerWalletController extends Controller
         }
 
         $currentUserId = $request->user()->id;
-        $query = $request->query('query'); 
+        $query = $request->query('query');
         $limit = $request->input('limit', 10);
 
         $users = $this->user
@@ -1331,8 +1354,8 @@ class CustomerWalletController extends Controller
             ->where('is_active', 1)
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%")
-                ->orWhere('phone', 'LIKE', "%{$query}%");
+                    ->orWhere('email', 'LIKE', "%{$query}%")
+                    ->orWhere('phone', 'LIKE', "%{$query}%");
             })
             ->select('id', 'name', 'email', 'phone', 'image', 'is_active')
             ->limit($limit)
@@ -1361,7 +1384,7 @@ class CustomerWalletController extends Controller
     public function getUserDetailsForTransfer(Request $request, $userId): JsonResponse
     {
         $user = $this->user->where('id', $userId)->where('is_active', 1)->first();
-        
+
         if (!$user) {
             return response()->json([
                 'errors' => [['code' => 'user_not_found', 'message' => translate('User not found or inactive')]]
@@ -1424,7 +1447,7 @@ class CustomerWalletController extends Controller
                 'success' => true,
                 'message' => translate('Wallet PIN updated successfully')
             ], 200);
-            
+
         } catch (Exception $e) {
             return response()->json([
                 'errors' => [['code' => 'server_error', 'message' => translate('Failed to update PIN')]]
@@ -1446,7 +1469,7 @@ class CustomerWalletController extends Controller
         }
 
         $user = $request->user();
-        
+
         if (!$user->wallet_pin) {
             return response()->json([
                 'errors' => [['code' => 'no_pin_set', 'message' => translate('Please set up your wallet PIN first')]]
@@ -1461,7 +1484,7 @@ class CustomerWalletController extends Controller
         ], 200);
     }
 
-     /**
+    /**
      * Request PIN Reset OTP
      */
     public function requestPinResetOTP(Request $request): JsonResponse
@@ -1488,20 +1511,24 @@ class CustomerWalletController extends Controller
 
             if (!$user) {
                 return response()->json([
-                    'errors' => [[
-                        'code' => 'user_not_found',
-                        'message' => translate('No account found with this information')
-                    ]]
+                    'errors' => [
+                        [
+                            'code' => 'user_not_found',
+                            'message' => translate('No account found with this information')
+                        ]
+                    ]
                 ], 404);
             }
 
             // Check if user has a wallet PIN set
             if (!$user->wallet_pin) {
                 return response()->json([
-                    'errors' => [[
-                        'code' => 'no_pin_set',
-                        'message' => translate('No wallet PIN is set. Please create a new PIN instead.')
-                    ]]
+                    'errors' => [
+                        [
+                            'code' => 'no_pin_set',
+                            'message' => translate('No wallet PIN is set. Please create a new PIN instead.')
+                        ]
+                    ]
                 ], 400);
             }
 
@@ -1525,10 +1552,12 @@ class CustomerWalletController extends Controller
 
             if (!$success) {
                 return response()->json([
-                    'errors' => [[
-                        'code' => 'notification_failed',
-                        'message' => translate('Failed to send OTP. Please try again.')
-                    ]]
+                    'errors' => [
+                        [
+                            'code' => 'notification_failed',
+                            'message' => translate('Failed to send OTP. Please try again.')
+                        ]
+                    ]
                 ], 500);
             }
 
@@ -1544,10 +1573,12 @@ class CustomerWalletController extends Controller
 
         } catch (Exception $e) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'server_error',
-                    'message' => translate('Failed to send OTP: ') . $e->getMessage()
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'server_error',
+                        'message' => translate('Failed to send OTP: ') . $e->getMessage()
+                    ]
+                ]
             ], 500);
         }
     }
@@ -1575,10 +1606,12 @@ class CustomerWalletController extends Controller
 
         if (!$otpData) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'otp_expired',
-                    'message' => translate('OTP has expired. Please request a new one.')
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'otp_expired',
+                        'message' => translate('OTP has expired. Please request a new one.')
+                    ]
+                ]
             ], 400);
         }
 
@@ -1586,10 +1619,12 @@ class CustomerWalletController extends Controller
         if ($otpData['attempts'] >= 5) {
             \Illuminate\Support\Facades\Cache::forget($cacheKey);
             return response()->json([
-                'errors' => [[
-                    'code' => 'max_attempts_exceeded',
-                    'message' => translate('Maximum verification attempts exceeded. Please request a new OTP.')
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'max_attempts_exceeded',
+                        'message' => translate('Maximum verification attempts exceeded. Please request a new OTP.')
+                    ]
+                ]
             ], 429);
         }
 
@@ -1600,10 +1635,12 @@ class CustomerWalletController extends Controller
             \Illuminate\Support\Facades\Cache::put($cacheKey, $otpData, now()->addMinutes(5));
 
             return response()->json([
-                'errors' => [[
-                    'code' => 'invalid_otp',
-                    'message' => translate('Invalid OTP. Please try again.')
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'invalid_otp',
+                        'message' => translate('Invalid OTP. Please try again.')
+                    ]
+                ],
                 'attempts_remaining' => 5 - $otpData['attempts']
             ], 401);
         }
@@ -1651,20 +1688,24 @@ class CustomerWalletController extends Controller
 
         if (!$tokenData) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'invalid_or_expired_token',
-                    'message' => translate('Reset token is invalid or expired. Please verify OTP again.')
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'invalid_or_expired_token',
+                        'message' => translate('Reset token is invalid or expired. Please verify OTP again.')
+                    ]
+                ]
             ], 400);
         }
 
         // Verify token
         if ($request->reset_token !== $tokenData['token']) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'invalid_token',
-                    'message' => translate('Invalid reset token')
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'invalid_token',
+                        'message' => translate('Invalid reset token')
+                    ]
+                ]
             ], 401);
         }
 
@@ -1688,10 +1729,12 @@ class CustomerWalletController extends Controller
 
         } catch (Exception $e) {
             return response()->json([
-                'errors' => [[
-                    'code' => 'server_error',
-                    'message' => translate('Failed to reset PIN: ') . $e->getMessage()
-                ]]
+                'errors' => [
+                    [
+                        'code' => 'server_error',
+                        'message' => translate('Failed to reset PIN: ') . $e->getMessage()
+                    ]
+                ]
             ], 500);
         }
     }
@@ -1979,7 +2022,7 @@ class CustomerWalletController extends Controller
     {
         try {
             Log::debug('Mail configuration', config('mail'));
-            
+
             Log::info("Transfer OTP sent to user {$sender->id}", [
                 'phone' => $sender->phone,
                 'otp' => $otp,
@@ -1987,7 +2030,7 @@ class CustomerWalletController extends Controller
                 'receiver' => $receiver->phone,
                 'timestamp' => now()->toDateTimeString()
             ]);
-            
+
             // Email notification
             if ($sender->email) {
                 try {
@@ -2002,7 +2045,7 @@ class CustomerWalletController extends Controller
                     ]);
                 }
             }
-            
+
             // WhatsApp notification
             if ($sender->phone) {
                 try {
@@ -2015,9 +2058,9 @@ class CustomerWalletController extends Controller
                         'expiry_minutes' => '5',
                         'timestamp' => now()->format('Y-m-d H:i:s')
                     ]);
-                    
+
                     $response = $this->whatsapp->sendMessage($sender->phone, $message);
-                    
+
                     Log::info("Transfer OTP WhatsApp sent", [
                         'user_id' => $sender->id,
                         'phone' => $sender->phone,
@@ -2030,7 +2073,7 @@ class CustomerWalletController extends Controller
                     ]);
                 }
             }
-            
+
             // In-app notification
             $this->storeInAppNotification($sender->id, [
                 'title' => 'Transfer OTP',
@@ -2038,7 +2081,7 @@ class CustomerWalletController extends Controller
                 'type' => 'transfer_otp',
                 'reference_id' => 'TRANSFER_OTP_' . time(),
             ]);
-            
+
         } catch (Exception $e) {
             Log::error("Failed to send transfer OTP", [
                 'user_id' => $sender->id,
@@ -2062,7 +2105,7 @@ class CustomerWalletController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            
+
             Log::info('In-app notification stored', [
                 'user_id' => $userId,
                 'type' => $data['type']
@@ -2087,7 +2130,7 @@ class CustomerWalletController extends Controller
 
             // Send success notifications to both parties
             // Implementation would depend on your notification system
-            
+
         } catch (Exception $e) {
             Log::error("Failed to send transfer success notification", [
                 'transaction_id' => $transactionId,
@@ -2148,7 +2191,7 @@ class CustomerWalletController extends Controller
         }
 
         $adminBonus = json_decode($transaction->admin_bonus, true) ?? [];
-        
+
         return response()->json([
             'transaction' => [
                 'id' => $transaction->id,
@@ -2228,7 +2271,7 @@ class CustomerWalletController extends Controller
     public function checkTransferEligibility(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $eligibility = [
             'wallet_pin_set' => !empty($user->wallet_pin),
             'phone_verified' => !empty($user->phone_verified_at),
@@ -2322,7 +2365,7 @@ class CustomerWalletController extends Controller
     public function getWalletSettings(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $settings = [
             'pin_enabled' => !empty($user->wallet_pin),
             'notifications_enabled' => $user->wallet_notifications ?? true,
@@ -2356,7 +2399,7 @@ class CustomerWalletController extends Controller
         }
 
         $user = $request->user();
-        
+
         $user->update([
             'wallet_sms_notifications' => $request->sms_notifications ?? $user->wallet_sms_notifications,
             'wallet_email_notifications' => $request->email_notifications ?? $user->wallet_email_notifications,

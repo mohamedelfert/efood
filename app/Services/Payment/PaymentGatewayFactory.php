@@ -4,7 +4,7 @@ namespace App\Services\Payment;
 
 use App\Services\Payment\PaymentGatewayInterface;
 use App\Services\Payment\Gateways\QIBPaymentGateway;
-use App\Services\Payment\Gateways\StripePaymentGateway;
+use App\Services\Payment\Gateways\KuraimiPaymentGateway;
 
 
 
@@ -14,7 +14,7 @@ class PaymentGatewayFactory
     {
         return match (strtolower($gateway)) {
             'qib' => app(QIBPaymentGateway::class),
-            'stripe' => app(StripePaymentGateway::class),
+            'kuraimi' => app(KuraimiPaymentGateway::class),
             default => null,
         };
     }

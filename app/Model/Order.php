@@ -52,6 +52,11 @@ class Order extends Model
         return $this->belongsTo(User::class, 'user_id')->withCount('orders');
     }
 
+    public function guest()
+    {
+        return $this->belongsTo(GuestUser::class, 'guest_id', 'id');
+    }
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'branch_id')->withCount('orders');
@@ -131,11 +136,6 @@ class Order extends Model
     public function scopePartial($query)
     {
         return $query->whereHas('partial_payment');
-    }
-
-    public function guest()
-    {
-        return $this->belongsTo(GuestUser::class, 'user_id');
     }
 
     public function deliveryman_review()

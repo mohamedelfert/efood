@@ -869,13 +869,14 @@ class OrderController extends Controller
             'distance' => 'required|numeric',
             'guest_id' => auth('api')->user() ? 'nullable' : 'required|integer',
             'is_partial' => 'required|in:0,1',
-            'customer_data' => 'required_if:payment_method,stripe,qib|array',
-            'customer_data.email' => 'required_if:payment_method,stripe,qib|email',
-            'customer_data.phone' => 'required_if:payment_method,stripe,qib|string',
-            'customer_data.name' => 'required_if:payment_method,stripe,qib|string',
-            'payment_CustomerNo' => 'required_if:payment_method,qib|string',
-            'payment_DestNation' => 'required_if:payment_method,qib|integer',
+            'customer_data' => 'required_if:payment_method,stripe,qib,kuraimi|array',
+            'customer_data.email' => 'required_if:payment_method,stripe,qib,kuraimi|email',
+            'customer_data.phone' => 'required_if:payment_method,stripe,qib,kuraimi|string',
+            'customer_data.name' => 'required_if:payment_method,stripe,qib,kuraimi|string',
+            // 'payment_CustomerNo' => 'required_if:payment_method,qib|string',
+            // 'payment_DestNation' => 'required_if:payment_method,qib|integer',
             'payment_Code' => 'required_if:payment_method,qib|integer',
+            'pin_pass' => 'required_if:payment_method,kuraimi|string',
             'cart' => 'required|array|min:1',
             'cart.*.product_id' => 'required|integer|exists:products,id',
             'cart.*.quantity' => 'required|integer|min:1',
@@ -1327,6 +1328,9 @@ class OrderController extends Controller
                         $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo;
                         $paymentData['payment_DestNation'] = $request->payment_DestNation;
                         $paymentData['payment_Code'] = $request->payment_Code;
+                    } elseif ($request->payment_method === 'kuraimi') {
+                        $paymentData['payment_SCustID'] = $userId;
+                        $paymentData['pin_pass'] = $request->pin_pass;
                     }
 
                     $gateway = PaymentGatewayFactory::create($request->payment_method);
@@ -1444,6 +1448,22 @@ class OrderController extends Controller
 
                         $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($request->payment_method);
 
+                        // Handle Kuraimi Synchronous Success (Partial)
+                        if ($request->payment_method === 'kuraimi') {
+                            WalletTransaction::where('transaction_id', $transactionId)->update(['status' => 'completed']);
+
+                            $this->order->where('id', $o_id)->update([
+                                'payment_status' => 'paid', // Full amount covered (Wallet + Kuraimi)
+                                'order_status' => 'confirmed'
+                            ]);
+
+                            return response()->json([
+                                'message' => translate('order_placed_successfully'),
+                                'order_id' => $order_id,
+                                'total_amount' => $calculated_order_amount + $deliveryCharge,
+                            ], 200);
+                        }
+
                         return response()->json([
                             'message' => translate('order_pending_payment'),
                             'order_id' => $order_id,
@@ -1475,7 +1495,7 @@ class OrderController extends Controller
             }
 
             // HANDLE PAYMENT GATEWAY (NON-PARTIAL) - NO CASHBACK HERE (WAITS FOR CALLBACK)
-            if (in_array($request->payment_method, ['stripe', 'qib']) && !$request->is_partial) {
+            if (in_array($request->payment_method, ['stripe', 'qib', 'kuraimi']) && !$request->is_partial) {
                 $customerData = [
                     'user_id' => $userId,
                     'name' => $request->customer_data['name'],
@@ -1499,6 +1519,9 @@ class OrderController extends Controller
                     $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo;
                     $paymentData['payment_DestNation'] = $request->payment_DestNation;
                     $paymentData['payment_Code'] = $request->payment_Code;
+                } elseif ($request->payment_method === 'kuraimi') {
+                    $paymentData['payment_SCustID'] = $userId;
+                    $paymentData['pin_pass'] = $request->pin_pass;
                 }
 
                 $gateway = PaymentGatewayFactory::create($request->payment_method);
@@ -1542,6 +1565,11 @@ class OrderController extends Controller
                             'payment_CustomerNo' => $request->payment_CustomerNo,
                             'payment_DestNation' => $request->payment_DestNation,
                             'payment_Code' => $request->payment_Code,
+                        ]);
+                    } elseif ($request->payment_method === 'kuraimi') {
+                        $metadata = array_merge($metadata, [
+                            'payment_SCustID' => $userId,
+                            'transaction_id' => $transactionId,
                         ]);
                     } else {
                         $metadata = array_merge($metadata, [
@@ -1626,6 +1654,29 @@ class OrderController extends Controller
                         'order_id' => $o_id,
                         'transaction_id' => $transactionId
                     ]);
+
+                    // Handle Kuraimi Synchronous Success
+                    if ($request->payment_method === 'kuraimi') {
+                        WalletTransaction::where('transaction_id', $transactionId)->update([
+                            'status' => 'completed',
+                            'balance' => $user->wallet_balance // Balance doesn't change for external payment, but consistent with completed
+                        ]);
+
+                        OrderTransaction::where('transaction_id', $transactionId)->orWhere('order_id', $o_id)->update([
+                            'status' => 'completed'
+                        ]);
+
+                        $this->order->where('id', $o_id)->update([
+                            'payment_status' => 'paid',
+                            'order_status' => 'confirmed'
+                        ]);
+
+                        return response()->json([
+                            'message' => translate('order_placed_successfully'),
+                            'order_id' => $order_id,
+                            'total_amount' => $calculated_order_amount + $deliveryCharge,
+                        ], 200);
+                    }
 
                     $gatewayInfo = PaymentGatewayHelper::getGatewayInfo($request->payment_method);
 

@@ -100,7 +100,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::get('{service_type}/reviews', [ServiceReviewController::class, 'getReviews']);
         Route::get('{service_type}/rating', [ServiceReviewController::class, 'getRating']);
         Route::get('statistics', [ServiceReviewController::class, 'getServiceStatistics']);
-        
+
         // Service reviews (authenticated)
         Route::group(['middleware' => ['auth:api']], function () {
             Route::post('reviews/submit', [ServiceReviewController::class, 'submitReview']);
@@ -138,7 +138,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     });
 
     Route::group(['prefix' => 'banners', 'middleware' => 'branch_adder'], function () {
-        Route::get('/', [BannerController::class, 'getBanners']);        
+        Route::get('/', [BannerController::class, 'getBanners']);
         Route::get('/{id}', [BannerController::class, 'getBannerDetails']);
         Route::get('/{id}/products', [BannerController::class, 'getBannerProducts']);
         Route::get('/offers/active', [BannerController::class, 'getActiveOffers']);
@@ -147,22 +147,22 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     Route::group(['prefix' => 'notifications', 'middleware' => ['auth:api']], function () {
         // Get all notifications (user + broadcast)
         Route::get('/', [NotificationController::class, 'getNotifications']);
-        
+
         // Get unread count
         Route::get('/unread-count', [NotificationController::class, 'getUnreadCount']);
-        
+
         // Get notifications by type
         Route::get('/type/{type}', [NotificationController::class, 'getNotificationsByType']);
-        
+
         // Mark single notification as read
         Route::post('/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
-        
+
         // Mark all notifications as read
         Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
-        
+
         // Delete a notification
         Route::delete('/{id}', [NotificationController::class, 'deleteNotification']);
-        
+
         // Clear all notifications
         Route::delete('/clear-all', [NotificationController::class, 'clearAllNotifications']);
     });
@@ -202,7 +202,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         });
 
         Route::group(['prefix' => 'cashback'], function () {
-            Route::get('active', [CustomerWalletController::class, 'getActiveCashbackSettings']);            
+            Route::get('active', [CustomerWalletController::class, 'getActiveCashbackSettings']);
             Route::post('preview', [CustomerWalletController::class, 'calculateCashbackPreview']);
             Route::get('total', [CustomerWalletController::class, 'getUserCashbackTotal']);
             Route::get('history', [CustomerWalletController::class, 'getCashbackHistory']);
@@ -252,10 +252,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::group(['prefix' => 'qib'], function () {
                 // Confirm wallet top-up with OTP
                 Route::post('confirm-topup', 'QIBPaymentController@confirmTopUp');
-                
+
                 // Confirm order payment with OTP  
                 Route::post('confirm-order', 'QIBPaymentController@confirmOrder');
-                
+
                 // Resend OTP for any pending transaction
                 Route::post('resend-otp', 'QIBPaymentController@resendOTP');
             });
@@ -264,7 +264,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         // Wallet Management Endpoints
         Route::group(['prefix' => 'wallet'], function () {
             Route::post('add-fund', [CustomerWalletController::class, 'addFund']);
-            
+
             // Get wallet balance and details
             Route::get('balance', [CustomerWalletController::class, 'getWalletBalance']);
             // Get wallet statistics/summary
@@ -280,10 +280,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             Route::post('request-reset-otp', [CustomerWalletController::class, 'requestPinResetOTP']);
             Route::post('verify-reset-otp', [CustomerWalletController::class, 'verifyPinResetOTP']);
             Route::post('reset-with-otp', [CustomerWalletController::class, 'resetPinWithOTP']);
-            
+
             // Top up wallet - Get available payment methods
             Route::get('payment-methods', [CustomerWalletController::class, 'getPaymentMethods']);
-            
+
             // Process wallet top-up
             Route::post('top-up', [CustomerWalletController::class, 'topUpWallet']);
 
@@ -312,10 +312,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
 
             // Verify transaction by reference (for external payment gateways)
             Route::post('verify-payment/{reference}', [CustomerWalletController::class, 'verifyPayment'])->withoutMiddleware(['auth:api', 'is_active']);
-            
+
             // Check wallet status without auth (for guest users)
             Route::post('check-status', [CustomerWalletController::class, 'checkWalletStatus']);
-          
+
             // Get transaction details
             Route::get('transaction/{transaction_id}', [CustomerWalletController::class, 'getTransactionDetails']);
             // Request refund for a transaction
@@ -328,20 +328,20 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
             // Get transfer limits and fees
             Route::get('transfer-limits', [CustomerWalletController::class, 'getTransferLimits']);
             // Get cashback history
-            Route::get('cashback-history', [CustomerWalletController::class, 'getCashbackHistory']); 
+            Route::get('cashback-history', [CustomerWalletController::class, 'getCashbackHistory']);
         });
     });
 
     Route::group(['prefix' => 'coupon'], function () {
         // Get list of active coupons
         Route::get('list', [CouponController::class, 'list']);
-        
+
         // Apply coupon code
         Route::post('apply', [CouponController::class, 'apply']);
-        
+
         // Get coupon details by code
         Route::get('details', [CouponController::class, 'details']);
-        
+
         // Get available coupons for specific order amount
         Route::get('available', [CouponController::class, 'availableCoupons']);
     });
@@ -389,11 +389,11 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
         Route::get('list', [BranchController::class, 'list']);
         Route::get('products', [BranchController::class, 'products']);
         Route::get('categories', [BranchController::class, 'categories']);
-        
+
         // Branch reviews (public access)
         Route::get('{branch_id}/reviews', [BranchReviewController::class, 'getReviews']);
         Route::get('{branch_id}/rating', [BranchReviewController::class, 'getRating']);
-        
+
         // Branch reviews (authenticated)
         Route::group(['middleware' => ['auth:api']], function () {
             Route::post('reviews/submit', [BranchReviewController::class, 'submitReview']);
@@ -403,10 +403,12 @@ Route::group(['namespace' => 'Api\V1', 'middleware' => 'localization'], function
     });
 
     Route::group(['prefix' => 'payment'], function () {
+        Route::post('kuraimi/verify-customer', 'KuraimiPaymentController@verifyCustomer');
+
         Route::post('/initiate', [PaymentsController::class, 'initiatePayment']);
         Route::post('/confirm', [PaymentsController::class, 'confirmPayment']);
         Route::post('/resend-otp', [PaymentsController::class, 'resendOTP']);
-        Route::match(['GET','POST'],'/callback', [PaymentsController::class, 'handleCallback']);
+        Route::match(['GET', 'POST'], '/callback', [PaymentsController::class, 'handleCallback']);
         Route::get('/methods', [PaymentsController::class, 'getPaymentMethods']);
 
         // Payment callback route

@@ -24,7 +24,7 @@ class PaymentsController extends Controller
     private $whatsappService;
     private $receiptGenerator;
 
-    public function __construct(Request $request,WhatsAppService $whatsappService,ReceiptGeneratorService $receiptGenerator)
+    public function __construct(Request $request, WhatsAppService $whatsappService, ReceiptGeneratorService $receiptGenerator)
     {
         $gatewayType = $request->input('gateway', 'stripe');
         $this->gateway = PaymentGatewayFactory::create($gatewayType);
@@ -264,7 +264,7 @@ class PaymentsController extends Controller
     //         ], 500);
     //     }
     // }
-    
+
     public function handleCallback(Request $request): JsonResponse
     {
         try {
@@ -355,8 +355,8 @@ class PaymentsController extends Controller
             $response = $this->gateway->handleCallback($data);
 
             if (
-                isset($response['status']) && 
-                $response['status'] === 'success' && 
+                isset($response['status']) &&
+                $response['status'] === 'success' &&
                 isset($response['stripe_transaction_id'])
             ) {
                 DB::beginTransaction();
@@ -570,16 +570,16 @@ class PaymentsController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Send WhatsApp notification with receipt using template
-    */
+     */
     private function sendWhatsAppReceiptNotification($transaction, $metadata, $previousBalance): void
     {
         try {
             // Check status
             $whatsappStatus = \App\Model\BusinessSetting::where('key', 'wallet_topup_whatsapp_status_user')->first();
-           
+
             if (!$whatsappStatus || $whatsappStatus->value != '1') {
                 Log::info('WhatsApp notifications disabled', [
                     'transaction_id' => $transaction->transaction_id
@@ -686,16 +686,18 @@ class PaymentsController extends Controller
         }
     }
 
-   public function getPaymentMethods(): JsonResponse
+    public function getPaymentMethods(): JsonResponse
     {
         $rows = Setting::where('settings_type', 'payment_config')
             ->whereIn('key_name', [
-                'stripe','qib',
+                'stripe',
+                'qib',
+                'kuraimi',
             ])
             ->get();
 
         $methods = $rows->map(function ($setting) {
-            $mode   = $setting->mode;
+            $mode = $setting->mode;
             $values = $mode === 'live' ? $setting->live_values : $setting->test_values;
             $enabled = $setting->is_active == 1
                 || Arr::get($values, 'status') == '1';
@@ -703,15 +705,15 @@ class PaymentsController extends Controller
             $extra = $setting->additional_data ? json_decode($setting->additional_data, true) : [];
 
             return [
-                'gateway'     => $setting->key_name,
-                'title'       => $extra['gateway_title'] ?? ucwords(str_replace('_', ' ', $setting->key_name)),
-                'image'       => $extra['gateway_image'] ?? null,
-                'mode'        => $mode,
-                'is_enabled'  => $enabled ? 1 : 0,
+                'gateway' => $setting->key_name,
+                'title' => $extra['gateway_title'] ?? ucwords(str_replace('_', ' ', $setting->key_name)),
+                'image' => $extra['gateway_image'] ?? null,
+                'mode' => $mode,
+                'is_enabled' => $enabled ? 1 : 0,
             ];
         })
-        ->filter(fn($m) => $m['is_enabled'] === 1)
-        ->values();
+            ->filter(fn($m) => $m['is_enabled'] === 1)
+            ->values();
 
         return response()->json([
             'success' => true,

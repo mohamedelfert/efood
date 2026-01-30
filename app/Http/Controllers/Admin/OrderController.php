@@ -75,9 +75,18 @@ class OrderController extends Controller
             $key = explode(' ', $request['search']);
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('id', 'like', "%{$value}%")
-                        ->orWhere('order_status', 'like', "%{$value}%")
-                        ->orWhere('transaction_reference', 'like', "%{$value}%");
+                    $q->where(function ($query) use ($value) {
+                        $query->orWhere('id', 'like', "%{$value}%")
+                            ->orWhere('order_status', 'like', "%{$value}%")
+                            ->orWhere('transaction_reference', 'like', "%{$value}%")
+                            ->orWhere(function ($q) use ($value) {
+                                $q->where('is_guest', 0)
+                                    ->whereHas('customer', function ($customerQuery) use ($value) {
+                                        $customerQuery->where('email', 'like', "%{$value}%")
+                                            ->orWhere('phone', 'like', "%{$value}%");
+                                    });
+                            });
+                    });
                 }
             });
             $queryParam['search'] = $search;
@@ -114,6 +123,28 @@ class OrderController extends Controller
 
         $key = explode(' ', $request['search']);
 
+        // Helper function to apply consistent search logic across all order count queries
+        $applySearch = function ($query) use ($request, $key) {
+            if ($request->has('search')) {
+                $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->where(function ($query) use ($value) {
+                            $query->orWhere('id', 'like', "%{$value}%")
+                                ->orWhere('order_status', 'like', "%{$value}%")
+                                ->orWhere('transaction_reference', 'like', "%{$value}%")
+                                ->orWhere(function ($q) use ($value) {
+                                    $q->where('is_guest', 0)
+                                        ->whereHas('customer', function ($customerQuery) use ($value) {
+                                            $customerQuery->where('email', 'like', "%{$value}%")
+                                                ->orWhere('phone', 'like', "%{$value}%");
+                                        });
+                                });
+                        });
+                    }
+                });
+            }
+        };
+
         $orderCount = [
             'pending' => $this->order
                 ->notPos()
@@ -129,14 +160,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -154,14 +179,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -179,14 +198,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -204,14 +217,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -228,14 +235,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -253,14 +254,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -278,14 +273,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
 
@@ -303,14 +292,8 @@ class OrderController extends Controller
                 ->when(!is_null($from) && !is_null($to), function ($query) use ($from, $to) {
                     $query->whereBetween('created_at', [$from, Carbon::parse($to)->endOfDay()]);
                 })
-                ->when($request->has('search'), function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('id', 'like', "%{$value}%")
-                                ->orWhere('order_status', 'like', "%{$value}%")
-                                ->orWhere('transaction_reference', 'like', "%{$value}%");
-                        }
-                    });
+                ->when($request->has('search'), function ($query) use ($applySearch) {
+                    $applySearch($query);
                 })
                 ->count(),
         ];
