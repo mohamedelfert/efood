@@ -41,8 +41,8 @@ return [
         'production_url' => env('KURAIMI_BANK_PRODUCTION_URL', 'https://web.krmbank.net.ye/alk-payments'),
 
         // Authentication
-        'username' => env('KURAIMI_BANK_USERNAME'),
-        'password' => env('KURAIMI_BANK_PASSWORD'),
+        'username' => env('KURAIMI_BANK_USERNAME', ''),
+        'password' => env('KURAIMI_BANK_PASSWORD', ''),
 
         // Connection Settings
         'timeout' => env('KURAIMI_BANK_TIMEOUT', 30),
