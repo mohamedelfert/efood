@@ -160,7 +160,7 @@ class ConfigController extends Controller
             'delivery' => (boolean) (Helpers::get_business_settings('delivery') ?? 1),
             'take_away' => (boolean) (Helpers::get_business_settings('take_away') ?? 1),
             'in_car' => (boolean) (Helpers::get_business_settings('in_car') ?? 1),
-            'dine_in' => (boolean) (Helpers::get_business_settings('dine_in') ?? 1),
+            // 'dine_in' => (boolean) (Helpers::get_business_settings('dine_in') ?? 1),
             'in_restaurant' => (boolean) (Helpers::get_business_settings('dine_in') ?? 1),
             'play_store_config' => [
                 "status" => isset($playStoreConfig) && (boolean) $playStoreConfig['status'],
