@@ -873,11 +873,11 @@ class CustomerWalletController extends Controller
         $receiver = $this->user->where('phone', $request->receiver_phone)->first();
         $amount = $request->amount;
 
-        if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
-            return response()->json([
-                'errors' => [['code' => 'invalid_pin', 'message' => translate('Invalid PIN')]]
-            ], 401);
-        }
+        // if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
+        //     return response()->json([
+        //         'errors' => [['code' => 'invalid_pin', 'message' => translate('Invalid PIN')]]
+        //     ], 401);
+        // }
 
         if ($sender->wallet_balance < $amount) {
             return response()->json([
@@ -1231,7 +1231,7 @@ class CustomerWalletController extends Controller
             'qr_data' => 'required|string',
             'amount' => 'required|numeric|min:1',
             'note' => 'nullable|string|max:255',
-            'pin' => 'required|string|min:4',
+            // 'pin' => 'required|string|min:4',
         ]);
 
         if ($validator->fails()) {
@@ -1259,12 +1259,12 @@ class CustomerWalletController extends Controller
             ], 400);
         }
 
-        // Verify PIN
-        if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
-            return response()->json([
-                'errors' => [['code' => 'invalid_pin', 'message' => translate('Invalid PIN')]]
-            ], 401);
-        }
+        // // Verify PIN
+        // if (!$sender->wallet_pin || !Hash::check($request->pin, $sender->wallet_pin)) {
+        //     return response()->json([
+        //         'errors' => [['code' => 'invalid_pin', 'message' => translate('Invalid PIN')]]
+        //     ], 401);
+        // }
 
         // Check balance
         if ($sender->wallet_balance < $amount) {
