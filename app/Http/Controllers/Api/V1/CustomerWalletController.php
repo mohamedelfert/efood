@@ -862,7 +862,7 @@ class CustomerWalletController extends Controller
             'receiver_phone' => 'required|string|exists:users,phone',
             'amount' => 'required|numeric|min:1',
             'note' => 'nullable|string|max:255',
-            'pin' => 'required|string|min:4',
+            // 'pin' => 'required|string|min:4',
         ]);
 
         if ($validator->fails()) {

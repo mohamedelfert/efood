@@ -757,6 +757,7 @@
   'iframe_id' => 'معرف الإطار',
   'integration_id' => 'معرف التكامل',
   'user_deleted_successfully!' => 'تم حذف المستخدم بنجاح!',
+  'Invalid credentials.' => 'بيانات الاعتماد غير صحيحة (يرجي مراجعه البريد الالكتروني او كلمه المرور)',
   'user_not_found!' => 'المستخدم غير موجود!',
   'cannot_delete_customer_with_wallet_balance' => 'لا يمكن حذف العميل الذي لديه رصيد في المحفظة. يرجى تصفية الرصيد أولاً.',
   'cannot_delete_customer_with_balance' => 'لا يمكن حذف العميل الذي لديه رصيد في المحفظة:',
