@@ -21,6 +21,7 @@ return [
         'timeout' => env('ALQUTAIBI_BANK_TIMEOUT', 30),
         'max_amount' => env('ALQUTAIBI_BANK_MAX_AMOUNT', 50000),
         'min_amount' => env('ALQUTAIBI_BANK_MIN_AMOUNT', 1),
+        'merchant_id' => env('ALQUTAIBI_BANK_MERCHANT_ID', '39018677'),
         'supported_currencies' => ['YER', 'SAR', 'USD'],
         'fees' => [
             'fixed' => 0,

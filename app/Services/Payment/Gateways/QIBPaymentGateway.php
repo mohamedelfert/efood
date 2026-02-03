@@ -81,13 +81,16 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             $normalizedDestination = $this->normalizeCustomerNumber($data['payment_DestNation']);
             $encryptedCustomerNo = $this->encryptString($this->apiKey, $normalizedDestination);
 
+            // Normalize customer phone number
+            $normalizedCustomerPhone = $this->normalizeCustomerNumber($data['payment_CustomerNo']);
+
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $data['payment_CustomerNo'],
+                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
                 'payment_DestNation' => (int) $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
-                'payment_Amount' => (float) $data['amount'],
+                'payment_Amount' => (float) $data['payment_Amount'],
                 'payment_Curr' => $this->getCurrencyId($data['currency'] ?? 'YER'),
             ];
 
@@ -161,10 +164,13 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             $normalizedDestination = $this->normalizeCustomerNumber($data['payment_DestNation']);
             $encryptedCustomerNo = $this->encryptString($this->apiKey, $normalizedDestination);
 
+            // Normalize customer phone number
+            $normalizedCustomerPhone = $this->normalizeCustomerNumber($data['payment_CustomerNo']);
+
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $data['payment_CustomerNo'],
+                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
                 'payment_DestNation' => (int) $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) $data['payment_Amount'],
@@ -234,10 +240,13 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             $normalizedDestination = $this->normalizeCustomerNumber($data['payment_DestNation']);
             $encryptedCustomerNo = $this->encryptString($this->apiKey, $normalizedDestination);
 
+            // Normalize customer phone number
+            $normalizedCustomerPhone = $this->normalizeCustomerNumber($data['payment_CustomerNo']);
+
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $data['payment_CustomerNo'],
+                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
                 'payment_DestNation' => (int) $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) $data['payment_Amount'],
