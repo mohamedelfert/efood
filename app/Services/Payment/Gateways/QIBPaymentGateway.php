@@ -90,8 +90,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
                 'payment_CustomerNo' => (int) $normalizedCustomerPhone,
                 'payment_DestNation' => (int) $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
-                'payment_Amount' => (float) $data['payment_Amount'],
-                'payment_Curr' => $this->getCurrencyId($data['currency'] ?? 'YER'),
+                'payment_Amount' => (float) ($data['amount'] ?? $data['payment_Amount']),
+                'payment_Curr' => $this->getCurrencyId($data['currency'] ?? $data['payment_Curr'] ?? 'YER'),
             ];
 
             Log::info('QIB RequestPayment', [
