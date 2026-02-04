@@ -87,8 +87,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
-                'payment_DestNation' => (int) $normalizedDestination,
+                'payment_CustomerNo' => $normalizedCustomerPhone,
+                'payment_DestNation' => $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) ($data['amount'] ?? $data['payment_Amount']),
                 'payment_Curr' => $this->getCurrencyId($data['currency'] ?? $data['payment_Curr'] ?? 'YER'),
@@ -170,8 +170,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
-                'payment_DestNation' => (int) $normalizedDestination,
+                'payment_CustomerNo' => $normalizedCustomerPhone,
+                'payment_DestNation' => $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) $data['payment_Amount'],
                 'payment_Curr' => $this->getCurrencyId($data['payment_Curr'] ?? 'YER'),
@@ -246,8 +246,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             // Prepare request payload
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
-                'payment_CustomerNo' => (int) $normalizedCustomerPhone,
-                'payment_DestNation' => (int) $normalizedDestination,
+                'payment_CustomerNo' => $normalizedCustomerPhone,
+                'payment_DestNation' => $normalizedDestination,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) $data['payment_Amount'],
                 'payment_Curr' => $this->getCurrencyId($data['payment_Curr'] ?? 'YER'),

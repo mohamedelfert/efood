@@ -552,8 +552,8 @@ class CustomerWalletController extends Controller
             'callback_url' => 'sometimes|url',
 
             // QIB specific fields
-            // 'payment_CustomerNo' => 'required_if:gateway,qib|string',
-            // 'payment_DestNation' => 'required_if:gateway,qib|integer',
+            'payment_CustomerNo' => 'required_if:gateway,qib|digits_between:8,9',
+            'payment_DestNation' => 'required_if:gateway,qib|digits_between:8,9',
             'payment_Code' => 'required_if:gateway,qib|integer',
 
             // Kuraimi specific
@@ -641,8 +641,8 @@ class CustomerWalletController extends Controller
 
             // Add QIB-specific fields
             if ($gateway === 'qib') {
-                $data['payment_CustomerNo'] = $request->payment_CustomerNo ?? $user->phone;
-                $data['payment_DestNation'] = $request->payment_DestNation ?? config('payment.alqutaibi.merchant_id');
+                $data['payment_CustomerNo'] = $request->payment_CustomerNo;
+                $data['payment_DestNation'] = $request->payment_DestNation;
                 $data['payment_Code'] = $request->payment_Code;
             } elseif ($gateway === 'kuraimi') {
                 $data['payment_SCustID'] = $user->id; // Using user ID as SCustID
@@ -663,8 +663,8 @@ class CustomerWalletController extends Controller
 
                 if ($gateway === 'qib') {
                     $metadata = array_merge($metadata, [
-                        'payment_CustomerNo' => $request->payment_CustomerNo ?? $user->phone,
-                        'payment_DestNation' => $request->payment_DestNation ?? config('payment.alqutaibi.merchant_id'),
+                        'payment_CustomerNo' => $request->payment_CustomerNo,
+                        'payment_DestNation' => $request->payment_DestNation,
                         'payment_Code' => $request->payment_Code,
                     ]);
                 } elseif ($gateway === 'kuraimi') {
