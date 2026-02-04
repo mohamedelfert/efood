@@ -136,6 +136,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
                     'message_en' => $result['descriptionEn'] ?? 'OTP sent successfully',
                     'transaction_id' => $result['transactionID'] ?? null,
                     'currency_id' => $result['currencyId'] ?? null,
+                    'atm_no' => $result['atmNo'] ?? null,
+                    'account_type' => $result['accountType'] ?? null,
                     'requires_otp' => true,
                     'error_code' => '0',
                 ];
@@ -215,6 +217,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
                     'message_en' => $result['descriptionEn'] ?? 'Payment confirmed successfully',
                     'transaction_id' => $result['transactionID'] ?? null,
                     'qib_transaction_id' => $result['transactionID'] ?? null,
+                    'atm_no' => $result['atmNo'] ?? null,
+                    'account_type' => $result['accountType'] ?? null,
                     'error_code' => '0',
                 ];
             }
