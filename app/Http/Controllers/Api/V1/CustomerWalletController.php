@@ -561,8 +561,8 @@ class CustomerWalletController extends Controller
 
         // Conditional validation for gateways
         if ($request->gateway === 'qib') {
-            $rules['payment_CustomerNo'] = 'sometimes|digits_between:8,9';
-            $rules['payment_DestNation'] = 'sometimes|digits_between:8,9';
+            $rules['payment_CustomerNo'] = 'nullable|digits_between:8,9';
+            $rules['payment_DestNation'] = 'nullable|digits_between:8,9';
             $rules['payment_Code'] = 'required|integer';
         } elseif ($request->gateway === 'kuraimi') {
             $rules['pin_pass'] = 'required|string';
