@@ -756,6 +756,8 @@
   'api_key' => 'مفتاح واجهة برمجة التطبيقات',
   'iframe_id' => 'معرف الإطار',
   'integration_id' => 'معرف التكامل',
+  'Missing required payment identifiers (DestNation or CustomerNo)' => 'معرفات الدفع المطلوبة مفقودة (DestNation أو CustomerNo)',
+  'Missing required payment identifiers' => 'معرفات الدفع المطلوبة مفقودة',
   'user_deleted_successfully!' => 'تم حذف المستخدم بنجاح!',
   'Invalid credentials.' => 'بيانات الاعتماد غير صحيحة (يرجي مراجعه البريد الالكتروني او كلمه المرور)',
   'user_not_found!' => 'المستخدم غير موجود!',

@@ -545,25 +545,38 @@ class CustomerWalletController extends Controller
 
     public function topUpWallet(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        Log::info('Wallet top-up request initiated', [
+            'user_id' => $request->user()->id ?? 'unauthorized',
+            'gateway' => $request->gateway,
+            'amount' => $request->amount,
+            'input' => $request->only(['payment_CustomerNo', 'payment_DestNation', 'payment_Code', 'currency'])
+        ]);
+
+        $rules = [
             'amount' => 'required|numeric|min:1|max:50000',
             'gateway' => 'required|in:stripe,qib,loyalty_points,kuraimi',
             'currency' => 'sometimes|string|in:SAR,USD,EUR,EGP,YER',
             'callback_url' => 'sometimes|url',
+        ];
 
-            // QIB specific fields
-            'payment_CustomerNo' => 'required_if:gateway,qib|digits_between:8,9',
-            'payment_DestNation' => 'required_if:gateway,qib|digits_between:8,9',
-            'payment_Code' => 'required_if:gateway,qib|integer',
+        // Conditional validation for gateways
+        if ($request->gateway === 'qib') {
+            $rules['payment_CustomerNo'] = 'required|digits_between:8,9';
+            $rules['payment_DestNation'] = 'required|digits_between:8,9';
+            $rules['payment_Code'] = 'required|integer';
+        } elseif ($request->gateway === 'kuraimi') {
+            $rules['pin_pass'] = 'required|string';
+        } elseif ($request->gateway === 'loyalty_points') {
+            $rules['points'] = 'required|integer|min:1';
+        }
 
-            // Kuraimi specific
-            'pin_pass' => 'required_if:gateway,kuraimi|string',
-
-            // Loyalty points field
-            'points' => 'required_if:gateway,loyalty_points|integer|min:1',
-        ]);
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
+            Log::warning('Wallet top-up validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->all()
+            ]);
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 

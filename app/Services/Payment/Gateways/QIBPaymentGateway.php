@@ -77,6 +77,15 @@ class QIBPaymentGateway implements PaymentGatewayInterface
     public function requestPayment(array $data): array
     {
         try {
+            // Ensure identifiers are provided
+            if (empty($data['payment_DestNation']) || empty($data['payment_CustomerNo'])) {
+                return [
+                    'status' => false,
+                    'error' => translate('Missing required payment identifiers (DestNation or CustomerNo)'),
+                    'errors' => [['code' => 'missing_identifiers', 'message' => translate('Missing required payment identifiers')]]
+                ];
+            }
+
             // Normalize and encrypt customer_no
             $normalizedDestination = $this->normalizeCustomerNumber($data['payment_DestNation']);
             $encryptedCustomerNo = $this->encryptString($this->apiKey, $normalizedDestination);
