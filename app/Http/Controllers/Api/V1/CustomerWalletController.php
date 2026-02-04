@@ -561,8 +561,8 @@ class CustomerWalletController extends Controller
 
         // Conditional validation for gateways
         if ($request->gateway === 'qib') {
-            $rules['payment_CustomerNo'] = 'required|digits_between:8,9';
-            $rules['payment_DestNation'] = 'required|digits_between:8,9';
+            $rules['payment_CustomerNo'] = 'sometimes|digits_between:8,9';
+            $rules['payment_DestNation'] = 'sometimes|digits_between:8,9';
             $rules['payment_Code'] = 'required|integer';
         } elseif ($request->gateway === 'kuraimi') {
             $rules['pin_pass'] = 'required|string';
@@ -654,8 +654,12 @@ class CustomerWalletController extends Controller
 
             // Add QIB-specific fields
             if ($gateway === 'qib') {
-                $data['payment_CustomerNo'] = $request->payment_CustomerNo;
-                $data['payment_DestNation'] = $request->payment_DestNation;
+                $userPhone = preg_replace('/[^0-9]/', '', $user->phone);
+                // If phone starts with 00, remove it. If it's a full international number, the bank might expect the last 9 digits.
+                // However, without specific bank rules for all countries, we'll just provided the stripped version.
+
+                $data['payment_CustomerNo'] = $request->payment_CustomerNo ?? $userPhone;
+                $data['payment_DestNation'] = $request->payment_DestNation ?? config('payment.alqutaibi.merchant_id');
                 $data['payment_Code'] = $request->payment_Code;
             } elseif ($gateway === 'kuraimi') {
                 $data['payment_SCustID'] = $user->id; // Using user ID as SCustID
@@ -676,9 +680,9 @@ class CustomerWalletController extends Controller
 
                 if ($gateway === 'qib') {
                     $metadata = array_merge($metadata, [
-                        'payment_CustomerNo' => $request->payment_CustomerNo,
-                        'payment_DestNation' => $request->payment_DestNation,
-                        'payment_Code' => $request->payment_Code,
+                        'payment_CustomerNo' => $data['payment_CustomerNo'],
+                        'payment_DestNation' => $data['payment_DestNation'],
+                        'payment_Code' => $data['payment_Code'],
                     ]);
                 } elseif ($gateway === 'kuraimi') {
                     $metadata = array_merge($metadata, [

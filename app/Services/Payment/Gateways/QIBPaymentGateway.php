@@ -79,6 +79,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
         try {
             // Ensure identifiers are provided
             if (empty($data['payment_DestNation']) || empty($data['payment_CustomerNo'])) {
+                Log::warning('QIB RequestPayment missing identifiers', ['data' => $data]);
                 return [
                     'status' => false,
                     'error' => translate('Missing required payment identifiers (DestNation or CustomerNo)'),
