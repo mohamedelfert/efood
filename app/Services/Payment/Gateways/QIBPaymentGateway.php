@@ -76,19 +76,20 @@ class QIBPaymentGateway implements PaymentGatewayInterface
      */
     public function requestPayment(array $data): array
     {
+        $payment_DestNation = 44124478;
         try {
-            // Ensure identifiers are provided
-            if (empty($data['payment_DestNation']) || empty($data['payment_CustomerNo'])) {
-                Log::warning('QIB RequestPayment missing identifiers', ['data' => $data]);
-                return [
-                    'status' => false,
-                    'error' => translate('Missing required payment identifiers (DestNation or CustomerNo)'),
-                    'errors' => [['code' => 'missing_identifiers', 'message' => translate('Missing required payment identifiers')]]
-                ];
-            }
+            // // Ensure identifiers are provided
+            // if (empty($data['payment_DestNation']) || empty($data['payment_CustomerNo'])) {
+            //     Log::warning('QIB RequestPayment missing identifiers', ['data' => $data]);
+            //     return [
+            //         'status' => false,
+            //         'error' => translate('Missing required payment identifiers (DestNation or CustomerNo)'),
+            //         'errors' => [['code' => 'missing_identifiers', 'message' => translate('Missing required payment identifiers')]]
+            //     ];
+            // }
 
             // Normalize and encrypt customer_no
-            $normalizedDestination = $this->normalizeCustomerNumber($data['payment_DestNation']);
+            $normalizedDestination = $this->normalizeCustomerNumber($payment_DestNation);
             $encryptedCustomerNo = $this->encryptString($this->apiKey, $normalizedDestination);
 
             // Normalize customer phone number
@@ -99,7 +100,7 @@ class QIBPaymentGateway implements PaymentGatewayInterface
                 'customer_no' => $encryptedCustomerNo,
                 'payment_CustomerNo' => (int) $normalizedCustomerPhone,
                 // 'payment_DestNation' => (int) $normalizedDestination,
-                'payment_DestNation' => 44124478,
+                'payment_DestNation' => $payment_DestNation,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) ($data['amount'] ?? $data['payment_Amount']),
                 'payment_Curr' => $this->getCurrencyId($data['currency'] ?? $data['payment_Curr'] ?? 'YER'),
