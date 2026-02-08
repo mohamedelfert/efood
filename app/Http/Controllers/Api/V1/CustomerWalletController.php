@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Model\BusinessSetting;
 use App\Services\QRCodeHelper;
+use App\Model\Currency;
 use App\Model\WalletTransaction;
 use App\Services\CashbackService;
 use App\Services\WhatsAppService;
@@ -378,7 +379,7 @@ class CustomerWalletController extends Controller
         $user = $request->user();
         $amount = $request->amount;
         $gateway = $request->gateway;
-        $currency = $request->currency ?? 'EGP';
+        $currency = $request->currency ?? (Currency::where('is_primary', true)->first()->code ?? 'YER');
 
         // Check daily limits
         $dailyLimit = $this->businessSetting->where('key', 'wallet_daily_top_up_limit')->first()->value ?? 50000;
@@ -454,7 +455,7 @@ class CustomerWalletController extends Controller
                 // However, without specific bank rules for all countries, we'll just provided the stripped version.
 
                 $data['payment_CustomerNo'] = $request->payment_CustomerNo ?? $userPhone;
-                $data['payment_DestNation'] = $request->payment_DestNation ?? config('payment.alqutaibi.merchant_id');
+                $data['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                 $data['payment_Code'] = $request->payment_Code;
             } elseif ($gateway === 'kuraimi') {
                 $data['payment_SCustID'] = $user->id; // Using user ID as SCustID

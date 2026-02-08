@@ -539,8 +539,8 @@ class OrderController extends Controller
                     ];
 
                     if ($request->payment_method === 'qib') {
-                        $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo;
-                        $paymentData['payment_DestNation'] = $request->payment_DestNation;
+                        $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo ?? ($request->customer_data['phone'] ?? null);
+                        $paymentData['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                         $paymentData['payment_Code'] = $request->payment_Code;
                     } elseif ($request->payment_method === 'kuraimi') {
                         $paymentData['payment_SCustID'] = $userId;
@@ -721,7 +721,7 @@ class OrderController extends Controller
                 $paymentData = [
                     'gateway' => $request->payment_method,
                     'amount' => $calculated_order_amount + $deliveryCharge,
-                    'currency' => 'EGP',
+                    'currency' => Currency::where('is_primary', true)->first()->code ?? 'YER',
                     'purpose' => 'order_payment',
                     'order_id' => $o_id,
                     'customer_data' => $customerData,
@@ -730,8 +730,8 @@ class OrderController extends Controller
                 ];
 
                 if ($request->payment_method === 'qib') {
-                    $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo;
-                    $paymentData['payment_DestNation'] = $request->payment_DestNation;
+                    $paymentData['payment_CustomerNo'] = $request->payment_CustomerNo ?? ($request->customer_data['phone'] ?? null);
+                    $paymentData['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                     $paymentData['payment_Code'] = $request->payment_Code;
                 } elseif ($request->payment_method === 'kuraimi') {
                     $paymentData['payment_SCustID'] = $userId;
