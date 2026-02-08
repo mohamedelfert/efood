@@ -98,7 +98,8 @@ class QIBPaymentGateway implements PaymentGatewayInterface
             $payload = [
                 'customer_no' => $encryptedCustomerNo,
                 'payment_CustomerNo' => (int) $normalizedCustomerPhone,
-                'payment_DestNation' => (int) $normalizedDestination,
+                // 'payment_DestNation' => (int) $normalizedDestination,
+                'payment_DestNation' => 44124478,
                 'payment_Code' => (int) $data['payment_Code'],
                 'payment_Amount' => (float) ($data['amount'] ?? $data['payment_Amount']),
                 'payment_Curr' => $this->getCurrencyId($data['currency'] ?? $data['payment_Curr'] ?? 'YER'),
