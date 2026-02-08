@@ -579,8 +579,8 @@ class OrderController extends Controller
 
                         if ($request->payment_method === 'qib') {
                             $metadata = array_merge($metadata, [
-                                'payment_CustomerNo' => $request->payment_CustomerNo,
-                                'payment_DestNation' => $request->payment_DestNation,
+                                'payment_CustomerNo' => $request->payment_CustomerNo ?? ($request->customer_data['phone'] ?? null),
+                                'payment_DestNation' => $request->payment_DestNation ?? 44124478,
                                 'payment_Code' => $request->payment_Code,
                             ]);
                         } else {
@@ -776,8 +776,8 @@ class OrderController extends Controller
 
                     if ($request->payment_method === 'qib') {
                         $metadata = array_merge($metadata, [
-                            'payment_CustomerNo' => $request->payment_CustomerNo,
-                            'payment_DestNation' => $request->payment_DestNation,
+                            'payment_CustomerNo' => $request->payment_CustomerNo ?? ($request->customer_data['phone'] ?? null),
+                            'payment_DestNation' => $request->payment_DestNation ?? 44124478,
                             'payment_Code' => $request->payment_Code,
                         ]);
                     } elseif ($request->payment_method === 'kuraimi') {
