@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Exception;
-use App\Model\User;
+use App\User;
 use App\Model\Order;
-use App\CpuHelpers\Helpers;
+use App\CentralLogics\Helpers;
 use Illuminate\Http\Request;
 use App\Model\WalletTransaction;
 use App\Model\OrderTransaction;
@@ -35,7 +35,7 @@ class QIBPaymentController extends Controller
 
         try {
             $user = $request->user();
-            
+
             // Find pending wallet transaction
             $transaction = WalletTransaction::where('transaction_id', $request->transaction_id)
                 ->where('user_id', $user->id)
@@ -50,14 +50,14 @@ class QIBPaymentController extends Controller
             }
 
             // Decode metadata
-            $metadata = is_string($transaction->metadata) 
-                ? json_decode($transaction->metadata, true) 
+            $metadata = is_string($transaction->metadata)
+                ? json_decode($transaction->metadata, true)
                 : $transaction->metadata;
 
             // Prepare QIB confirmation data
             $confirmData = [
                 'payment_CustomerNo' => $metadata['payment_CustomerNo'],
-                'payment_DestNation' => $metadata['payment_DestNation'],
+                'payment_DestNation' => 44124478,
                 'payment_Code' => $metadata['payment_Code'],
                 'payment_Amount' => $transaction->credit,
                 'payment_Curr' => $metadata['currency'] ?? 'YER',
@@ -136,7 +136,7 @@ class QIBPaymentController extends Controller
                     'error' => $e->getMessage(),
                     'transaction_id' => $transaction->transaction_id
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'errors' => [['code' => 'update_failed', 'message' => translate('Failed to update wallet')]]
@@ -173,7 +173,7 @@ class QIBPaymentController extends Controller
 
         try {
             $user = $request->user();
-            
+
             // Find pending wallet transaction
             $transaction = WalletTransaction::where('transaction_id', $request->transaction_id)
                 ->where('user_id', $user->id)
@@ -199,14 +199,14 @@ class QIBPaymentController extends Controller
             }
 
             // Decode metadata
-            $metadata = is_string($transaction->metadata) 
-                ? json_decode($transaction->metadata, true) 
+            $metadata = is_string($transaction->metadata)
+                ? json_decode($transaction->metadata, true)
                 : $transaction->metadata;
 
             // Prepare QIB confirmation data
             $confirmData = [
                 'payment_CustomerNo' => $metadata['payment_CustomerNo'],
-                'payment_DestNation' => $metadata['payment_DestNation'],
+                'payment_DestNation' => 44124478,
                 'payment_Code' => $metadata['payment_Code'],
                 'payment_Amount' => $transaction->credit,
                 'payment_Curr' => $metadata['currency'] ?? 'YER',
@@ -293,7 +293,7 @@ class QIBPaymentController extends Controller
                     'transaction_id' => $transaction->transaction_id,
                     'order_id' => $order->id
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'errors' => [['code' => 'update_failed', 'message' => translate('Failed to update order')]]
@@ -329,7 +329,7 @@ class QIBPaymentController extends Controller
 
         try {
             $user = $request->user();
-            
+
             // Find pending transaction
             $transaction = WalletTransaction::where('transaction_id', $request->transaction_id)
                 ->where('user_id', $user->id)
@@ -344,14 +344,14 @@ class QIBPaymentController extends Controller
             }
 
             // Decode metadata
-            $metadata = is_string($transaction->metadata) 
-                ? json_decode($transaction->metadata, true) 
+            $metadata = is_string($transaction->metadata)
+                ? json_decode($transaction->metadata, true)
                 : $transaction->metadata;
 
             // Prepare resend data
             $resendData = [
                 'payment_CustomerNo' => $metadata['payment_CustomerNo'],
-                'payment_DestNation' => $metadata['payment_DestNation'],
+                'payment_DestNation' => 44124478,
                 'payment_Code' => $metadata['payment_Code'],
                 'payment_Amount' => $transaction->credit,
                 'payment_Curr' => $metadata['currency'] ?? 'YER',
