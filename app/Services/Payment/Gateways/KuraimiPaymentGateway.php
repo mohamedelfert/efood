@@ -41,10 +41,10 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
     {
         try {
             $payload = [
-                'SCustID' => $data['customer_id'] ?? null,
-                'MobileNo' => $data['phone'] ?? null,
-                'Email' => $data['email'] ?? null,
-                'CustomerZone' => $data['customer_zone'] ?? 'YE0012004',
+                'SCustID' => (string) ($data['customer_id'] ?? ''),
+                'MobileNo' => (string) ($data['phone'] ?? ''),
+                'Email' => (string) ($data['email'] ?? ''),
+                'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
             ];
 
             // Remove null values
@@ -132,11 +132,11 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
             // Prepare payment request
             $payload = [
-                'SCustID' => $data['payment_SCustID'],
-                'REFNO' => $data['transaction_id'] ?? 'REF_' . time(),
+                'SCustID' => (string) ($data['payment_SCustID'] ?? ''),
+                'REFNO' => (string) ($data['transaction_id'] ?? 'REF_' . time()),
                 'AMOUNT' => (float) $data['amount'],
-                'CRCY' => $data['currency'] ?? 'YER',
-                'MRCHNTNAME' => $data['merchant_name'] ?? config('app.name', 'Merchant'),
+                'CRCY' => (string) ($data['currency'] ?? 'YER'),
+                'MRCHNTNAME' => (string) ($data['merchant_name'] ?? config('app.name', 'Merchant')),
                 'PINPASS' => base64_encode($data['pin_pass'] ?? ''),
             ];
 

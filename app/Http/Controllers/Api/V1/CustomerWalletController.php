@@ -458,7 +458,10 @@ class CustomerWalletController extends Controller
                 $data['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                 $data['payment_Code'] = $request->payment_Code;
             } elseif ($gateway === 'kuraimi') {
-                $data['payment_SCustID'] = $user->id; // Using user ID as SCustID
+                $userPhone = preg_replace('/[^0-9]/', '', $user->phone);
+                $data['payment_SCustID'] = (string) $userPhone;
+                $data['phone'] = $userPhone;
+                $data['email'] = $user->email;
                 $data['pin_pass'] = $request->pin_pass;
             }
 
