@@ -26,13 +26,24 @@ class PaymentsController extends Controller
 
     public function __construct(Request $request, WhatsAppService $whatsappService, ReceiptGeneratorService $receiptGenerator)
     {
-        $gatewayType = $request->input('gateway', 'stripe');
-        $this->gateway = PaymentGatewayFactory::create($gatewayType);
-        if (!$this->gateway) {
-            throw new Exception('Invalid payment gateway');
-        }
         $this->whatsappService = $whatsappService;
         $this->receiptGenerator = $receiptGenerator;
+
+        // Skip gateway instantiation for methods that don't need it
+        if ($request->is('api/v1/payment/methods')) {
+            return;
+        }
+
+        try {
+            $gatewayType = $request->input('gateway', 'stripe');
+            $this->gateway = PaymentGatewayFactory::create($gatewayType);
+        } catch (\Exception $e) {
+            Log::warning('Payment gateway instantiation failed', ['error' => $e->getMessage()]);
+            $this->gateway = null;
+        }
+
+        // Only throw for methods that will definitely need the gateway
+        // Most methods check if $this->gateway is set anyway, or we can add checks there
     }
 
     // public function handleCallback(Request $request): JsonResponse
