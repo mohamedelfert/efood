@@ -43,6 +43,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             $payload = [
                 'SCustID' => (string) ($data['customer_id'] ?? ''),
                 'MobileNo' => (string) ($data['phone'] ?? ''),
+                'MobileNumber' => (string) ($data['phone'] ?? ''),
                 'Email' => (string) ($data['email'] ?? ''),
                 'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
             ];
