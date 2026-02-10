@@ -59,7 +59,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
                 ];
             }
 
-            Log::info('Kuraimi Verify Customer Details', [
+            Log::info('Kuraimi E-Payment Verify Customer Details', [
                 'payload' => array_diff_key($payload, ['Email' => '']),
                 'customer_zone' => $payload['CustomerZone']
             ]);
@@ -70,7 +70,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
                 ])
-                ->post("{$this->baseUrl}/webapi/VerifyCustomer", $payload);
+                ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer", $payload);
 
             $result = $response->json();
 
