@@ -42,15 +42,19 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
     /**
      * Generate Basic Auth header
+     * Per Kuraimi docs, C# example uses "username : password" (with spaces around colon)
      */
     private function getBasicAuthHeader(): string
     {
-        // PHP's base64_encode handles this correctly
-        $credentials = base64_encode("{$this->username}:{$this->password}");
+        // Docs C# example: Encoding.UTF8.GetBytes("Supplier2021 : Admin123")
+        // Note the spaces around the colon — this differs from standard HTTP Basic Auth
+        $credentials = base64_encode("{$this->username} : {$this->password}");
 
         Log::debug('Basic Auth Header Generated', [
             'credentials_length' => strlen($credentials),
             'username_length' => strlen($this->username),
+            'raw_preview' => substr($this->username, 0, 3) . '***:***' . substr($this->password, -2),
+            'format' => 'spaced (username : password)',
         ]);
 
         return "Basic {$credentials}";
