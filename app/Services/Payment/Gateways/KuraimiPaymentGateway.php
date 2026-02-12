@@ -74,70 +74,76 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             if (str_starts_with($phone, '967') && strlen($phone) > 9) {
                 $localPhone = substr($phone, 3);
             }
-            $prefixedPhone = '967' . (str_starts_with($localPhone, '0') ? substr($localPhone, 1) : $localPhone);
-            if (strlen($localPhone) > 9 && str_starts_with($localPhone, '0')) {
+            if (str_starts_with($localPhone, '0')) {
                 $localPhone = substr($localPhone, 1);
             }
+            $prefixedPhone = '967' . $localPhone;
 
-            $zone = (string) ($data['customer_zone'] ?? 'YE0012004');
-
-            // Variations to probe: [Key, Value]
-            $variations = [
+            // MEGA PROBE: Test key + zone combinations
+            $keyVariations = [
                 ['MobileNo', $localPhone],
-                ['MOBILENO', $localPhone],
-                ['MSISDN', $localPhone],
-                ['MSISDN', $prefixedPhone],
-                ['SCustID', $localPhone],
-                ['SCUSTID', $localPhone],
-                ['CustID', $localPhone],
+                ['MobileNo', $prefixedPhone],
+                ['MobileNo', (int) $localPhone],    // integer type
             ];
 
-            Log::info('Kuraimi Multi-Probe Started', ['variations_count' => count($variations)]);
+            $zoneVariations = ['YE0012004', 'YE0012006', 'YE0012007', 'YE0012008', 'YE0012009'];
 
-            foreach ($variations as $variation) {
-                [$key, $val] = $variation;
-                $payload = [
-                    $key => $val,
-                    'CustomerZone' => $zone,
-                ];
+            Log::info('Kuraimi MEGA Probe Started', [
+                'local_phone' => $localPhone,
+                'prefixed_phone' => $prefixedPhone,
+                'zones_to_test' => $zoneVariations,
+                'keys_to_test' => count($keyVariations),
+                'total_combinations' => count($keyVariations) * count($zoneVariations),
+            ]);
 
-                try {
-                    $response = Http::timeout(10)
-                        ->withHeaders([
-                            'Authorization' => $this->getBasicAuthHeader(),
-                            'Content-Type' => 'application/json',
-                            'Accept' => 'application/json',
-                        ])
-                        ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer", $payload);
+            foreach ($zoneVariations as $zone) {
+                foreach ($keyVariations as $variation) {
+                    [$key, $val] = $variation;
+                    $payload = [
+                        $key => $val,
+                        'CustomerZone' => $zone,
+                    ];
 
-                    $result = $response->json();
-                    $code = $result['Code'] ?? ($result['CODE'] ?? 'N/A');
+                    try {
+                        $response = Http::timeout(10)
+                            ->withHeaders([
+                                'Authorization' => $this->getBasicAuthHeader(),
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                            ])
+                            ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer", $payload);
 
-                    Log::info("Kuraimi Probe Variation: $key=$val", [
-                        'code' => $code,
-                        'response' => $result,
-                        'status' => $response->status()
-                    ]);
+                        $result = $response->json();
+                        $code = $result['Code'] ?? ($result['CODE'] ?? 'N/A');
 
-                    // If we get Code 1 (Success) or Code 2 (Not Found), it means the structure is CORRECT
-                    if ($code == 1 || $code == 2) {
-                        Log::info("!!! Kuraimi Probe SUCCESS for key $key !!!", ['payload' => $payload]);
-                        return [
-                            'status' => $code == 1,
-                            'data' => $result,
-                            'message' => $result['Message'] ?? ($result['DescriptionEn'] ?? null),
-                            'error' => $code == 2 ? 'Customer not found' : null,
-                            'error_code' => $code
-                        ];
+                        Log::info("Kuraimi Probe: $key=$val zone=$zone", [
+                            'code' => $code,
+                            'message' => $result['Message'] ?? null,
+                        ]);
+
+                        // Code 1 = Success, Code 2 = Not Found (but structure is correct)
+                        if ($code == 1 || $code == 2) {
+                            Log::info("!!! MEGA PROBE HIT: $key + $zone !!!", ['payload' => $payload, 'response' => $result]);
+                            return [
+                                'status' => $code == 1,
+                                'data' => $result,
+                                'customer_id' => $result['SCustID'] ?? null,
+                                'message' => $result['Message'] ?? ($result['DescriptionEn'] ?? null),
+                                'error' => $code == 2 ? 'Customer not found' : null,
+                                'error_code' => $code
+                            ];
+                        }
+                    } catch (\Exception $e) {
+                        Log::error("Kuraimi Probe Exception: $key=$val zone=$zone: " . $e->getMessage());
                     }
-                } catch (\Exception $e) {
-                    Log::error("Kuraimi Probe Exception for $key: " . $e->getMessage());
                 }
             }
 
+            Log::warning('Kuraimi MEGA Probe: ALL variations returned Exception-1');
+
             return [
                 'status' => false,
-                'error' => 'Verification failed with Exception-1 for all variations. Contact Kuraimi support.',
+                'error' => 'All verification variations failed (Code 3). Contact Kuraimi support.',
                 'error_code' => 3
             ];
         } catch (\Exception $e) {
@@ -160,7 +166,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
     public function requestPayment(array $data): array
     {
         try {
-            // Verify customer first (optional but recommended)
+            // Verify customer first
             $verifyResult = $this->verifyCustomerDetails([
                 'customer_id' => $data['customer_id'] ?? $data['payment_SCustID'] ?? null,
                 'phone' => $data['phone'] ?? null,
@@ -172,6 +178,37 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
                 Log::warning('Customer verification failed before payment', [
                     'verify_result' => $verifyResult,
                 ]);
+
+                // BLIND SENDPAYMENT TEST: Try SendPayment even if VerifyCustomer fails
+                // This helps determine if the entire E-Payment module is down or just VerifyCustomer
+                Log::info('Kuraimi BLIND SendPayment Test: Attempting payment despite verification failure');
+                $blindPayload = [
+                    'SCustID' => (string) ($data['phone'] ?? ''),
+                    'REFNO' => 'PROBE_' . time(),
+                    'AMOUNT' => (float) ($data['amount'] ?? 1),
+                    'CRCY' => 'YER',
+                    'MRCHNTNAME' => config('app.name', 'Merchant'),
+                    'PINPASS' => base64_encode($data['pin_pass'] ?? ''),
+                ];
+
+                try {
+                    $blindResponse = Http::timeout(10)
+                        ->withHeaders([
+                            'Authorization' => $this->getBasicAuthHeader(),
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                        ])
+                        ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/SendPayment", $blindPayload);
+
+                    Log::info('Kuraimi BLIND SendPayment Response', [
+                        'status' => $blindResponse->status(),
+                        'body' => $blindResponse->body(),
+                        'response' => $blindResponse->json(),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Kuraimi BLIND SendPayment Exception: ' . $e->getMessage());
+                }
+
                 return $verifyResult;
             }
 
