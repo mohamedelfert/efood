@@ -64,78 +64,82 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
     {
         try {
             $phone = !empty($data['phone']) ? (string) $data['phone'] : null;
-
-            // Normalize phone number: ensure it's exactly 9 digits for Yemen local verification
-            if ($phone) {
-                $phone = preg_replace('/[^0-9]/', '', $phone);
-                // If it has 967 prefix, remove it to try local format (9 digits)
-                if (str_starts_with($phone, '967') && strlen($phone) > 9) {
-                    $phone = substr($phone, 3);
-                }
-                // If it starts with 0, remove it
-                if (str_starts_with($phone, '0') && strlen($phone) > 9) {
-                    $phone = substr($phone, 1);
-                }
+            if (!$phone) {
+                return ['status' => false, 'error' => 'Mobile number is required', 'error_code' => 'invalid_input'];
             }
 
-            // Simplified payload according to successful community integrations
-            $payload = [
-                'MobileNo' => $phone,
-                'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
+            // Normalization
+            $phone = preg_replace('/[^0-9]/', '', $phone);
+            $localPhone = $phone;
+            if (str_starts_with($phone, '967') && strlen($phone) > 9) {
+                $localPhone = substr($phone, 3);
+            }
+            $prefixedPhone = '967' . (str_starts_with($localPhone, '0') ? substr($localPhone, 1) : $localPhone);
+            if (strlen($localPhone) > 9 && str_starts_with($localPhone, '0')) {
+                $localPhone = substr($localPhone, 1);
+            }
+
+            $zone = (string) ($data['customer_zone'] ?? 'YE0012004');
+
+            // Variations to probe: [Key, Value]
+            $variations = [
+                ['MobileNo', $localPhone],
+                ['MOBILENO', $localPhone],
+                ['MSISDN', $localPhone],
+                ['MSISDN', $prefixedPhone],
+                ['SCustID', $localPhone],
+                ['SCUSTID', $localPhone],
+                ['CustID', $localPhone],
             ];
 
-            // At least MobileNo must be present
-            if (empty($payload['MobileNo'])) {
-                return [
-                    'status' => false,
-                    'error' => 'Mobile number is required for customer verification',
-                    'error_code' => 'invalid_input'
+            Log::info('Kuraimi Multi-Probe Started', ['variations_count' => count($variations)]);
+
+            foreach ($variations as $variation) {
+                [$key, $val] = $variation;
+                $payload = [
+                    $key => $val,
+                    'CustomerZone' => $zone,
                 ];
+
+                try {
+                    $response = Http::timeout(10)
+                        ->withHeaders([
+                            'Authorization' => $this->getBasicAuthHeader(),
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                        ])
+                        ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer", $payload);
+
+                    $result = $response->json();
+                    $code = $result['Code'] ?? ($result['CODE'] ?? 'N/A');
+
+                    Log::info("Kuraimi Probe Variation: $key=$val", [
+                        'code' => $code,
+                        'response' => $result,
+                        'status' => $response->status()
+                    ]);
+
+                    // If we get Code 1 (Success) or Code 2 (Not Found), it means the structure is CORRECT
+                    if ($code == 1 || $code == 2) {
+                        Log::info("!!! Kuraimi Probe SUCCESS for key $key !!!", ['payload' => $payload]);
+                        return [
+                            'status' => $code == 1,
+                            'data' => $result,
+                            'message' => $result['Message'] ?? ($result['DescriptionEn'] ?? null),
+                            'error' => $code == 2 ? 'Customer not found' : null,
+                            'error_code' => $code
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Kuraimi Probe Exception for $key: " . $e->getMessage());
+                }
             }
-
-            Log::info('Kuraimi E-Payment Verify Customer Details (Simplified)', [
-                'url' => "{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer",
-                'payload' => $payload,
-            ]);
-
-            $response = Http::timeout($this->timeout)
-                ->withHeaders([
-                    'Authorization' => $this->getBasicAuthHeader(),
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
-                ->post("{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer", $payload);
-
-            $result = $response->json();
-
-            Log::info('Kuraimi Verify Customer Response', [
-                'status_code' => $response->status(),
-                'response' => $result,
-                'body' => $response->body(), // Log raw body for deeper debugging
-            ]);
-
-            // Check if verification was successful (Code: 1 = Success)
-            if (isset($result['Code']) && $result['Code'] == 1) {
-                return [
-                    'status' => true,
-                    'message' => $result['DescriptionEn'] ?? 'Customer verified successfully',
-                    'message_ar' => $result['DescriptionAr'] ?? 'تم التحقق من العميل بنجاح',
-                    'customer_id' => $result['SCustID'] ?? null,
-                    'error_code' => '0',
-                ];
-            }
-
-            // Handle error with detailed mapping
-            $errorMessages = $this->getErrorMessages();
-            $errorCode = $result['Code'] ?? 'unknown';
 
             return [
                 'status' => false,
-                'error' => $errorMessages[$errorCode] ?? ($result['DescriptionEn'] ?? 'Customer verification failed'),
-                'error_ar' => $result['DescriptionAr'] ?? 'فشل التحقق من العميل',
-                'error_code' => $errorCode,
+                'error' => 'Verification failed with Exception-1 for all variations. Contact Kuraimi support.',
+                'error_code' => 3
             ];
-
         } catch (\Exception $e) {
             Log::error('Kuraimi Verify Customer Exception', [
                 'error' => $e->getMessage(),
@@ -144,7 +148,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
             return [
                 'status' => false,
-                'error' => 'Customer verification failed: ' . $e->getMessage(),
+                'error' => 'Verification error: ' . $e->getMessage(),
                 'error_code' => 'exception'
             ];
         }
