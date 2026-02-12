@@ -42,19 +42,15 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
     /**
      * Generate Basic Auth header
-     * Per Kuraimi docs, C# example uses "username : password" (with spaces around colon)
      */
     private function getBasicAuthHeader(): string
     {
-        // Docs C# example: Encoding.UTF8.GetBytes("Supplier2021 : Admin123")
-        // Note the spaces around the colon — this differs from standard HTTP Basic Auth
-        $credentials = base64_encode("{$this->username} : {$this->password}");
+        $credentials = base64_encode("{$this->username}:{$this->password}");
 
-        Log::debug('Basic Auth Header Generated', [
-            'credentials_length' => strlen($credentials),
-            'username_length' => strlen($this->username),
-            'raw_preview' => substr($this->username, 0, 3) . '***:***' . substr($this->password, -2),
-            'format' => 'spaced (username : password)',
+        Log::debug('Basic Auth Header', [
+            'credentials_b64_preview' => substr($credentials, 0, 12) . '...',
+            'username' => $this->username,
+            'password_length' => strlen($this->password),
         ]);
 
         return "Basic {$credentials}";
@@ -162,10 +158,9 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
             Log::info('Kuraimi E-Payment Request', [
                 'url' => "{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/SendPayment",
-                'customer_id' => $payload['SCustID'],
-                'amount' => $payload['AMOUNT'],
-                'currency' => $payload['CRCY'],
-                'reference_no' => $payload['REFNO'],
+                'full_payload' => $payload,
+                'pin_pass_raw' => $data['pin_pass'] ?? 'NOT_SET',
+                'pin_pass_encoded' => $payload['PINPASS'],
             ]);
 
             $response = Http::timeout($this->timeout)
