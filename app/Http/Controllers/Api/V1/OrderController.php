@@ -543,7 +543,9 @@ class OrderController extends Controller
                         $paymentData['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                         $paymentData['payment_Code'] = $request->payment_Code;
                     } elseif ($request->payment_method === 'kuraimi') {
-                        $paymentData['payment_SCustID'] = $userId;
+                        $paymentData['customer_id'] = (string) $userId;
+                        $paymentData['phone'] = preg_replace('/[^0-9]/', '', $request->customer_data['phone'] ?? '');
+                        $paymentData['email'] = $request->customer_data['email'] ?? null;
                         $paymentData['pin_pass'] = $request->pin_pass;
                     }
 
@@ -734,7 +736,9 @@ class OrderController extends Controller
                     $paymentData['payment_DestNation'] = $request->payment_DestNation ?? 44124478;
                     $paymentData['payment_Code'] = $request->payment_Code;
                 } elseif ($request->payment_method === 'kuraimi') {
-                    $paymentData['payment_SCustID'] = $userId;
+                    $paymentData['customer_id'] = (string) $userId;
+                    $paymentData['phone'] = preg_replace('/[^0-9]/', '', $request->customer_data['phone'] ?? '');
+                    $paymentData['email'] = $request->customer_data['email'] ?? null;
                     $paymentData['pin_pass'] = $request->pin_pass;
                 }
 

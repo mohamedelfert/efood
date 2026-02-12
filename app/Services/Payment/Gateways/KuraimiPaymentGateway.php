@@ -66,6 +66,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             $payload = [
                 'SCustID' => !empty($data['customer_id']) ? (string) $data['customer_id'] : null,
                 'MobileNo' => !empty($data['phone']) ? (string) $data['phone'] : null,
+                'MobileNumber' => !empty($data['phone']) ? (string) $data['phone'] : null,
                 'Email' => !empty($data['email']) ? (string) $data['email'] : null,
                 'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
             ];
@@ -74,7 +75,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             $payload = array_filter($payload, fn($value) => $value !== null && $value !== '');
 
             // At least one identifier must be present
-            if (!isset($payload['SCustID']) && !isset($payload['MobileNo']) && !isset($payload['Email'])) {
+            if (!isset($payload['SCustID']) && !isset($payload['MobileNo']) && !isset($payload['MobileNumber']) && !isset($payload['Email'])) {
                 return [
                     'status' => false,
                     'error' => 'At least one customer identifier is required (ID, Phone, or Email)',
@@ -103,6 +104,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             Log::info('Kuraimi Verify Customer Response', [
                 'status_code' => $response->status(),
                 'response' => $result,
+                'body' => $response->body(), // Log raw body for deeper debugging
             ]);
 
             // Check if verification was successful (Code: 1 = Success)
@@ -149,7 +151,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
         try {
             // Verify customer first (optional but recommended)
             $verifyResult = $this->verifyCustomerDetails([
-                'customer_id' => $data['payment_SCustID'] ?? null,
+                'customer_id' => $data['customer_id'] ?? $data['payment_SCustID'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'email' => $data['email'] ?? null,
                 'customer_zone' => $data['customer_zone'] ?? 'YE0012004',
