@@ -54,6 +54,8 @@ return [
         'max_amount' => env('KURAIMI_MAX_AMOUNT', 100000),
         'default_customer_zone' => env('KURAIMI_CUSTOMER_ZONE', 'YE0012004'),
         'merchant_name' => env('KURAIMI_MERCHANT_NAME', config('app.name', 'eFOOD')),
+        'test_customer_id' => env('KURAIMI_TEST_CUSTOMER_ID', 'SC12345'),
+        'test_pin' => env('KURAIMI_TEST_PIN', '1234'),
 
         // Features
         'supports_refund' => true,

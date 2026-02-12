@@ -48,6 +48,7 @@ class OrderController extends Controller
     protected $product_by_branch;
     protected $offlinePayment;
     protected $orderArea;
+    protected $gateway;
     protected $notificationService;
 
     public function __construct(
@@ -1446,7 +1447,7 @@ class OrderController extends Controller
                 // Update order status
                 $orderId = json_decode($transaction->metadata, true)['order_id'] ?? null;
                 if ($orderId) {
-                    \App\Models\Order::where('id', $orderId)->update([
+                    Order::where('id', $orderId)->update([
                         'payment_status' => 'paid',
                         'order_status' => 'confirmed',
                         'updated_at' => now(),
