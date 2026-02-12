@@ -63,52 +63,39 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
     public function verifyCustomerDetails(array $data): array
     {
         try {
-            $isUat = !config('payment.kuraimi.is_production', false);
-            $testId = config('payment.kuraimi.test_customer_id', 'SC12345');
-
             $phone = !empty($data['phone']) ? (string) $data['phone'] : null;
 
-            // Normalize phone number: ensure it's digits only
+            // Normalize phone number: ensure it's exactly 9 digits for Yemen local verification
             if ($phone) {
                 $phone = preg_replace('/[^0-9]/', '', $phone);
-                // If it's 9 digits (local Yemen), try adding 967 prefix
-                if (strlen($phone) === 9 && (str_starts_with($phone, '77') || str_starts_with($phone, '73') || str_starts_with($phone, '71') || str_starts_with($phone, '70'))) {
-                    $phone = '967' . $phone;
+                // If it has 967 prefix, remove it to try local format (9 digits)
+                if (str_starts_with($phone, '967') && strlen($phone) > 9) {
+                    $phone = substr($phone, 3);
+                }
+                // If it starts with 0, remove it
+                if (str_starts_with($phone, '0') && strlen($phone) > 9) {
+                    $phone = substr($phone, 1);
                 }
             }
 
+            // Simplified payload according to successful community integrations
             $payload = [
-                'SCustID' => $isUat ? $testId : (!empty($data['customer_id']) ? (string) $data['customer_id'] : null),
                 'MobileNo' => $phone,
-                'MobileNumber' => $phone,
-                'Email' => !empty($data['email']) ? (string) $data['email'] : null,
                 'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
-                // Adding CAPS variations just in case
-                'SCUSTID' => $isUat ? $testId : (!empty($data['customer_id']) ? (string) $data['customer_id'] : null),
-                'MOBILENO' => $phone,
             ];
 
-            // Remove null values
-            $payload = array_filter($payload, fn($value) => $value !== null && $value !== '');
-
-            // At least one identifier must be present
-            if (!isset($payload['SCustID']) && !isset($payload['MobileNo']) && !isset($payload['Email'])) {
+            // At least MobileNo must be present
+            if (empty($payload['MobileNo'])) {
                 return [
                     'status' => false,
-                    'error' => 'At least one customer identifier is required (ID, Phone, or Email)',
+                    'error' => 'Mobile number is required for customer verification',
                     'error_code' => 'invalid_input'
                 ];
             }
 
-            // Ensure CustomerZone is always present
-            if (!isset($payload['CustomerZone'])) {
-                $payload['CustomerZone'] = $data['customer_zone'] ?? 'YE0012004';
-            }
-
-            Log::info('Kuraimi E-Payment Verify Customer Details', [
+            Log::info('Kuraimi E-Payment Verify Customer Details (Simplified)', [
                 'url' => "{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer",
-                'payload' => array_diff_key($payload, ['Email' => '']),
-                'is_uat' => $isUat,
+                'payload' => $payload,
             ]);
 
             $response = Http::timeout($this->timeout)
