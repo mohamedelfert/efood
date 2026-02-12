@@ -174,19 +174,27 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
             $result = $response->json();
 
+            // Normalize response keys: API uses PascalCase (Code) not UPPERCASE (CODE)
+            $code = $result['CODE'] ?? $result['Code'] ?? null;
+            $message = $result['MESSAGE'] ?? $result['Message'] ?? null;
+            $messageDesc = $result['MESSAGEDESC'] ?? $result['MessageDesc'] ?? null;
+            $resultSet = $result['ResultSet'] ?? $result['resultSet'] ?? null;
+
             Log::info('Kuraimi E-Payment Response', [
                 'status_code' => $response->status(),
-                'code' => $result['CODE'] ?? null,
-                'message' => $result['MESSAGE'] ?? null,
+                'code' => $code,
+                'message' => $message,
+                'message_desc' => $messageDesc,
+                'body' => $response->body(),
             ]);
 
-            // Check if payment was successful (CODE: 1 = Success)
-            if (isset($result['CODE']) && $result['CODE'] == 1) {
+            // Check if payment was successful (Code: 1 = Success)
+            if ($code !== null && (int) $code === 1) {
                 return [
                     'status' => true,
-                    'message' => $result['MESSAGE'] ?? 'Payment initiated successfully',
-                    'message_ar' => $result['MESSAGEDESC'] ?? 'تم بدء الدفع بنجاح',
-                    'transaction_id' => $result['ResultSet']['PH_REF_NO'] ?? $payload['REFNO'],
+                    'message' => $message ?? 'Payment initiated successfully',
+                    'message_ar' => $messageDesc ?? 'تم بدء الدفع بنجاح',
+                    'transaction_id' => $resultSet['PH_REF_NO'] ?? $payload['REFNO'],
                     'reference_number' => $payload['REFNO'],
                     'requires_otp' => false,
                     'error_code' => '0',
@@ -195,13 +203,13 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
 
             // Map error codes to user-friendly messages
             $errorMessages = $this->getErrorMessages();
-            $errorCode = $result['CODE'] ?? 'unknown';
-            $errorMessage = $errorMessages[$errorCode] ?? ($result['MESSAGE'] ?? 'Payment initiation failed');
+            $errorCode = $code ?? 'unknown';
+            $errorMessage = $errorMessages[$errorCode] ?? ($message ?? 'Payment initiation failed');
 
             return [
                 'status' => false,
                 'error' => $errorMessage,
-                'error_ar' => $result['MESSAGEDESC'] ?? 'فشل بدء الدفع',
+                'error_ar' => $messageDesc ?? 'فشل بدء الدفع',
                 'error_code' => $errorCode,
                 'errors' => [['code' => $errorCode, 'message' => $errorMessage]]
             ];
