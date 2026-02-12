@@ -19,9 +19,25 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
         $this->baseUrl = $isProduction
             ? config('payment.kuraimi.production_url')
             : config('payment.kuraimi.uat_url');
+
+        // Get credentials from config (not env directly)
         $this->username = config('payment.kuraimi.username');
         $this->password = config('payment.kuraimi.password');
         $this->timeout = config('payment.kuraimi.timeout', 30);
+
+        // Validate credentials are set
+        if (empty($this->username) || empty($this->password)) {
+            Log::error('Kuraimi credentials not configured', [
+                'username_set' => !empty($this->username),
+                'password_set' => !empty($this->password),
+            ]);
+        }
+
+        Log::info('Kuraimi Gateway Initialized', [
+            'base_url' => $this->baseUrl,
+            'is_production' => $isProduction,
+            'username' => substr($this->username, 0, 3) . '***', // Log partial username only
+        ]);
     }
 
     /**
@@ -29,7 +45,14 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
      */
     private function getBasicAuthHeader(): string
     {
+        // PHP's base64_encode handles this correctly
         $credentials = base64_encode("{$this->username}:{$this->password}");
+
+        Log::debug('Basic Auth Header Generated', [
+            'credentials_length' => strlen($credentials),
+            'username_length' => strlen($this->username),
+        ]);
+
         return "Basic {$credentials}";
     }
 
@@ -41,18 +64,17 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
     {
         try {
             $payload = [
-                'SCustID' => (string) ($data['customer_id'] ?? ''),
-                'MobileNo' => (string) ($data['phone'] ?? ''),
-                'MobileNumber' => (string) ($data['phone'] ?? ''),
-                'Email' => (string) ($data['email'] ?? ''),
+                'SCustID' => !empty($data['customer_id']) ? (string) $data['customer_id'] : null,
+                'MobileNo' => !empty($data['phone']) ? (string) $data['phone'] : null,
+                'Email' => !empty($data['email']) ? (string) $data['email'] : null,
                 'CustomerZone' => (string) ($data['customer_zone'] ?? 'YE0012004'),
             ];
 
             // Remove null values
-            $payload = array_filter($payload, fn($value) => $value !== null);
+            $payload = array_filter($payload, fn($value) => $value !== null && $value !== '');
 
             // At least one identifier must be present
-            if (empty($payload) || (!isset($payload['SCustID']) && !isset($payload['MobileNo']) && !isset($payload['Email']))) {
+            if (!isset($payload['SCustID']) && !isset($payload['MobileNo']) && !isset($payload['Email'])) {
                 return [
                     'status' => false,
                     'error' => 'At least one customer identifier is required (ID, Phone, or Email)',
@@ -60,9 +82,12 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
                 ];
             }
 
+            // Ensure CustomerZone is always present
+            $payload['CustomerZone'] = $data['customer_zone'] ?? 'YE0012004';
+
             Log::info('Kuraimi E-Payment Verify Customer Details', [
+                'url' => "{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/VerifyCustomer",
                 'payload' => array_diff_key($payload, ['Email' => '']),
-                'customer_zone' => $payload['CustomerZone']
             ]);
 
             $response = Http::timeout($this->timeout)
@@ -91,12 +116,15 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
                 ];
             }
 
-            // Handle error
+            // Handle error with detailed mapping
+            $errorMessages = $this->getErrorMessages();
+            $errorCode = $result['Code'] ?? 'unknown';
+
             return [
                 'status' => false,
-                'error' => $result['DescriptionEn'] ?? 'Customer verification failed',
+                'error' => $errorMessages[$errorCode] ?? ($result['DescriptionEn'] ?? 'Customer verification failed'),
                 'error_ar' => $result['DescriptionAr'] ?? 'فشل التحقق من العميل',
-                'error_code' => $result['Code'] ?? 'unknown',
+                'error_code' => $errorCode,
             ];
 
         } catch (\Exception $e) {
@@ -121,13 +149,16 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
         try {
             // Verify customer first (optional but recommended)
             $verifyResult = $this->verifyCustomerDetails([
-                'customer_id' => $data['payment_SCustID'],
+                'customer_id' => $data['payment_SCustID'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'email' => $data['email'] ?? null,
                 'customer_zone' => $data['customer_zone'] ?? 'YE0012004',
             ]);
 
             if (!$verifyResult['status']) {
+                Log::warning('Customer verification failed before payment', [
+                    'verify_result' => $verifyResult,
+                ]);
                 return $verifyResult;
             }
 
@@ -142,6 +173,7 @@ class KuraimiPaymentGateway implements PaymentGatewayInterface
             ];
 
             Log::info('Kuraimi E-Payment Request', [
+                'url' => "{$this->baseUrl}/v1/PHEPaymentAPI/EPayment/SendPayment",
                 'customer_id' => $payload['SCustID'],
                 'amount' => $payload['AMOUNT'],
                 'currency' => $payload['CRCY'],
